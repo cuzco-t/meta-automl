@@ -1,0 +1,241 @@
+Dame un resumen en markdown en español sobre la siguiente documentacion
+
+General
+These are the most simple measures for extracting general properties of the datasets. For instance, nr_attr and nr_class are the total number of attributes in the dataset and the number of output values (classes) in the dataset, respectively. The following examples illustrate these measures:
+attr_to_inst                                                  0.02666666666666667
+cat_to_num                                                                    0.0
+freq_class.mean                                                0.3333333333333333
+freq_class.sd                                                                 0.0
+inst_to_attr                                                                 37.5
+nr_attr                                                                         4
+nr_bin                                                                          0
+nr_cat                                                                          0
+nr_class                                                                        3
+nr_inst                                                                       150
+nr_num                                                                          4
+num_to_cat                                                                    nan
+
+
+Statistical
+Statistical meta-features are the standard statistical measures to describe the numerical properties of a distribution of data. As it requires only numerical attributes, the categorical data are transformed to numerical. For instance, cor_cor and skewness are the absolute correlation between of each pair of attributes and the skewness of the numeric attributes in the dataset, respectively. The following examples illustrate these measures:
+can_cor.mean                                                   0.7280089563896481
+can_cor.sd                                                     0.3631869233645244
+cor.mean                                                        0.594116025760156
+cor.sd                                                         0.3375443182856702
+cov.mean                                                       0.5966542132736764
+cov.sd                                                         0.5582672431248462
+eigenvalues.mean                                               1.1432392617449672
+eigenvalues.sd                                                 2.0587713015069764
+g_mean.mean                                                    3.2230731578977903
+g_mean.sd                                                      2.0229431040263726
+gravity                                                        3.2082811597489393
+h_mean.mean                                                    2.9783891110628673
+h_mean.sd                                                       2.145948231748242
+iq_range.mean                                                  1.7000000000000002
+iq_range.sd                                                    1.2754084313139324
+kurtosis.mean                                                 -0.8105361276250795
+kurtosis.sd                                                    0.7326910069728161
+lh_trace                                                       32.477316568194915
+mad.mean                                                                1.0934175
+mad.sd                                                         0.5785781994035033
+max.mean                                                        5.425000000000001
+max.sd                                                         2.4431878083083722
+mean.mean                                                      3.4645000000000006
+mean.sd                                                         1.918485079431164
+median.mean                                                    3.6125000000000003
+median.sd                                                       1.919364043982624
+min.mean                                                       1.8499999999999999
+min.sd                                                         1.8083141320025125
+nr_cor_attr                                                                   0.5
+nr_disc                                                                         2
+nr_norm                                                                       1.0
+nr_outliers                                                                     1
+p_trace                                                         1.191898822470078
+range.mean                                                     3.5750000000000006
+range.sd                                                       1.6500000000000001
+roy_root                                                       32.191925524310506
+sd.mean                                                        0.9478670787835934
+sd.sd                                                          0.5712994109375844
+sd_ratio                                                       1.2708666438750897
+skewness.mean                                                 0.06273198447775732
+skewness.sd                                                   0.29439896290757683
+sparsity.mean                                                  0.0287147773948895
+sparsity.sd                                                  0.011032357470087495
+t_mean.mean                                                    3.4705555555555554
+t_mean.sd                                                      1.9048021402275979
+var.mean                                                       1.1432392617449665
+var.sd                                                         1.3325463926454557
+w_lambda                                                     0.023438633222267347
+
+Information theory
+Information theory meta-features are particularly appropriate to describe discrete (categorical) attributes, but they also fit continuous ones using a discretization process. These measures are based on information theory. For instance, class_ent and mut_inf are the entropy of the class and the common information shared between each attribute and the class in the dataset, respectively. The following examples illustrate these measures:
+
+Extract all info-theory measures
+attr_conc.mean                                                0.20980476831180148
+attr_conc.sd                                                   0.1195879817732128
+attr_ent.mean                                                  2.2771912775084115
+attr_ent.sd                                                   0.06103943244855649
+class_conc.mean                                               0.27347384133126745
+class_conc.sd                                                 0.14091096327223987
+class_ent                                                       1.584962500721156
+eq_num_attr                                                    1.8780672345507194
+joint_ent.mean                                                 3.0182209990602855
+joint_ent.sd                                                   0.3821875549207214
+mut_inf.mean                                                   0.8439327791692818
+mut_inf.sd                                                     0.4222019352579773
+ns_ratio                                                        1.698308838945616
+
+Model-based
+These measures describe characteristics of the investigated models. These meta-features can include, for example, the description of the Decision Tree induced for a dataset, like its number of leaves (leaves) and the number of nodes (nodes) of the tree. The following examples illustrate these measures:
+leaves                                                                          9
+leaves_branch.mean                                             3.7777777777777777
+leaves_branch.sd                                               1.2018504251546631
+leaves_corrob.mean                                             0.1111111111111111
+leaves_corrob.sd                                              0.15051762539834182
+leaves_homo.mean                                                37.46666666666667
+leaves_homo.sd                                                 13.142298124757328
+leaves_per_class.mean                                          0.3333333333333333
+leaves_per_class.sd                                           0.22222222222222224
+nodes                                                                           8
+nodes_per_attr                                                                2.0
+nodes_per_inst                                                0.05333333333333334
+nodes_per_level.mean                                                          1.6
+nodes_per_level.sd                                             0.8944271909999159
+nodes_repeated.mean                                            2.6666666666666665
+nodes_repeated.sd                                              1.5275252316519465
+tree_depth.mean                                                3.0588235294117645
+tree_depth.sd                                                  1.4348601079588785
+tree_imbalance.mean                                           0.19491705385114738
+tree_imbalance.sd                                             0.13300709991513865
+tree_shape.mean                                                0.2708333333333333
+tree_shape.sd                                                 0.10711960313126631
+var_importance.mean                                                          0.25
+var_importance.sd                                             0.44925548152944056
+
+Landmarking
+Landmarking measures are simple and fast algorithms, from which performance characteristics can be extracted. These measures include the performance of simple and efficient learning algorithms like Naive Bayes (naive_bayes) and 1-Nearest Neighbor (one_nn). The following examples illustrate these measures:
+
+Extract all landmarking measures
+best_node.mean                                                 0.6666666666666667
+best_node.sd                                               1.1702778228589004e-16
+elite_nn.mean                                                  0.9400000000000001
+elite_nn.sd                                                   0.05837300238472753
+linear_discr.mean                                              0.9800000000000001
+linear_discr.sd                                               0.04499657051403685
+naive_bayes.mean                                               0.9533333333333334
+naive_bayes.sd                                                0.04499657051403685
+one_nn.mean                                                                  0.96
+one_nn.sd                                                     0.05621826951410451
+random_node.mean                                               0.6666666666666667
+random_node.sd                                             1.1702778228589004e-16
+worst_node.mean                                                0.5533333333333333
+worst_node.sd                                                  0.0773001205818937
+
+Relative Landmarking
+Relative Landmarking measures are simple and fast algorithms, from which performance characteristics can be extracted. But different from landmarking, a rank is returned where the best performance is the first ranked and the worst the last one ranked.
+
+Extract all relative landmarking measures
+best_node.mean.relative                                                       2.5
+best_node.sd.relative                                                         1.5
+elite_nn.mean.relative                                                        4.0
+elite_nn.sd.relative                                                          6.5
+linear_discr.mean.relative                                                    7.0
+linear_discr.sd.relative                                                      3.5
+naive_bayes.mean.relative                                                     5.0
+naive_bayes.sd.relative                                                       3.5
+one_nn.mean.relative                                                          6.0
+one_nn.sd.relative                                                            5.0
+random_node.mean.relative                                                     2.5
+random_node.sd.relative                                                       1.5
+worst_node.mean.relative                                                      1.0
+worst_node.sd.relative                                                        6.5
+
+Subsampling Landmarking
+Subsampling Landmarking measures are simple and fast algorithms, from which performance characteristics can be extracted. Nevertheless, different from landmarking, the performance is computed from a subsample of dataset.
+best_node.mean                                                 0.6754545454545454
+best_node.sd                                                 0.051967709123569066
+elite_nn.mean                                                  0.9045454545454547
+elite_nn.sd                                                    0.0902246965512691
+linear_discr.mean                                               0.990909090909091
+linear_discr.sd                                               0.02874797872880346
+naive_bayes.mean                                               0.9427272727272727
+naive_bayes.sd                                                0.06542227038166469
+one_nn.mean                                                    0.9627272727272727
+one_nn.sd                                                     0.04819039374799481
+random_node.mean                                               0.4445454545454545
+random_node.sd                                                0.10518687729554597
+worst_node.mean                                                0.6109090909090907
+worst_node.sd                                                 0.08395634879634749
+
+Clustering
+Clustering measures are based in clusteing algorithm, and clustering correlation and dissimilarity measures.
+
+Extract all clustering based measures
+ch                                                             487.33087637489984
+int                                                             3.322592586185653
+nre                                                            1.0986122886681096
+pb                                                              -0.68004959585269
+sc                                                                              0
+sil                                                             0.503477440693296
+vdb                                                            0.7513707094756737
+vdu                                                        2.3392212858877218e-05
+
+Concept
+Concept measures estimate the variability of class labels among examples and the examples density.
+
+Extract all concept measures
+cohesiveness.mean                                               67.10333333333334
+cohesiveness.sd                                                 5.355733510152213
+conceptvar.mean                                                 0.495358313970321
+conceptvar.sd                                                 0.07796805526728046
+impconceptvar.mean                                                          42.61
+impconceptvar.sd                                                5.354503216731368
+wg_dist.mean                                                   0.4620901765870531
+wg_dist.sd                                                    0.05612193762635788
+
+Itemset
+The Itemset computes the correlation between binary attributes.
+
+Extract all itemset measures
+one_itemset.mean                                                              0.2
+one_itemset.sd                                                0.04993563108104261
+two_itemset.mean                                                             0.32
+two_itemset.sd                                                 0.0851125499534728
+
+Complexity
+The complexity measures estimate the difficulty in separating the data points into their expected classes.
+c1                                                             0.9999999999999998
+c2                                                                            0.0
+cls_coef                                                       0.2674506351402339
+density                                                        0.8329306487695749
+f1.mean                                                        0.2775641932566493
+f1.sd                                                          0.2612622587707819
+f1v.mean                                                     0.026799629786085716
+f1v.sd                                                        0.03377041736533042
+f2.mean                                                     0.0063817663817663794
+f2.sd                                                        0.011053543615254369
+f3.mean                                                       0.12333333333333334
+f3.sd                                                         0.21361959960016152
+f4.mean                                                      0.043333333333333335
+f4.sd                                                         0.07505553499465135
+hubs.mean                                                      0.7822257352122133
+hubs.sd                                                        0.3198336185970707
+l1.mean                                                      0.004338258439810357
+l1.sd                                                        0.007514084034116028
+l2.mean                                                      0.013333333333333345
+l2.sd                                                        0.023094010767585053
+l3.mean                                                      0.003333333333333336
+l3.sd                                                        0.005773502691896263
+lsc                                                            0.8166666666666667
+n1                                                            0.10666666666666667
+n2.mean                                                       0.19814444191641126
+n2.sd                                                         0.14669333921747651
+n3.mean                                                                      0.06
+n3.sd                                                          0.2382824447791588
+n4.mean                                                                       0.0
+n4.sd                                                                         0.0
+t1.mean                                                      0.007092198581560285
+t1.sd                                                        0.002283518026238616
+t2                                                            0.02666666666666667
+t3                                                           0.013333333333333334
+t4                                                                            0.5
