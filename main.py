@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import warnings
@@ -10,16 +11,15 @@ from src.BaseDeDatos import BaseDeDatos
 
 if __name__ == "__main__":
     target = "purchase_amount_usd"
-    df = pd.read_csv("./data/descriptive_practice_dataset_large.csv")
-
-    X = df.drop(columns=[target]).to_numpy()
-    y = df[target].to_numpy()
+    ruta_relativa = "./data/descriptive_practice_dataset_large.csv"
+    
+    ruta_absoluta = os.path.abspath(ruta_relativa)
 
     logging.getLogger("pymfe").setLevel(logging.ERROR)
     warnings.filterwarnings("ignore")
 
     extractor = ExtractorMetaFeatures()
-    meta_features, meta_features_vectorizadas = extractor.extraer(X, y)
+    meta_features, meta_features_vectorizadas = extractor.extraer(ruta_absoluta, target)
 
     # Guardar meta-features en la base de datos
     db = BaseDeDatos()

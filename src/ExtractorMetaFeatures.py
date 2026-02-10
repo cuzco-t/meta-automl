@@ -1,5 +1,7 @@
+import os
 import math
 import numpy as np
+import pandas as pd
 from pymfe.mfe import MFE
 
 class ExtractorMetaFeatures:
@@ -21,8 +23,10 @@ class ExtractorMetaFeatures:
     def __init__(self):
         pass
 
-    def extraer(self, X, y):
+    def extraer(self, ruta_absoluta, target):
         meta_features = {}
+
+        X, y = self._leer_dataset(ruta_absoluta, target)
 
         for grupo in self._GUPOS_META_FEATURES:
             mfe = MFE(groups=[grupo])
@@ -43,10 +47,28 @@ class ExtractorMetaFeatures:
                 meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
         
         meta_features = self._mapear_meta_features(meta_features)
+        meta_features = self._agregar_meta_features_personalizadas(ruta_absoluta, X, meta_features)
         meta_features_vectorizadas = self._vectorizar_meta_features(meta_features)
 
         return meta_features, meta_features_vectorizadas
     
+    def _leer_dataset(self, ruta_absoluta, target):
+        """
+        Lee el dataset desde la ruta absoluta proporcionada y separa las características (X) del target (y).
+        
+        :param self: Referencia de la instancia de la clase.
+        :param ruta_absoluta: Ruta absoluta del archivo CSV que contiene el dataset.
+        :param target: Nombre de la columna que se utilizará como target.
+        :return: Tuple con las características (X) y el target (y) del dataset
+        :rtype: tuple
+        """
+        df = pd.read_csv(ruta_absoluta, encoding="utf-8")
+        X = df.drop(columns=[target]).to_numpy()
+        y = df[target].to_numpy()
+
+        return X, y
+
+
     def _setear_variables_grupo(self, grupo, valor):
         """
         Devuelve un diccionario con todas las meta-features del grupo indicado seteadas
@@ -314,16 +336,80 @@ class ExtractorMetaFeatures:
         return meta_features_vectorizadas
 
 
-    def _agregar_meta_features_personalizadas(self, meta_features: dict):
+    def _agregar_meta_features_personalizadas(self, ruta_absoluta, X, meta_features: dict):
         """
         Agrega meta-features personalizadas que no se encuentran en la librería pymfe.
         Las nuevas meta-features se agregarán al grupo "personalizadas" con el prefijo
         "personalizado_".
         
         :param self: Referencia de la instancia de la clase.
+        :param ruta_absoluta: Ruta absoluta del archivo de datos.
+        :type ruta_absoluta: str
+        :param X: Matriz de características.
+        :type X: np.ndarray
         :param meta_features: Diccionario con las meta-features al que se agregarán las personalizadas.
         :type meta_features: dict
         :return: Diccionario con las meta-features incluyendo las personalizadas.
         :rtype: dict
         """
-        pass
+
+        def calcular_peso_en_KB(ruta_absoluta: str) -> float:
+            """
+            Calcula el peso del archivo de datos en kilobytes (KB) a partir de su ruta absoluta.
+            :param ruta_absoluta: Ruta absoluta del archivo de datos.
+            :type ruta_absoluta: str
+            :return: Peso del archivo en KB.
+            :rtype: float
+            """
+            peso_bytes = os.path.getsize(ruta_absoluta)
+            peso_kb = peso_bytes / 1024
+
+            return peso_kb
+
+        def calcular_numero_de_columnas_con_valores_faltantes(X: np.ndarray) -> float:
+            """
+            Calcula el número de columnas que contienen valores faltantes en la matriz de características X.
+            Se consideran valores faltantes tanto los NaN estándar como ciertos strings específicos 
+            (como "", "na", "n/a", "null", "none").
+            
+            :param X: Matriz de características del dataset.
+            :type X: np.ndarray
+            :return: Número de columnas que contienen valores faltantes.
+            :rtype: float
+            """
+            STRINGS_FALTANTES = {"", "na", "n/a","null", "none"}
+            df = pd.DataFrame(X)
+
+            faltantes_std = df.isnull()
+
+            faltantes_str = df.apply(
+                lambda col: col.astype(str).str.strip().str.lower().isin(STRINGS_FALTANTES)
+                if col.dtype == object else False
+            )
+
+            faltantes = faltantes_std | faltantes_str
+
+            return float(faltantes.any(axis=0).sum())
+
+        def calcular_numero_de_registros_duplicados(X: np.ndarray) -> float:
+            """
+            Calcula el número de registros duplicados en la matriz de características X.
+            
+            :param X: Matriz de características del dataset.
+            :type X: np.ndarray
+            :return: Número de registros duplicados.
+            :rtype: float
+            """
+            df = pd.DataFrame(X)
+            num_duplicados = df.duplicated().sum()
+
+            return float(num_duplicados)
+
+        
+        meta_features['personalizadas'] = {
+            "peso_kb": calcular_peso_en_KB(ruta_absoluta),
+            "num_columnas_con_valores_faltantes": calcular_numero_de_columnas_con_valores_faltantes(X),
+            "num_registros_duplicados": calcular_numero_de_registros_duplicados(X)
+        }
+
+        return meta_features
