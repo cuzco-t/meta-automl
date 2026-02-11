@@ -22,6 +22,11 @@ class Preprocesamiento:
         self.secuencia_preprocesamiento = {}
         self._SEMILLA = int(os.getenv("SEMILLA_ALEATORIA", "42"))
         self._ETIQUETA_ERROR = os.getenv("ETIQUETA_ERROR", "ERROR")
+        self._RANGOS_RATIOS_UNICOS = {
+            "bajo": (0, 0.05),
+            "medio": (0.05, 0.9),
+            "alto": (0.9, 1.0)
+        }
 
         # random.seed(self._SEMILLA)
         # np.random.seed(self._SEMILLA)
@@ -46,13 +51,19 @@ class Preprocesamiento:
         X, y = self._tratar_duplicados(X, y)
         X = self._tratar_faltantes_numericos(X)
         X = self._tratar_faltantes_strings(X)
+
+        X = self._codificar_variables_binarias(X)
+        X = self._codificar_variables_categoricas_rango_bajo(X)
+        X = self._codificar_variables_categoricas_rango_medio(X)
+        self.imprimir_tipos_datos(X, y, "Después de codificar variables categóricas")
+        print("-" * 50)
+        pd.set_option('display.max_columns', None)
+        print(X.head())
+
         X = self._tratar_outliers_numericos(X)
         X = self._escalar_datos_numericos(X)
-        self.imprimir_tipos_datos(X, y, "DESPUÉS DE ESCALAR DATOS Y ANTES DE NORMALIZAR DATOS")
         X = self._normalizar_datos_numericos(X)
-        self.imprimir_tipos_datos(X, y, "DESPUÉS DE NORMALIZAR DATOS Y ANTES DE CREAR NUEVAS VARIABLES")
         X = self._crear_nueva_variable(X)
-        self.imprimir_tipos_datos(X, y, "DESPUÉS DE CREAR NUEVAS VARIABLES")
 
         # except Exception as e:
         #     print(f"Error durante el preprocesamiento: {e}")
@@ -227,6 +238,83 @@ class Preprocesamiento:
 
         if tecnica_seleccionada == "eliminar" and filas_a_eliminar is not None:
             X_df = X_df.loc[filas_a_eliminar]
+
+        return X_df
+
+
+    def _codificar_variables_binarias(self, X: pd.DataFrame):
+        TECNICAS = [None, "label-encoding"]
+
+        tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
+        self.secuencia_preprocesamiento["codificar_variables_binarias"] = tecnica_seleccionada
+
+        if tecnica_seleccionada is None:
+            return X
+        # Asegurar DataFrame
+        X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+        for col in X_df.columns:
+            if pd.api.types.is_object_dtype(X_df[col]) and X_df[col].nunique() == 2:
+                if tecnica_seleccionada == "label-encoding":
+                    X_df[col] = X_df[col].astype('category').cat.codes
+
+        return X_df
+
+
+    def _codificar_variables_categoricas_rango_bajo(self, X: pd.DataFrame):
+        TECNICAS = [None, "one-hot-encoding", "label-encoding"]
+
+        tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
+        self.secuencia_preprocesamiento["codificar_variables_categoricas_rango_bajo"] = tecnica_seleccionada
+
+        if tecnica_seleccionada is None:
+            return X
+
+        # Asegurar DataFrame
+        X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+
+        for col in X_df.columns:
+            if pd.api.types.is_object_dtype(X_df[col]):
+                ratio_unicos = X_df[col].nunique() / len(X_df)
+                if ratio_unicos <= 0.05:
+                    if tecnica_seleccionada == "one-hot-encoding":
+                        dummies = pd.get_dummies(X_df[col], prefix=col)
+                        X_df = pd.concat([X_df.drop(columns=[col]), dummies], axis=1)
+
+                    elif tecnica_seleccionada == "label-encoding":
+                        X_df[col] = X_df[col].astype('category').cat.codes
+                
+                if ratio_unicos >= 0.90:
+                    X_df = X_df.drop(columns=[col])
+
+        return X_df
+    
+
+    def _codificar_variables_categoricas_rango_medio(self, X: pd.DataFrame):
+        TECNICAS = [None, "frequency-encoding", "eliminar"]
+
+        tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
+        self.secuencia_preprocesamiento["codificar_variables_categoricas_rango_medio"] = tecnica_seleccionada
+
+        if tecnica_seleccionada is None:
+            return X
+
+        # Asegurar DataFrame
+        X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
+
+        columnas_a_eliminar = []
+
+        for col in X_df.columns:
+            if pd.api.types.is_object_dtype(X_df[col]):
+                ratio_unicos = X_df[col].nunique() / len(X_df)
+                if 0.05 < ratio_unicos < 0.90:
+                    if tecnica_seleccionada == "frequency-encoding":
+                        freq = X_df[col].value_counts(normalize=True)
+                        X_df[col] = X_df[col].map(freq)
+                    elif tecnica_seleccionada == "eliminar":
+                        columnas_a_eliminar.append(col)
+
+        if columnas_a_eliminar:
+            X_df = X_df.drop(columns=columnas_a_eliminar)
 
         return X_df
 
