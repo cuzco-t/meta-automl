@@ -21,7 +21,7 @@ class ExtractorMetaFeatures:
     _CONSTANTE_INFINITO = 2222.0
 
     def __init__(self):
-        pass
+        self.df = None
 
     def extraer(self, ruta_absoluta, target):
         meta_features = {}
@@ -62,9 +62,9 @@ class ExtractorMetaFeatures:
         :return: Tuple con las características (X) y el target (y) del dataset
         :rtype: tuple
         """
-        df = pd.read_csv(ruta_absoluta, encoding="utf-8")
-        X = df.drop(columns=[target]).to_numpy()
-        y = df[target].to_numpy()
+        self.df = pd.read_csv(ruta_absoluta, encoding="utf-8")
+        X = self.df.drop(columns=[target]).to_numpy()
+        y = self.df[target].to_numpy()
 
         return X, y
 

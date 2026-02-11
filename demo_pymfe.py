@@ -1,24 +1,21 @@
-import os
-import logging
-import warnings
+from matplotlib import pyplot as plt
 import pandas as pd
-from src.ExtractorMetaFeatures import ExtractorMetaFeatures
 
-target = "purchase_amount_usd"
-df = pd.read_csv("./data/descriptive_practice_dataset_large.csv")
+# Cargar el dataset
+df = pd.read_csv("./data/descriptive_practice_dataset_large.csv", encoding="utf-8")
+print(df.dtypes)
 
-X = df.drop(columns=[target]).to_numpy()
-y = df[target].to_numpy()
-
-logging.getLogger("pymfe").setLevel(logging.ERROR)
-warnings.filterwarnings("ignore")
-
-extractor = ExtractorMetaFeatures()
-meta_features, meta_features_aplanadas = extractor.extraer(X, y)
+df.to_numpy()
+print(df.dtypes)
 
 
-print(f"Meta-features extraídas: {len(meta_features)} dimensiones.")
-print(meta_features)
+# # Seleccionar solo columnas numéricas
+# numeric_cols = df.select_dtypes(include='number').columns
+# print("Columnas numéricas:", numeric_cols)
 
-print(f"\nMeta-features aplanadas extraídas: {len(meta_features_aplanadas)} dimensiones.")
-print(meta_features_aplanadas)
+# # Dibujar un boxplot por cada columna numérica
+# for col in numeric_cols:
+#     plt.figure(figsize=(6, 4))
+#     df.boxplot(column=col)
+#     plt.title(f"Boxplot de {col}")
+#     plt.show()
