@@ -27,6 +27,7 @@ class Preprocesamiento:
             "medio": (0.05, 0.9),
             "alto": (0.9, 1.0)
         }
+        self._PERMITIR_NONE = False
 
         # random.seed(self._SEMILLA)
         # np.random.seed(self._SEMILLA)
@@ -40,6 +41,12 @@ class Preprocesamiento:
         for i in range(X.shape[1]):
             print(f"Columna {i}: dtype = {X.iloc[:, i].dtype}")
         print(f"Tipo de dato en y: dtype = {y.dtype}")
+
+    def _permitir_None(self, tecnica: list):
+        if self._PERMITIR_NONE == False:
+            tecnica.remove(None)
+        
+        return tecnica
 
     def preprocesar_datos(self, X: np.ndarray, y: np.ndarray, tarea: str) -> tuple[np.ndarray, np.ndarray, list]:
         self._tarea = tarea
@@ -55,15 +62,14 @@ class Preprocesamiento:
         X = self._codificar_variables_binarias(X)
         X = self._codificar_variables_categoricas_rango_bajo(X)
         X = self._codificar_variables_categoricas_rango_medio(X)
-        self.imprimir_tipos_datos(X, y, "Después de codificar variables categóricas")
-        print("-" * 50)
-        pd.set_option('display.max_columns', None)
-        print(X.head())
 
         X = self._tratar_outliers_numericos(X)
         X = self._escalar_datos_numericos(X)
         X = self._normalizar_datos_numericos(X)
         X = self._crear_nueva_variable(X)
+
+        # pd.set_option('display.max_columns', None)
+        # print(X.head())
 
         # except Exception as e:
         #     print(f"Error durante el preprocesamiento: {e}")
@@ -81,7 +87,8 @@ class Preprocesamiento:
             return X, y
         
         TECNICAS = [None, "smote", "undersampling", "oversampling", "Borderline-SMOTE"]
-        
+        TECNICAS = self._permitir_None(TECNICAS)
+
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
 
         try:
@@ -104,7 +111,7 @@ class Preprocesamiento:
                 borderline_smote = BorderlineSMOTE(random_state=self._SEMILLA)
                 X, y = borderline_smote.fit_resample(X, y)
 
-            self.secuencia_preprocesamiento.append(tecnica_seleccionada)
+            self.secuencia_preprocesamiento["balancear_clases"] = tecnica_seleccionada
 
         except:
             self.secuencia_preprocesamiento.append(self._ETIQUETA_ERROR)
@@ -113,7 +120,8 @@ class Preprocesamiento:
 
 
     def _tratar_duplicados(self, X: pd.DataFrame, y: pd.Series):
-        TECNICAS = ["eliminar"]
+        TECNICAS = [None, "eliminar"]
+        TECNICAS = self._permitir_None(TECNICAS)
 
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["tratar_duplicados"] = tecnica_seleccionada
@@ -144,6 +152,7 @@ class Preprocesamiento:
 
     def _tratar_faltantes_numericos(self, X: pd.DataFrame):
         TECNICAS = [None, "media", "mediana", "moda", "aleatorio", "media_geometrica", "eliminar"]
+        TECNICAS = self._permitir_None(TECNICAS)
 
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["tratar_faltantes_numericos"] = tecnica_seleccionada
@@ -196,6 +205,7 @@ class Preprocesamiento:
   
     def _tratar_faltantes_strings(self, X: pd.DataFrame):
         TECNICAS = [None, "moda", "aleatorio", "eliminar", "etiqueta_desconocido"]
+        TECNICAS = self._permitir_None(TECNICAS)
 
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["tratar_faltantes_strings"] = tecnica_seleccionada
@@ -244,6 +254,7 @@ class Preprocesamiento:
 
     def _codificar_variables_binarias(self, X: pd.DataFrame):
         TECNICAS = [None, "label-encoding"]
+        TECNICAS = self._permitir_None(TECNICAS)
 
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["codificar_variables_binarias"] = tecnica_seleccionada
@@ -262,6 +273,7 @@ class Preprocesamiento:
 
     def _codificar_variables_categoricas_rango_bajo(self, X: pd.DataFrame):
         TECNICAS = [None, "one-hot-encoding", "label-encoding"]
+        TECNICAS = self._permitir_None(TECNICAS)
 
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["codificar_variables_categoricas_rango_bajo"] = tecnica_seleccionada
@@ -277,7 +289,7 @@ class Preprocesamiento:
                 ratio_unicos = X_df[col].nunique() / len(X_df)
                 if ratio_unicos <= 0.05:
                     if tecnica_seleccionada == "one-hot-encoding":
-                        dummies = pd.get_dummies(X_df[col], prefix=col)
+                        dummies = pd.get_dummies(X_df[col], prefix=col, dtype=int)
                         X_df = pd.concat([X_df.drop(columns=[col]), dummies], axis=1)
 
                     elif tecnica_seleccionada == "label-encoding":
@@ -291,6 +303,7 @@ class Preprocesamiento:
 
     def _codificar_variables_categoricas_rango_medio(self, X: pd.DataFrame):
         TECNICAS = [None, "frequency-encoding", "eliminar"]
+        TECNICAS = self._permitir_None(TECNICAS)
 
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["codificar_variables_categoricas_rango_medio"] = tecnica_seleccionada
@@ -322,6 +335,7 @@ class Preprocesamiento:
     def _tratar_outliers_numericos(self, X: pd.DataFrame):
         TECNICAS = [None, "media", "mediana", "moda",
                     "aleatorio", "media_geometrica", "eliminar"]
+        TECNICAS = self._permitir_None(TECNICAS)
 
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["tratar_outliers_numericos"] = tecnica_seleccionada
@@ -386,6 +400,7 @@ class Preprocesamiento:
 
     def _escalar_datos_numericos(self, X: pd.DataFrame):
         TECNICAS = [None, "min-max", "max-abs-scaler", "standard-scaler", "robust-scaler"]
+        TECNICAS = self._permitir_None(TECNICAS)
         
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["escalar_datos_numericos"] = tecnica_seleccionada  # registramos técnica seleccionada
@@ -433,6 +448,8 @@ class Preprocesamiento:
 
     def _normalizar_datos_numericos(self, X: pd.DataFrame):
         TECNICAS = [None, "z-score", "box-cox", "cuadrado", "sqrt", "ln", "inverso"]
+        TECNICAS = self._permitir_None(TECNICAS)
+
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["normalizar_datos_numericos"] = tecnica_seleccionada
 
@@ -483,6 +500,8 @@ class Preprocesamiento:
 
     def _crear_nueva_variable(self, X: pd.DataFrame):
         TECNICAS = [None, "suma", "resta", "multiplicacion", "ratio", "pca"]
+        TECNICAS = self._permitir_None(TECNICAS)
+
         tecnica_seleccionada = self._seleccionar_opcion_aleatoria(TECNICAS)
         self.secuencia_preprocesamiento["crear_nueva_variable"] = tecnica_seleccionada
 
