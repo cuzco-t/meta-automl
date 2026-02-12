@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 from dotenv import load_dotenv
-from imblearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 
@@ -88,8 +88,12 @@ class MineroDePipelines:
             print(f"Columna {i}: dtype = {X_train.iloc[:, i].dtype}")
 
         PERMITIR_NONE = False
+        # El tratamiento que manipula Y debe hacerse fuera del pipeline
+        tratar_duplicados = TratarDuplicados(PERMITIR_NONE, self._SEMILLA)
+        tratar_duplicados.fit(X_train, y_train)
+        X_train, y_train = tratar_duplicados.transform(X_train, y_train)
+
         pipeline = Pipeline([
-            ("tratar_duplicados", TratarDuplicados(PERMITIR_NONE, self._SEMILLA)),
             ("tratar_faltantes_numericos", TratarFaltantesNumericos(PERMITIR_NONE, self._SEMILLA)),
             ("tratar_faltantes_strings", TratarFaltantesStrings(PERMITIR_NONE, self._SEMILLA)),
             ("codificar_variables_binarias", CodificarVariablesBinarias(PERMITIR_NONE, self._SEMILLA)),
@@ -100,17 +104,73 @@ class MineroDePipelines:
             ("escalar_datos_numericos", EscalarDatosNumericos(PERMITIR_NONE, self._SEMILLA)),
             ("normalizar_datos_numericos", NormalizarDatosNumericos(PERMITIR_NONE, self._SEMILLA)),
             ("crear_nueva_variable", CrearNuevaVariable(PERMITIR_NONE, self._SEMILLA)),
-            # ("seleccionar_variables", SeleccionarVariables(PERMITIR_NONE, self._SEMILLA))
         ])
 
-        X_preprocesado = pipeline.fit_transform(X_train, y_train)
-        print(f"Tamaño del conjunto de entrenamiento preprocesado: {X_preprocesado.shape}")
-        print(f"Tipos de datos del conjunto de entrenamiento preprocesado: \n{X_preprocesado.dtypes}")
+        print("Tipos de datos del conjunto de entrenamiento antes del preprocesamiento:")
+        print(X_train.dtypes)
+        print(y_train.dtypes)
+        X_preprocesado = pipeline.fit_transform(X_train)
 
+        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, "regresion", self._SEMILLA)
+        seleccionar_variables.fit(X_preprocesado, y_train)
+        X_seleccionado = seleccionar_variables.transform(X_preprocesado, y_train)
+
+        print(f"Tamaño del conjunto de entrenamiento preprocesado: {X_seleccionado.shape}")
+        print(f"Tipos de datos del conjunto de entrenamiento preprocesado: \n{X_seleccionado.dtypes}")
+        # ===================================
+        X_val, y_val = tratar_duplicados.transform(X_val, y_val)
+        X_val = pipeline.transform(X_val)
+        X_val = seleccionar_variables.transform(X_val, y_val)
+
+        print(f"Tamaño del conjunto de validación preprocesado: {X_val.shape}")
+        print(f"Tipos de datos del conjunto de validación preprocesado: \n{X_val.dtypes}")
+
+        print("=" * 50)
         print("Secuencia de preprocesamiento aplicada:")
         secuencia = SecuenciaPreprocesamiento()
         secuencia.imprimir_secuencia()
-
+        self._reiniciar_fases_pipeline()
         return None
-
     
+    def _reiniciar_fases_pipeline(self):
+        tratar_duplicados = TratarDuplicados()
+        tratar_duplicados.reiniciar()
+        tratar_faltantes_numericos = TratarFaltantesNumericos()
+        tratar_faltantes_numericos.reiniciar()
+        tratar_faltantes_strings = TratarFaltantesStrings()
+        tratar_faltantes_strings.reiniciar()
+        codificar_variables_binarias = CodificarVariablesBinarias()
+        codificar_variables_binarias.reiniciar()
+        codificar_variables_categoricas_rango_bajo = CodificarVariablesCategoricasRangoBajo()
+        codificar_variables_categoricas_rango_bajo.reiniciar()
+        codificar_variables_categoricas_rango_medio = CodificarVariablesCategoricasRangoMedio()
+        codificar_variables_categoricas_rango_medio.reiniciar()
+        codificar_variables_categoricas_rango_alto = CodificarVariablesCategoricasRangoAlto()
+        codificar_variables_categoricas_rango_alto.reiniciar()
+        tratar_outliers_numericos = TratarOutliersNumericos()
+        tratar_outliers_numericos.reiniciar()
+        escalar_datos_numericos = EscalarDatosNumericos()
+        escalar_datos_numericos.reiniciar()
+        normalizar_datos_numericos = NormalizarDatosNumericos()
+        normalizar_datos_numericos.reiniciar()
+        crear_nueva_variable = CrearNuevaVariable()
+        crear_nueva_variable.reiniciar()
+        seleccionar_variables = SeleccionarVariables()
+        seleccionar_variables.reiniciar()
+
+        def imprimir_valores_por_defecto():
+            print(f"tratar_duplicados: seleccionada = {tratar_duplicados.tecnica_seleccionada_}, parametros = {tratar_duplicados.parametro_tecnica_}")
+            print(f"tratar_faltantes_numericos: seleccionada = {tratar_faltantes_numericos.tecnica_seleccionada_}, parametros = {tratar_faltantes_numericos.parametro_tecnica_}")
+            print(f"tratar_faltantes_strings: seleccionada = {tratar_faltantes_strings.tecnica_seleccionada_}, parametros = {tratar_faltantes_strings.parametro_tecnica_}")
+            print(f"codificar_variables_binarias: seleccionada = {codificar_variables_binarias.tecnica_seleccionada_}, parametros = {codificar_variables_binarias.parametro_tecnica_}")
+            print(f"codificar_variables_categoricas_rango_bajo: seleccionada = {codificar_variables_categoricas_rango_bajo.tecnica_seleccionada_}, parametros = {codificar_variables_categoricas_rango_bajo.parametro_tecnica_}")
+            print(f"codificar_variables_categoricas_rango_medio: seleccionada = {codificar_variables_categoricas_rango_medio.tecnica_seleccionada_}, parametros = {codificar_variables_categoricas_rango_medio.parametro_tecnica_}")
+            print(f"codificar_variables_categoricas_rango_alto: seleccionada = {codificar_variables_categoricas_rango_alto.tecnica_seleccionada_}, parametros = {codificar_variables_categoricas_rango_alto.parametro_tecnica_}")
+            print(f"tratar_outliers_numericos: seleccionada = {tratar_outliers_numericos.tecnica_seleccionada_}, parametros = {tratar_outliers_numericos.parametro_tecnica_}")
+            print(f"escalar_datos_numericos: seleccionada = {escalar_datos_numericos.tecnica_seleccionada_}, parametros = {escalar_datos_numericos.parametro_tecnica_}")
+            print(f"normalizar_datos_numericos: seleccionada = {normalizar_datos_numericos.tecnica_seleccionada_}, parametros = {normalizar_datos_numericos.parametro_tecnica_}")
+            print(f"crear_nueva_variable: seleccionada = {crear_nueva_variable.tecnica_seleccionada_}, parametros = {crear_nueva_variable.parametro_tecnica_}")
+            print(f"seleccionar_variables: seleccionada = {seleccionar_variables.tecnica_seleccionada_}, parametros = {seleccionar_variables.parametro_tecnica_}")
+        
+        print("Valores por defecto después de reiniciar:")
+        imprimir_valores_por_defecto()

@@ -5,14 +5,32 @@ from ..RegistroTecnica import RegistroTecnica
 from sklearn.base import BaseEstimator, TransformerMixin
 
 class TratarFaltantesStrings(BaseEstimator, TransformerMixin, RegistroTecnica):
+    _instance = None  # Atributo de clase para almacenar la instancia única
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(TratarFaltantesStrings, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, permitir_none=True, random_state=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
         random_state: para reproducibilidad
         """
-        self.nombre_fase = "tratar_faltantes_strings"
-        self.permitir_none = permitir_none
-        self.random_state = random_state
+        # Evitamos re-inicializar si ya existe la instancia
+        if not hasattr(self, "_initialized"):
+            self.nombre_fase = "tratar_faltantes_strings"
+            self.permitir_none = permitir_none
+            self.random_state = random_state
+            self.parametro_tecnica_ = {}
+            self._initialized = True
+
+    def reiniciar(self):
+        """
+        Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
+        Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
+        """
+        self.tecnica_seleccionada_ = None
         self.parametro_tecnica_ = {}
 
     def _permitir_none(self, tecnicas):

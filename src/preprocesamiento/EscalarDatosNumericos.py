@@ -6,16 +6,35 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler, MaxAbsScaler
 
 class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
+    _instance = None  # Atributo de clase para almacenar la instancia única
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(EscalarDatosNumericos, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, permitir_none=True, random_state=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
         random_state: para reproducibilidad
         """
-        self.nombre_fase = "escalar_datos_numericos"
-        self.permitir_none = permitir_none
-        self.random_state = random_state
+        # Evitamos re-inicializar si la instancia ya existe
+        if not hasattr(self, "_initialized"):
+            self.nombre_fase = "escalar_datos_numericos"
+            self.permitir_none = permitir_none
+            self.random_state = random_state
+            self.tecnica_seleccionada_ = None
+            self.scaler_ = None  # guardaremos el objeto scaler para transform
+            self._initialized = True
+
+    def reiniciar(self):
+        """
+        Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
+        Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
+        """
         self.tecnica_seleccionada_ = None
-        self.scaler_ = None  # guardaremos el objeto scaler para transform
+        self.parametro_tecnica_ = {}
+        self.scaler_ = None
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:

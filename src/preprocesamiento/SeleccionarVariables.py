@@ -2,24 +2,37 @@ import numpy as np
 import pandas as pd
 
 from ..RegistroTecnica import RegistroTecnica
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_selection import VarianceThreshold, SelectFromModel, mutual_info_classif, mutual_info_regression
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.decomposition import PCA
 
-class SeleccionarVariables(BaseEstimator, TransformerMixin, RegistroTecnica):
-    def __init__(self, permitir_none=True, tarea='clasificacion', random_state=None):
+class SeleccionarVariables(RegistroTecnica):
+    _instance = None  # Atributo de clase para almacenar la instancia única
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(SeleccionarVariables, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self, permitir_none=True, tarea='regresion', random_state=None):
         """
         permitir_none: si True, permite que no se seleccione ninguna técnica
         tarea: 'clasificacion' o 'regresion'
         random_state: para reproducibilidad
         """
-        self.nombre_fase = "seleccion_variables"
-        self.permitir_none = permitir_none
-        self.tarea = tarea
-        self.random_state = random_state
+        # Evitamos re-inicializar si la instancia ya existe
+        if not hasattr(self, "_initialized"):
+            self.nombre_fase = "seleccion_variables"
+            self.permitir_none = permitir_none
+            self.tarea = tarea
+            self.random_state = random_state
+            self.tecnica_seleccionada_ = None
+            self._SEMILLA = random_state  # para modelos que requieren random_state
+            self.parametro_tecnica_ = []
+            self._initialized = True
+
+    def reiniciar(self):
         self.tecnica_seleccionada_ = None
-        self._SEMILLA = random_state  # para modelos que requieren random_state
         self.parametro_tecnica_ = []
 
     def _permitir_none(self, tecnicas):
@@ -53,6 +66,7 @@ class SeleccionarVariables(BaseEstimator, TransformerMixin, RegistroTecnica):
         n_columnas = X_df.shape[1]
 
         if self.tecnica_seleccionada_ is None:
+            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
             return X_df.values if is_numpy else X_df
 
         rng = np.random.default_rng(self.random_state)
@@ -63,6 +77,8 @@ class SeleccionarVariables(BaseEstimator, TransformerMixin, RegistroTecnica):
             if not self.parametro_tecnica_:
                 columnas = rng.choice(X_df.columns, size=n_select, replace=False)
                 self.parametro_tecnica_ = columnas.tolist()
+                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+
             else:
                 columnas = self.parametro_tecnica_
 
@@ -76,6 +92,7 @@ class SeleccionarVariables(BaseEstimator, TransformerMixin, RegistroTecnica):
 
                 columnas = X_df.columns[selector.get_support()]
                 self.parametro_tecnica_ = columnas.tolist()
+                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
             else:
                 columnas = pd.Index(self.parametro_tecnica_)
 
@@ -92,7 +109,7 @@ class SeleccionarVariables(BaseEstimator, TransformerMixin, RegistroTecnica):
                 mi_series = pd.Series(mi, index=X_df.columns)
                 columnas = mi_series.sort_values(ascending=False).head(n_select).index
                 self.parametro_tecnica_ = columnas.tolist()
-
+                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
             else:
                 columnas = pd.Index(self.parametro_tecnica_)
 
@@ -111,9 +128,10 @@ class SeleccionarVariables(BaseEstimator, TransformerMixin, RegistroTecnica):
 
                 columnas = X_df.columns[selector.get_support()]
                 self.parametro_tecnica_ = columnas.tolist()
-
+                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
             else:
                 columnas = pd.Index(self.parametro_tecnica_)
+                X_new = X_df[columnas]
 
             return pd.DataFrame(X_new, columns=columnas, index=X_df.index)
 
@@ -124,6 +142,8 @@ class SeleccionarVariables(BaseEstimator, TransformerMixin, RegistroTecnica):
                 X_pca = pca.fit_transform(X_df)
                 columnas = [f'pca_{i}' for i in range(n_components)]
                 self.parametro_tecnica_ = columnas
+                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+
             else:
                 columnas = self.parametro_tecnica_
                 n_components = len(columnas)
