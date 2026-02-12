@@ -3,15 +3,33 @@ import pandas as pd
 import numpy as np
 
 from dotenv import load_dotenv
-from .Preprocesamiento import Preprocesamiento
+from imblearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
+
+from .SecuenciaPreprocesamiento import SecuenciaPreprocesamiento
+
+from src.preprocesamiento.BalanceadorDeClases import BalanceadorDeClases
+from src.preprocesamiento.TratarDuplicados import TratarDuplicados
+from src.preprocesamiento.TratarFaltantesNumericos import TratarFaltantesNumericos
+from src.preprocesamiento.TratarFaltantesStrings import TratarFaltantesStrings
+
+from src.preprocesamiento.CodificarVariablesBinarias import CodificarVariablesBinarias
+from src.preprocesamiento.CodificarVariablesCategoricasRangoBajo import CodificarVariablesCategoricasRangoBajo
+from src.preprocesamiento.CodificarVariablesCategoricasRangoMedio import CodificarVariablesCategoricasRangoMedio
+from src.preprocesamiento.CodificarVariablesCategoricasRangoAlto import CodificarVariablesCategoricasRangoAlto
+
+from src.preprocesamiento.TratarOutliersNumericos import TratarOutliersNumericos
+from src.preprocesamiento.EscalarDatosNumericos import EscalarDatosNumericos
+from src.preprocesamiento.NormalizarDatosNumericos import NormalizarDatosNumericos
+from src.preprocesamiento.CrearNuevaVariable import CrearNuevaVariable
+from src.preprocesamiento.SeleccionarVariables import SeleccionarVariables
 
 class MineroDePipelines:
     def __init__(self):
         load_dotenv()
-        self.preprocesamiento = Preprocesamiento()
-        self._SEMILLA = int(os.getenv("SEMILLA_ALEATORIA", "42"))
+        # self._SEMILLA = int(os.getenv("SEMILLA_ALEATORIA", "42"))
+        self._SEMILLA = None
 
 
     def _leer_dataset(self, ruta_absoluta, target) -> tuple[pd.DataFrame, pd.Series]:
@@ -69,13 +87,30 @@ class MineroDePipelines:
         for i in range(X_train.shape[1]):
             print(f"Columna {i}: dtype = {X_train.iloc[:, i].dtype}")
 
+        PERMITIR_NONE = False
+        pipeline = Pipeline([
+            ("tratar_duplicados", TratarDuplicados(PERMITIR_NONE, self._SEMILLA)),
+            ("tratar_faltantes_numericos", TratarFaltantesNumericos(PERMITIR_NONE, self._SEMILLA)),
+            ("tratar_faltantes_strings", TratarFaltantesStrings(PERMITIR_NONE, self._SEMILLA)),
+            ("codificar_variables_binarias", CodificarVariablesBinarias(PERMITIR_NONE, self._SEMILLA)),
+            ("codificar_variables_categoricas_rango_bajo", CodificarVariablesCategoricasRangoBajo(PERMITIR_NONE, self._SEMILLA)),
+            ("codificar_variables_categoricas_rango_medio", CodificarVariablesCategoricasRangoMedio(PERMITIR_NONE, self._SEMILLA)),
+            ("codificar_variables_categoricas_rango_alto", CodificarVariablesCategoricasRangoAlto(PERMITIR_NONE, self._SEMILLA)),
+            ("tratar_outliers_numericos", TratarOutliersNumericos(PERMITIR_NONE, self._SEMILLA)),
+            ("escalar_datos_numericos", EscalarDatosNumericos(PERMITIR_NONE, self._SEMILLA)),
+            ("normalizar_datos_numericos", NormalizarDatosNumericos(PERMITIR_NONE, self._SEMILLA)),
+            ("crear_nueva_variable", CrearNuevaVariable(PERMITIR_NONE, self._SEMILLA)),
+            # ("seleccionar_variables", SeleccionarVariables(PERMITIR_NONE, self._SEMILLA))
+        ])
 
-        # Aquí se podrían agregar más pasos al pipeline, como selección de características, etc.
-        X_preprocesado, y_preprocesado, secuencia = self.preprocesamiento.preprocesar_datos(X_train, y_train, tarea="regresion")
-        print(f"Tamaño del conjunto de entrenamiento preprocesado: {X_preprocesado.shape}, {y_preprocesado.shape}")
-        print(f"Tamaño del conjunto de validación: {X_val.shape}, {y_val.shape}")
-        print("-" * 50)
-        print("\nSecuencia de preprocesamiento:")
-        for clave, valor in secuencia.items():
-            print(f"{clave}: {valor}")
+        X_preprocesado = pipeline.fit_transform(X_train, y_train)
+        print(f"Tamaño del conjunto de entrenamiento preprocesado: {X_preprocesado.shape}")
+        print(f"Tipos de datos del conjunto de entrenamiento preprocesado: \n{X_preprocesado.dtypes}")
+
+        print("Secuencia de preprocesamiento aplicada:")
+        secuencia = SecuenciaPreprocesamiento()
+        secuencia.imprimir_secuencia()
+
+        return None
+
     
