@@ -20,6 +20,7 @@ class CodificarVariablesBinarias(BaseEstimator, TransformerMixin, RegistroTecnic
         # Evitamos re-inicializar si la instancia ya existía
         if not hasattr(self, "_initialized"):
             self.nombre_fase = "codificar_variables_binarias"
+            self.tecnica_seleccionada_ = None
             self.permitir_none = permitir_none
             self.random_state = random_state
             self.parametro_tecnica_ = {}
@@ -43,6 +44,9 @@ class CodificarVariablesBinarias(BaseEstimator, TransformerMixin, RegistroTecnic
         Selecciona aleatoriamente la técnica a aplicar en variables binarias
         y la guarda en self.tecnica_seleccionada_
         """
+        if self.tecnica_seleccionada_ is not None:
+            return self
+        
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "label-encoding"]
         TECNICAS = self._permitir_none(TECNICAS)

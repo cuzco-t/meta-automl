@@ -45,6 +45,9 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         Selecciona aleatoriamente la técnica de escalado y prepara el scaler si es necesario
         """
+        if self.tecnica_seleccionada_ is not None:
+            return self
+        
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "min-max", "max-abs-scaler", "standard-scaler", "robust-scaler"]
         TECNICAS = self._permitir_none(TECNICAS)

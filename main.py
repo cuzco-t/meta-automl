@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 import logging
 import warnings
 
@@ -30,7 +31,7 @@ def guardar_meta_features_en_db(meta_features, meta_features_vectorizadas):
     db.insertar(query, params)
     db.cerrar()
 
-if __name__ == "__main__":
+def main():
     target = "purchase_amount_usd"
     ruta_relativa = "./data/descriptive_practice_dataset_large.csv"
     tarea = "regresion"
@@ -49,3 +50,7 @@ if __name__ == "__main__":
 
     # Guardar meta-features en la base de datos
     # guardar_meta_features_en_db(meta_features, meta_features_vectorizadas)
+
+
+if __name__ == "__main__":
+    main()

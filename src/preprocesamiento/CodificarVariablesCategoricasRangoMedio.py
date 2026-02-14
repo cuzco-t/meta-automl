@@ -44,6 +44,9 @@ class CodificarVariablesCategoricasRangoMedio(BaseEstimator, TransformerMixin, R
         Selecciona aleatoriamente la técnica a aplicar a las variables categóricas
         de rango medio y la guarda en self.tecnica_seleccionada_
         """
+        if self.tecnica_seleccionada_ is not None:
+            return self
+        
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "frequency-encoding", "eliminar"]
         TECNICAS = self._permitir_none(TECNICAS)

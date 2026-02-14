@@ -1,7 +1,11 @@
+import ast
+import toonstream
 import numpy as np
 import pandas as pd
 
+from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
+from ..ExtractorMetaFeatures import ExtractorMetaFeatures
 from sklearn.feature_selection import VarianceThreshold, SelectFromModel, mutual_info_classif, mutual_info_regression
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.decomposition import PCA
@@ -47,6 +51,7 @@ class SeleccionarVariables(RegistroTecnica):
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "aleatorio", "variance_threshold", "mutual_info",
                     "select_from_model", "pca", "llm"]
+        TECNICAS.remove("llm")
         TECNICAS = self._permitir_none(TECNICAS)
 
         self.tecnica_seleccionada_ = generador_aleatorio.choice(TECNICAS)
@@ -153,6 +158,24 @@ class SeleccionarVariables(RegistroTecnica):
             return pd.DataFrame(X_pca, columns=columnas, index=X_df.index)
 
         elif self.tecnica_seleccionada_ == "llm":
-            pass  # Placeholder para futura implementación de técnicas basadas en LLMs
+            extractor = ExtractorMetaFeatures()
+            meta_features_por_columna = extractor.extraer_meta_features_por_columna(X, y)
+            print(f"Meta-features por columna para selección de variables:\n{meta_features_por_columna}")
+
+            llm = LLM("deepseek-r1:8b")
+            meta_features_por_columna_toon = toonstream.encode(meta_features_por_columna)
+            prompt = llm.plantillas_prompts(
+                plantilla="seleccionar_variables",
+                kwargs={
+                    "tarea": self.tarea,
+                    "meta_features_por_columna": meta_features_por_columna_toon
+                }
+            )
+            input("El prompt es:\n" + prompt + "\nPresiona Enter para continuar...")
+            columnas_texto = llm.generar_respuesta(prompt)
+            columnas_lista = ast.literal_eval(columnas_texto)
+
+            self.parametro_tecnica_ = columnas_lista
+            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
 
         return X_df.values if is_numpy else X_df

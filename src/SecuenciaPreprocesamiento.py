@@ -1,3 +1,6 @@
+import json
+
+
 class SecuenciaPreprocesamiento:
     _instancia = None
     _inicializado = False
@@ -13,6 +16,7 @@ class SecuenciaPreprocesamiento:
             SecuenciaPreprocesamiento._inicializado = True
 
     def agregar_tecnica(self, fase, tecnica, parametro):
+        # print(f"Fase: {fase}, Técnica: {tecnica}, Parámetro: {parametro}\n")
         self.secuencia[fase] = {"tecnica": tecnica, "parametro": parametro}
 
     def obtener_secuencia(self):
@@ -24,3 +28,7 @@ class SecuenciaPreprocesamiento:
     def imprimir_secuencia(self):
         for fase, info in self.secuencia.items():
             print(f"Fase: {fase}, Técnica: {info['tecnica']}, Parámetro: {info['parametro']}\n")
+
+    def guardar_secuencia(self, ruta_archivo="secuencia_preprocesamiento.json"):
+        with open(ruta_archivo, "w") as f:
+            json.dump(self.secuencia, f, indent=4)

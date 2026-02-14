@@ -44,6 +44,9 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         """
         Selecciona aleatoriamente la técnica de normalización
         """
+        if self.tecnica_seleccionada_ is not None:
+            return self
+            
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "z-score", "box-cox", "cuadrado", "sqrt", "ln", "inverso"]
         TECNICAS = self._permitir_none(TECNICAS)

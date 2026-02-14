@@ -45,6 +45,9 @@ class TratarOutliersNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         Selecciona aleatoriamente la técnica a aplicar a los outliers numéricos
         y la guarda en self.tecnica_seleccionada_
         """
+        if self.tecnica_seleccionada_ is not None:
+            return self
+            
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "media", "mediana", "moda", "aleatorio", "media_geometrica", "eliminar"]
         TECNICAS = self._permitir_none(TECNICAS)

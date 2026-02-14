@@ -2,7 +2,9 @@ import os
 import math
 import numpy as np
 import pandas as pd
+
 from pymfe.mfe import MFE
+from collections.abc import Mapping
 
 class ExtractorMetaFeatures:
     _GUPOS_META_FEATURES = [
@@ -285,35 +287,48 @@ class ExtractorMetaFeatures:
         return grupos_meta_features.get(grupo, {})
 
 
-    def _mapear_meta_features(self, meta_features: dict):
+    def _mapear_meta_features(self, meta_features):
         """
-        Mapea las meta-features extraídas a tipos nativos de Python y reemplaza NaN / inf por valores específicos.
-        
-        :param self: Referencia de la instancia de la clase.
-        :param meta_features: Diccionario con las meta-features a mapear.
-        :type meta_features: dict
-        :return: Diccionario con las meta-features mapeadas a valores nativos de Python.
-        :rtype: dict
+        Recorre recursivamente un diccionario (con cualquier profundidad)
+        y transforma los valores hoja a tipos nativos de Python,
+        reemplazando NaN e infinitos.
         """
-        meta_features_mapeadas = {}
-        for grupo, features in meta_features.items():
-            meta_features_mapeadas[grupo] = {}
-            for meta_feature, valor in features.items():
-                if valor is None or (isinstance(valor, float) and (math.isnan(valor))):
-                    valor = self._CONSTANTE_ERROR
 
-                if isinstance(valor, float) and math.isinf(valor):
-                    valor = self._CONSTANTE_INFINITO
+        def _transformar_valor(valor):
+            # None o NaN
+            if valor is None:
+                return self._CONSTANTE_ERROR
 
-                if isinstance(valor, np.float64):
-                    valor = float(valor)
+            if isinstance(valor, (float, np.floating)):
+                if math.isnan(valor):
+                    return self._CONSTANTE_ERROR
+                if math.isinf(valor):
+                    return self._CONSTANTE_INFINITO
+                return round(float(valor), 2)
 
-                if isinstance(valor, np.int64) or isinstance(valor, int):
-                    valor = float(valor)
+            # Enteros numpy o Python → float
+            if isinstance(valor, (int, np.integer)):
+                return round(float(valor), 2)
 
-                meta_features_mapeadas[grupo][meta_feature] = valor
-        
-        return meta_features_mapeadas
+            return valor
+
+        def _mapear_recursivo(obj):
+            # Si es diccionario → recorrer claves
+            if isinstance(obj, Mapping):
+                return {k: _mapear_recursivo(v) for k, v in obj.items()}
+
+            # Si es lista o tupla → recorrer elementos
+            elif isinstance(obj, list):
+                return [_mapear_recursivo(v) for v in obj]
+
+            elif isinstance(obj, tuple):
+                return tuple(_mapear_recursivo(v) for v in obj)
+
+            # Si es hoja → transformar
+            else:
+                return _transformar_valor(obj)
+
+        return _mapear_recursivo(meta_features)
                 
 
     def _vectorizar_meta_features(self, meta_features: dict):
@@ -413,3 +428,41 @@ class ExtractorMetaFeatures:
         }
 
         return meta_features
+    
+
+    def _eliminar_constantes_errores(self, meta_features):
+        valores_a_eliminar = {self._CONSTANTE_ERROR, self._CONSTANTE_INFINITO}
+        for col, subdict in meta_features.items():
+            meta_features[col] = {k: v for k, v in subdict.items() if v not in valores_a_eliminar}
+
+        return meta_features
+
+
+    def extraer_meta_features_por_columna(self, X: pd.DataFrame, y: pd.Series, meta_feature_variables=None):
+        meta_features_por_columna = {}
+        if meta_feature_variables is None:
+            meta_feature_variables = [
+                "mean",      # tendencia central
+                "median",    # tendencia robusta
+                "min",       # extremo inferior
+                "max",       # extremo superior
+                "var",       # dispersión general
+                "sd",        # desviación estándar
+                "iq_range",  # dispersión robusta
+                "can_cor"    # correlación con otras columnas
+            ]
+
+        mfe = MFE(features=meta_feature_variables)
+        for col in X.columns:
+            X_col = X[[col]].to_numpy()
+            try:
+                mfe.fit(X_col, np.array(y))
+                ft = mfe.extract()
+                meta_features_por_columna[col] = dict(zip(ft[0], ft[1]))
+            except Exception as e:
+                print(f"ERROR al extraer meta-features para la columna: {col}")
+
+        meta_features_por_columna = self._mapear_meta_features(meta_features_por_columna)
+        meta_features_por_columna = self._eliminar_constantes_errores(meta_features_por_columna)
+        
+        return meta_features_por_columna

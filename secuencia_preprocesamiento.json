@@ -1,0 +1,109 @@
+{
+    "tratar_duplicados": {
+        "tecnica": "eliminar",
+        "parametro": null
+    },
+    "tratar_faltantes_numericos": {
+        "tecnica": "mediana",
+        "parametro": {
+            "age": 36.0,
+            "height_cm": 167.9,
+            "income_usd": 5081.7,
+            "satisfaction_1_5": 4.0
+        }
+    },
+    "codificar_variables_binarias": {
+        "tecnica": "label-encoding",
+        "parametro": {
+            "owns_car": {
+                "No": 0,
+                "Si": 1
+            },
+            "uses_public_transport": {
+                "No": 0,
+                "Si": 1
+            }
+        }
+    },
+    "codificar_variables_categoricas_rango_bajo": {
+        "tecnica": "label-encoding",
+        "parametro": {
+            "gender": {
+                "Femenino": 0,
+                "Masculino": 1,
+                "Otro": 2
+            },
+            "marital_status": {
+                "Casado": 0,
+                "Divorciado": 1,
+                "Soltero": 2,
+                "Viudo": 3
+            },
+            "socioeconomic": {
+                "Alto": 0,
+                "Bajo": 1,
+                "Medio": 2
+            },
+            "education": {
+                "Posgrado": 0,
+                "Primaria": 1,
+                "Secundaria": 2,
+                "T\u00e9cnico": 3,
+                "Universitario": 4
+            }
+        }
+    },
+    "codificar_variables_categoricas_rango_medio": {
+        "tecnica": "frequency-encoding",
+        "parametro": {}
+    },
+    "codificar_variables_categoricas_rango_alto": {
+        "tecnica": "eliminar",
+        "parametro": {}
+    },
+    "escalar_datos_numericos": {
+        "tecnica": "min-max",
+        "parametro": null
+    },
+    "normalizar_datos_numericos": {
+        "tecnica": "cuadrado",
+        "parametro": {}
+    },
+    "crear_nueva_variable": {
+        "tecnica": "ratio",
+        "parametro": [
+            "income_usd",
+            "age"
+        ]
+    },
+    "seleccion_variables": {
+        "tecnica": "mutual_info",
+        "parametro": [
+            "ticket_price_usd",
+            "height_cm",
+            "id",
+            "uses_public_transport",
+            "ratio",
+            "income_usd",
+            "age",
+            "gender",
+            "num_children",
+            "education",
+            "socioeconomic",
+            "marital_status"
+        ]
+    },
+    "selector_modelo": {
+        "tecnica": "Ridge",
+        "parametro": {
+            "alpha": 1.0,
+            "copy_X": true,
+            "fit_intercept": true,
+            "max_iter": null,
+            "positive": false,
+            "random_state": null,
+            "solver": "auto",
+            "tol": 0.0001
+        }
+    }
+}

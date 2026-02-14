@@ -45,6 +45,9 @@ class CrearNuevaVariable(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         Selecciona aleatoriamente la técnica para crear nueva variable
         """
+        if self.tecnica_seleccionada_ is not None:
+            return self
+        
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "suma", "resta", "multiplicacion", "ratio", "pca"]
         TECNICAS = self._permitir_none(TECNICAS)
@@ -94,7 +97,7 @@ class CrearNuevaVariable(BaseEstimator, TransformerMixin, RegistroTecnica):
             if len(numeric_cols) >= 2:
                 if self.parametro_tecnica_ is None:
                     n_components = rng.integers(2, len(numeric_cols))
-                    self.parametro_tecnica_ = n_components
+                    self.parametro_tecnica_ = int(n_components)
                     self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
                 else:
                     n_components = self.parametro_tecnica_

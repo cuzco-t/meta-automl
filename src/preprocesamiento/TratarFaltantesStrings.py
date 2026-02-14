@@ -20,6 +20,7 @@ class TratarFaltantesStrings(BaseEstimator, TransformerMixin, RegistroTecnica):
         # Evitamos re-inicializar si ya existe la instancia
         if not hasattr(self, "_initialized"):
             self.nombre_fase = "tratar_faltantes_strings"
+            self.tecnica_seleccionada_ = None
             self.permitir_none = permitir_none
             self.random_state = random_state
             self.parametro_tecnica_ = {}
@@ -44,6 +45,9 @@ class TratarFaltantesStrings(BaseEstimator, TransformerMixin, RegistroTecnica):
         Selecciona aleatoriamente la técnica a aplicar a los valores faltantes
         de tipo string y la guarda en self.tecnica_seleccionada_
         """
+        if self.tecnica_seleccionada_ is not None:
+            return self
+        
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "moda", "aleatorio", "eliminar", "etiqueta_desconocido"]
         TECNICAS = self._permitir_none(TECNICAS)
