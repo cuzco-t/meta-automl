@@ -160,8 +160,10 @@ class MineroDePipelines:
         X_train = X.copy()
         y_train = y.copy()
         PERMITIR_NONE = False
+        
         # El tratamiento que manipula Y debe hacerse fuera del pipeline
         tratar_duplicados = TratarDuplicados(PERMITIR_NONE, self._SEMILLA)
+        
         tratar_duplicados.fit(X_train, y_train)
         X_train, y_train = tratar_duplicados.transform(X_train, y_train)
 
