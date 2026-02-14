@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 
 from ..RegistroTecnica import RegistroTecnica
-from sklearn.base import BaseEstimator, TransformerMixin
 
-class CodificarVariablesCategoricasRangoAlto(BaseEstimator, TransformerMixin, RegistroTecnica):
+class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
     _instance = None  # Atributo de clase para almacenar la instancia única
 
     def __new__(cls, *args, **kwargs):

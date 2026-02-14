@@ -4,11 +4,11 @@
         "parametro": null
     },
     "tratar_faltantes_numericos": {
-        "tecnica": "mediana",
+        "tecnica": "moda",
         "parametro": {
-            "age": 36.0,
-            "height_cm": 167.9,
-            "income_usd": 5081.7,
+            "age": 16.0,
+            "height_cm": 164.9,
+            "income_usd": 406.13,
             "satisfaction_1_5": 4.0
         }
     },
@@ -26,35 +26,16 @@
         }
     },
     "codificar_variables_categoricas_rango_bajo": {
-        "tecnica": "label-encoding",
-        "parametro": {
-            "gender": {
-                "Femenino": 0,
-                "Masculino": 1,
-                "Otro": 2
-            },
-            "marital_status": {
-                "Casado": 0,
-                "Divorciado": 1,
-                "Soltero": 2,
-                "Viudo": 3
-            },
-            "socioeconomic": {
-                "Alto": 0,
-                "Bajo": 1,
-                "Medio": 2
-            },
-            "education": {
-                "Posgrado": 0,
-                "Primaria": 1,
-                "Secundaria": 2,
-                "T\u00e9cnico": 3,
-                "Universitario": 4
-            }
-        }
+        "tecnica": "one-hot-encoding",
+        "parametro": [
+            "gender",
+            "marital_status",
+            "socioeconomic",
+            "education"
+        ]
     },
     "codificar_variables_categoricas_rango_medio": {
-        "tecnica": "frequency-encoding",
+        "tecnica": "eliminar",
         "parametro": {}
     },
     "codificar_variables_categoricas_rango_alto": {
@@ -62,48 +43,47 @@
         "parametro": {}
     },
     "escalar_datos_numericos": {
-        "tecnica": "min-max",
+        "tecnica": "max-abs-scaler",
         "parametro": null
     },
     "normalizar_datos_numericos": {
-        "tecnica": "cuadrado",
+        "tecnica": "inverso",
         "parametro": {}
     },
     "crear_nueva_variable": {
-        "tecnica": "ratio",
-        "parametro": [
-            "income_usd",
-            "age"
-        ]
+        "tecnica": "pca",
+        "parametro": 2
     },
     "seleccion_variables": {
-        "tecnica": "mutual_info",
+        "tecnica": "select_from_model",
         "parametro": [
-            "ticket_price_usd",
-            "height_cm",
-            "id",
-            "uses_public_transport",
-            "ratio",
-            "income_usd",
-            "age",
-            "gender",
-            "num_children",
-            "education",
-            "socioeconomic",
-            "marital_status"
+            "pca_0"
         ]
     },
     "selector_modelo": {
-        "tecnica": "Ridge",
+        "tecnica": "GradientBoostingRegressor",
         "parametro": {
-            "alpha": 1.0,
-            "copy_X": true,
-            "fit_intercept": true,
-            "max_iter": null,
-            "positive": false,
+            "alpha": 0.9,
+            "ccp_alpha": 0.0,
+            "criterion": "friedman_mse",
+            "init": null,
+            "learning_rate": 0.1,
+            "loss": "squared_error",
+            "max_depth": 3,
+            "max_features": null,
+            "max_leaf_nodes": null,
+            "min_impurity_decrease": 0.0,
+            "min_samples_leaf": 1,
+            "min_samples_split": 2,
+            "min_weight_fraction_leaf": 0.0,
+            "n_estimators": 100,
+            "n_iter_no_change": null,
             "random_state": null,
-            "solver": "auto",
-            "tol": 0.0001
+            "subsample": 1.0,
+            "tol": 0.0001,
+            "validation_fraction": 0.1,
+            "verbose": 0,
+            "warm_start": false
         }
     }
 }

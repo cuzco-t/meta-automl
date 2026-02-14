@@ -100,6 +100,7 @@ class SeleccionarVariables(RegistroTecnica):
                 self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
             else:
                 columnas = pd.Index(self.parametro_tecnica_)
+                X_new = X_df[columnas]
 
             return pd.DataFrame(X_new, columns=columnas, index=X_df.index)
 

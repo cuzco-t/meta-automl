@@ -3,9 +3,8 @@ import pandas as pd
 from scipy import stats
 
 from ..RegistroTecnica import RegistroTecnica
-from sklearn.base import BaseEstimator, TransformerMixin
 
-class TratarOutliersNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
+class TratarOutliersNumericos(RegistroTecnica):
     _instance = None  # Atributo de clase para la instancia única
 
     def __new__(cls, *args, **kwargs):

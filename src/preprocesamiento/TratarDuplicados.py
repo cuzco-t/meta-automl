@@ -32,7 +32,6 @@ class TratarDuplicados(RegistroTecnica):
         self.tecnica_seleccionada_ = None
         self.parametro_tecnica_ = None
 
-
     def fit(self, X, y=None):
         """
         Decide aleatoriamente la técnica a aplicar y la guarda en self.tecnica_seleccionada_
