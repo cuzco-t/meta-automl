@@ -105,8 +105,8 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
 
         elif self.log_algoritmo == "z-score":
             self.log_params = {
-                "mean": {col: X_df[col].mean() for col in cols_numericas},
-                "std": {col: X_df[col].std(ddof=0) for col in cols_numericas}
+                "mean": {col: float(X_df[col].mean()) for col in cols_numericas},
+                "std": {col: float(X_df[col].std(ddof=0)) for col in cols_numericas}
             }
 
         elif self.log_algoritmo == "box-cox":
