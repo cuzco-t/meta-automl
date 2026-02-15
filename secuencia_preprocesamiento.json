@@ -4,12 +4,12 @@
         "parametro": null
     },
     "tratar_faltantes_numericos": {
-        "tecnica": "media",
+        "tecnica": "moda",
         "parametro": {
-            "age": 36.41564417177914,
-            "height_cm": 167.62874617737003,
-            "income_usd": 7420.958713629401,
-            "satisfaction_1_5": 3.5837173579109063
+            "age": 16.0,
+            "height_cm": 166.7,
+            "income_usd": 406.13,
+            "satisfaction_1_5": 4.0
         }
     },
     "codificar_variables_binarias": {
@@ -26,16 +26,35 @@
         }
     },
     "codificar_variables_categoricas_rango_bajo": {
-        "tecnica": "one-hot-encoding",
-        "parametro": [
-            "gender",
-            "marital_status",
-            "socioeconomic",
-            "education"
-        ]
+        "tecnica": "label-encoding",
+        "parametro": {
+            "gender": {
+                "Femenino": 0,
+                "Masculino": 1,
+                "Otro": 2
+            },
+            "marital_status": {
+                "Casado": 0,
+                "Divorciado": 1,
+                "Soltero": 2,
+                "Viudo": 3
+            },
+            "socioeconomic": {
+                "Alto": 0,
+                "Bajo": 1,
+                "Medio": 2
+            },
+            "education": {
+                "Posgrado": 0,
+                "Primaria": 1,
+                "Secundaria": 2,
+                "T\u00e9cnico": 3,
+                "Universitario": 4
+            }
+        }
     },
     "codificar_variables_categoricas_rango_medio": {
-        "tecnica": "eliminar",
+        "tecnica": "frequency-encoding",
         "parametro": {}
     },
     "codificar_variables_categoricas_rango_alto": {
@@ -43,50 +62,56 @@
         "parametro": {}
     },
     "escalar_datos_numericos": {
-        "tecnica": "standard-scaler",
+        "tecnica": "min-max",
         "parametro": {
+            "clip": false,
             "copy": true,
-            "with_mean": true,
-            "with_std": true
+            "feature_range": [
+                0,
+                1
+            ]
         }
     },
     "normalizar_datos_numericos": {
-        "tecnica": "box-cox",
+        "tecnica": "cuadrado",
         "parametro": {}
     },
     "crear_nueva_variable": {
-        "tecnica": "multiplicacion",
+        "tecnica": "ratio",
         "parametro": [
-            "gender_Masculino",
-            "weight_kg"
+            "age",
+            "id"
         ]
     },
     "seleccion_variables": {
-        "tecnica": "select_from_model",
+        "tecnica": "variance_threshold",
         "parametro": [
-            "id",
-            "age",
-            "num_children",
-            "height_cm",
-            "weight_kg",
-            "income_usd",
-            "commute_min",
-            "ticket_price_usd",
-            "satisfaction_1_5",
-            "multiplicacion_gender_Masculino_weight_kg"
+            "socioeconomic",
+            "uses_public_transport",
+            "ratio_age_id"
         ]
     },
     "selector_modelo": {
-        "tecnica": "KNeighborsRegressor",
+        "tecnica": "RandomForestRegressor",
         "parametro": {
-            "algorithm": "auto",
-            "leaf_size": 30,
-            "metric": "minkowski",
-            "metric_params": null,
+            "bootstrap": true,
+            "ccp_alpha": 0.0,
+            "criterion": "squared_error",
+            "max_depth": null,
+            "max_features": 1.0,
+            "max_leaf_nodes": null,
+            "max_samples": null,
+            "min_impurity_decrease": 0.0,
+            "min_samples_leaf": 1,
+            "min_samples_split": 2,
+            "min_weight_fraction_leaf": 0.0,
+            "monotonic_cst": null,
+            "n_estimators": 100,
             "n_jobs": null,
-            "n_neighbors": 5,
-            "p": 2,
-            "weights": "uniform"
+            "oob_score": false,
+            "random_state": null,
+            "verbose": 0,
+            "warm_start": false
         }
     }
 }

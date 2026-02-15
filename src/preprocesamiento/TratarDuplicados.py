@@ -12,16 +12,18 @@ class TratarDuplicados(RegistroTecnica):
             cls._instance = super(TratarDuplicados, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, permitir_none=True, random_state=None):
+    def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
-        random_state: para reproducibilidad
+        semilla: para reproducibilidad
         """
         # Evitamos re-inicializar si ya existe la instancia
         if not hasattr(self, "_initialized"):
+            RegistroTecnica.__init__(self, log_fase="tratar_duplicados")
             self.permitir_none = permitir_none
-            self.random_state = random_state
-            self.log_algoritmo = None
+            self.semilla = semilla
+            self.config_test = config_test
+            self.reiniciar()
             self._initialized = True
 
     def reiniciar(self):
@@ -32,46 +34,56 @@ class TratarDuplicados(RegistroTecnica):
         self.log_algoritmo = None
         self.log_params = None
 
+    def _permitir_none(self, tecnicas):
+        if not self.permitir_none:
+            return [t for t in tecnicas if t is not None]
+        return tecnicas
+
     def fit(self, X, y=None):
         """
         Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
         """
         if self.log_algoritmo is not None:
             return self
+        
+        if self.config_test is not None:
+            self.log_algoritmo = self.config_test.get("algoritmo")
+            self.log_params = self.config_test.get("params")
 
-        generador_aleatorio = np.random.default_rng(self.random_state)
-        TECNICAS = [None, "eliminar"]
-        if not self.permitir_none:
-            TECNICAS = ["eliminar"]
+        else:
+            generador_aleatorio = np.random.default_rng()
+            TECNICAS = self._permitir_none([None, "eliminar"])
 
-        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+
         self.registrar_tecnica("tratar_duplicados", self.log_algoritmo, None)
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X: pd.DataFrame, y: pd.Series):
         """
         Aplica la técnica seleccionada en fit
+        :return: X e y con la técnica aplicada
+        :rtype: tuple[pd.DataFrame, pd.Series]
         """
-        if self.log_algoritmo != "eliminar":
-            return X if y is None else (X, y)
 
-        # Comienza a eliminar duplicados
-        X_df = X if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
-
+        match self.log_algoritmo:
+            case None:
+                return X, y
+            case "eliminar":
+                return self._eliminar(X, y)
+            case _:
+                raise ValueError(f"Técnica desconocida: {self.log_algoritmo}")
+    
+    def _eliminar(self, X_df: pd.DataFrame, y_df: pd.Series) -> tuple[pd.DataFrame, pd.Series]:
+        """
+        Elimina filas duplicadas en X_df y las correspondientes en y_df
+        
+        :return: X_df y y_df sin filas duplicadas
+        :rtype: tuple[pd.DataFrame, pd.Series]
+        """
         mask = ~X_df.duplicated()
 
-        if isinstance(X, pd.DataFrame):
-            X_clean = X.loc[mask]
-        else:
-            X_clean = X_df.loc[mask].to_numpy()
+        X_clean = X_df.loc[mask]
+        y_clean = y_df.loc[mask]
 
-        if y is None:
-            return X_clean
-        else:
-            if isinstance(y, pd.Series):
-                y_clean = y.loc[mask]
-            else:
-                y_arr = np.asarray(y)
-                y_clean = y_arr[mask.values]
-            return X_clean, y_clean
-    
+        return X_clean, y_clean

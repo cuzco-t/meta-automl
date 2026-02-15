@@ -1,10 +1,10 @@
 from .SecuenciaPreprocesamiento import SecuenciaPreprocesamiento
 
 class RegistroTecnica:
-    def __init__(self):
-        self.log_fase = None
-        self.log_algoritmo = None
-        self.log_params = None
+    def __init__(self, log_fase=None, log_algoritmo=None, log_params=None):
+        self.log_fase = log_fase
+        self.log_algoritmo = log_algoritmo
+        self.log_params = log_params
 
     def registrar_tecnica(self, fase, tecnica, parametro):
         secuencia = SecuenciaPreprocesamiento()
