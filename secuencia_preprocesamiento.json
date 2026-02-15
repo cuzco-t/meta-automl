@@ -4,12 +4,12 @@
         "parametro": null
     },
     "tratar_faltantes_numericos": {
-        "tecnica": "moda",
+        "tecnica": "media",
         "parametro": {
-            "age": 16.0,
-            "height_cm": 164.9,
-            "income_usd": 406.13,
-            "satisfaction_1_5": 4.0
+            "age": 36.41564417177914,
+            "height_cm": 167.62874617737003,
+            "income_usd": 7420.958713629401,
+            "satisfaction_1_5": 3.5837173579109063
         }
     },
     "codificar_variables_binarias": {
@@ -43,47 +43,50 @@
         "parametro": {}
     },
     "escalar_datos_numericos": {
-        "tecnica": "max-abs-scaler",
-        "parametro": null
+        "tecnica": "standard-scaler",
+        "parametro": {
+            "copy": true,
+            "with_mean": true,
+            "with_std": true
+        }
     },
     "normalizar_datos_numericos": {
-        "tecnica": "inverso",
+        "tecnica": "box-cox",
         "parametro": {}
     },
     "crear_nueva_variable": {
-        "tecnica": "pca",
-        "parametro": 2
+        "tecnica": "multiplicacion",
+        "parametro": [
+            "gender_Masculino",
+            "weight_kg"
+        ]
     },
     "seleccion_variables": {
         "tecnica": "select_from_model",
         "parametro": [
-            "pca_0"
+            "id",
+            "age",
+            "num_children",
+            "height_cm",
+            "weight_kg",
+            "income_usd",
+            "commute_min",
+            "ticket_price_usd",
+            "satisfaction_1_5",
+            "multiplicacion_gender_Masculino_weight_kg"
         ]
     },
     "selector_modelo": {
-        "tecnica": "GradientBoostingRegressor",
+        "tecnica": "KNeighborsRegressor",
         "parametro": {
-            "alpha": 0.9,
-            "ccp_alpha": 0.0,
-            "criterion": "friedman_mse",
-            "init": null,
-            "learning_rate": 0.1,
-            "loss": "squared_error",
-            "max_depth": 3,
-            "max_features": null,
-            "max_leaf_nodes": null,
-            "min_impurity_decrease": 0.0,
-            "min_samples_leaf": 1,
-            "min_samples_split": 2,
-            "min_weight_fraction_leaf": 0.0,
-            "n_estimators": 100,
-            "n_iter_no_change": null,
-            "random_state": null,
-            "subsample": 1.0,
-            "tol": 0.0001,
-            "validation_fraction": 0.1,
-            "verbose": 0,
-            "warm_start": false
+            "algorithm": "auto",
+            "leaf_size": 30,
+            "metric": "minkowski",
+            "metric_params": null,
+            "n_jobs": null,
+            "n_neighbors": 5,
+            "p": 2,
+            "weights": "uniform"
         }
     }
 }

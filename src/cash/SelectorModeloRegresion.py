@@ -32,7 +32,7 @@ from sklearn.neural_network import MLPRegressor
 class SelectorModeloRegresion(RegistroTecnica):
     def __init__(self, random_state=None):
         super().__init__()
-        self.nombre_fase = "selector_modelo"
+        self.log_fase = "selector_modelo"
         self.random_state = random_state
         self.modelo_seleccionado_ = None
         
@@ -41,7 +41,7 @@ class SelectorModeloRegresion(RegistroTecnica):
         # instancia de ese modelo con los mismos hiperparámetros
         if self.modelo_seleccionado_ is not None:
             modelo = self._get_instancia_modelo()
-            modelo.set_params(**self.parametro_tecnica_)
+            modelo.set_params(**self.log_params)
             return modelo
 
 
@@ -80,20 +80,18 @@ class SelectorModeloRegresion(RegistroTecnica):
 
         # hiper_parametros_texto = llm.generar_respuesta(prompt)
         # hiper_parametros = ast.literal_eval(hiper_parametros_texto)
-
-        # self.modelo_seleccionado_.set_params(**hiper_parametros)
-        # self.parametro_tecnica_ = hiper_parametros
-
         #! (Comentar en produccion) Esta linea es para probar el modelo sin usar el LLM
-        self.parametro_tecnica_ = self.modelo_seleccionado_.get_params()
+        hiper_parametros = self.modelo_seleccionado_.get_params()
+        self.log_params = hiper_parametros
+        self.registrar_tecnica(self.log_fase, self.modelo_seleccionado_.__class__.__name__, self.log_params)
         
-        self.registrar_tecnica(self.nombre_fase, self.modelo_seleccionado_.__class__.__name__, self.parametro_tecnica_)
-        
+        self.modelo_seleccionado_.set_params(**hiper_parametros)
+
         return self.modelo_seleccionado_
 
     def reiniciar(self):
         self.modelo_seleccionado_ = None
-        self.parametro_tecnica_ = {}
+        self.log_params = {}
     
     def _get_instancia_modelo(self):
         if self.modelo_seleccionado_ == "lineal":

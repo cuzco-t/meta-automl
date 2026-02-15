@@ -21,7 +21,7 @@ class TratarDuplicados(RegistroTecnica):
         if not hasattr(self, "_initialized"):
             self.permitir_none = permitir_none
             self.random_state = random_state
-            self.tecnica_seleccionada_ = None
+            self.log_algoritmo = None
             self._initialized = True
 
     def reiniciar(self):
@@ -29,14 +29,14 @@ class TratarDuplicados(RegistroTecnica):
         Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
         Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
         """
-        self.tecnica_seleccionada_ = None
-        self.parametro_tecnica_ = None
+        self.log_algoritmo = None
+        self.log_params = None
 
     def fit(self, X, y=None):
         """
-        Decide aleatoriamente la técnica a aplicar y la guarda en self.tecnica_seleccionada_
+        Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
         """
-        if self.tecnica_seleccionada_ is not None:
+        if self.log_algoritmo is not None:
             return self
 
         generador_aleatorio = np.random.default_rng(self.random_state)
@@ -44,15 +44,15 @@ class TratarDuplicados(RegistroTecnica):
         if not self.permitir_none:
             TECNICAS = ["eliminar"]
 
-        self.tecnica_seleccionada_ = generador_aleatorio.choice(TECNICAS)
-        self.registrar_tecnica("tratar_duplicados", self.tecnica_seleccionada_, None)
+        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+        self.registrar_tecnica("tratar_duplicados", self.log_algoritmo, None)
         return self
 
     def transform(self, X, y=None):
         """
         Aplica la técnica seleccionada en fit
         """
-        if self.tecnica_seleccionada_ != "eliminar":
+        if self.log_algoritmo != "eliminar":
             return X if y is None else (X, y)
 
         # Comienza a eliminar duplicados

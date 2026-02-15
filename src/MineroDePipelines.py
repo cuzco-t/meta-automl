@@ -279,7 +279,7 @@ class MineroDePipelines:
 
         def imprimir_valores_por_defecto():
             for nombre, fase in fases.items():
-                print(f"{nombre}: {fase.parametro_tecnica_}")    
+                print(f"{nombre}: {fase.log_params}")    
         
         print("Valores por defecto después de reiniciar:")
         imprimir_valores_por_defecto()

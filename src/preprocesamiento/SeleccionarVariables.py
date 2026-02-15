@@ -26,18 +26,18 @@ class SeleccionarVariables(RegistroTecnica):
         """
         # Evitamos re-inicializar si la instancia ya existe
         if not hasattr(self, "_initialized"):
-            self.nombre_fase = "seleccion_variables"
+            self.log_fase = "seleccion_variables"
             self.permitir_none = permitir_none
             self.tarea = tarea
             self.random_state = random_state
-            self.tecnica_seleccionada_ = None
+            self.log_algoritmo = None
             self._SEMILLA = random_state  # para modelos que requieren random_state
-            self.parametro_tecnica_ = []
+            self.log_params = []
             self._initialized = True
 
     def reiniciar(self):
-        self.tecnica_seleccionada_ = None
-        self.parametro_tecnica_ = []
+        self.log_algoritmo = None
+        self.log_params = []
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -54,7 +54,7 @@ class SeleccionarVariables(RegistroTecnica):
         TECNICAS.remove("llm")
         TECNICAS = self._permitir_none(TECNICAS)
 
-        self.tecnica_seleccionada_ = generador_aleatorio.choice(TECNICAS)
+        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
         return self
 
     def transform(self, X, y=None):
@@ -70,42 +70,42 @@ class SeleccionarVariables(RegistroTecnica):
 
         n_columnas = X_df.shape[1]
 
-        if self.tecnica_seleccionada_ is None:
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+        if self.log_algoritmo is None:
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
             return X_df.values if is_numpy else X_df
 
         rng = np.random.default_rng(self.random_state)
 
-        if self.tecnica_seleccionada_ == "aleatorio":
+        if self.log_algoritmo == "aleatorio":
             n_select = rng.integers(1, n_columnas + 1)
 
-            if not self.parametro_tecnica_:
+            if not self.log_params:
                 columnas = rng.choice(X_df.columns, size=n_select, replace=False)
-                self.parametro_tecnica_ = columnas.tolist()
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.log_params = columnas.tolist()
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
 
             else:
-                columnas = self.parametro_tecnica_
+                columnas = self.log_params
 
             return X_df[columnas].values if is_numpy else X_df[columnas]
 
-        elif self.tecnica_seleccionada_ == "variance_threshold":
-            if not self.parametro_tecnica_:
+        elif self.log_algoritmo == "variance_threshold":
+            if not self.log_params:
                 threshold = rng.uniform(0.0, 0.2)
                 selector = VarianceThreshold(threshold=threshold)
                 X_new = selector.fit_transform(X_df)
 
                 columnas = X_df.columns[selector.get_support()]
-                self.parametro_tecnica_ = columnas.tolist()
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.log_params = columnas.tolist()
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
             else:
-                columnas = pd.Index(self.parametro_tecnica_)
+                columnas = pd.Index(self.log_params)
                 X_new = X_df[columnas]
 
             return pd.DataFrame(X_new, columns=columnas, index=X_df.index)
 
-        elif self.tecnica_seleccionada_ == "mutual_info":
-            if not self.parametro_tecnica_:
+        elif self.log_algoritmo == "mutual_info":
+            if not self.log_params:
                 n_select = rng.integers(1, n_columnas + 1)
                 if self.tarea == "clasificacion":
                     mi = mutual_info_classif(X_df, y_series, random_state=self.random_state)
@@ -114,15 +114,15 @@ class SeleccionarVariables(RegistroTecnica):
 
                 mi_series = pd.Series(mi, index=X_df.columns)
                 columnas = mi_series.sort_values(ascending=False).head(n_select).index
-                self.parametro_tecnica_ = columnas.tolist()
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.log_params = columnas.tolist()
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
             else:
-                columnas = pd.Index(self.parametro_tecnica_)
+                columnas = pd.Index(self.log_params)
 
             return X_df[columnas].values if is_numpy else X_df[columnas]
 
-        elif self.tecnica_seleccionada_ == "select_from_model":
-            if not self.parametro_tecnica_:
+        elif self.log_algoritmo == "select_from_model":
+            if not self.log_params:
                 if self.tarea == "clasificacion":
                     model = RandomForestClassifier(n_estimators=100, random_state=self._SEMILLA)
                 elif self.tarea == "regresion":
@@ -133,32 +133,32 @@ class SeleccionarVariables(RegistroTecnica):
                 X_new = selector.transform(X_df)
 
                 columnas = X_df.columns[selector.get_support()]
-                self.parametro_tecnica_ = columnas.tolist()
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.log_params = columnas.tolist()
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
             else:
-                columnas = pd.Index(self.parametro_tecnica_)
+                columnas = pd.Index(self.log_params)
                 X_new = X_df[columnas]
 
             return pd.DataFrame(X_new, columns=columnas, index=X_df.index)
 
-        elif self.tecnica_seleccionada_ == "pca":
-            if not self.parametro_tecnica_:
+        elif self.log_algoritmo == "pca":
+            if not self.log_params:
                 n_components = rng.integers(2, n_columnas + 1)
                 pca = PCA(n_components=n_components, random_state=self.random_state)
                 X_pca = pca.fit_transform(X_df)
                 columnas = [f'pca_{i}' for i in range(n_components)]
-                self.parametro_tecnica_ = columnas
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.log_params = columnas
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
 
             else:
-                columnas = self.parametro_tecnica_
+                columnas = self.log_params
                 n_components = len(columnas)
                 pca = PCA(n_components=n_components, random_state=self.random_state)
                 X_pca = pca.fit_transform(X_df)
 
             return pd.DataFrame(X_pca, columns=columnas, index=X_df.index)
 
-        elif self.tecnica_seleccionada_ == "llm":
+        elif self.log_algoritmo == "llm":
             extractor = ExtractorMetaFeatures()
             meta_features_por_columna = extractor.extraer_meta_features_por_columna(X, y)
             print(f"Meta-features por columna para selección de variables:\n{meta_features_por_columna}")
@@ -176,7 +176,8 @@ class SeleccionarVariables(RegistroTecnica):
             columnas_texto = llm.generar_respuesta(prompt)
             columnas_lista = ast.literal_eval(columnas_texto)
 
-            self.parametro_tecnica_ = columnas_lista
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+            self.log_params = columnas_lista
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+            return X_df[columnas_lista].values if is_numpy else X_df[columnas_lista]
 
         return X_df.values if is_numpy else X_df

@@ -20,11 +20,11 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         """
         # Evitamos re-inicializar si la instancia ya existe
         if not hasattr(self, "_initialized"):
-            self.nombre_fase = "normalizar_datos_numericos"
+            self.log_fase = "normalizar_datos_numericos"
             self.permitir_none = permitir_none
             self.random_state = random_state
-            self.tecnica_seleccionada_ = None
-            self.parametro_tecnica_ = {}
+            self.log_algoritmo = None
+            self.log_params = {}
             self._initialized = True
 
     def reiniciar(self):
@@ -32,8 +32,8 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
         Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
         """
-        self.tecnica_seleccionada_ = None
-        self.parametro_tecnica_ = {}
+        self.log_algoritmo = None
+        self.log_params = {}
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -44,14 +44,14 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         """
         Selecciona aleatoriamente la técnica de normalización
         """
-        if self.tecnica_seleccionada_ is not None:
+        if self.log_algoritmo is not None:
             return self
             
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "z-score", "box-cox", "cuadrado", "sqrt", "ln", "inverso"]
         TECNICAS = self._permitir_none(TECNICAS)
 
-        self.tecnica_seleccionada_ = generador_aleatorio.choice(TECNICAS)
+        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
         return self
 
     def transform(self, X, y=None):
@@ -61,39 +61,40 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         is_numpy = isinstance(X, np.ndarray)
         X_df = pd.DataFrame(X) if is_numpy or not isinstance(X, pd.DataFrame) else X.copy()
 
-        if self.tecnica_seleccionada_ is None:
+        if self.log_algoritmo is None:
             return X_df.values if is_numpy else X_df
 
         for col in X_df.columns:
             if not pd.api.types.is_numeric_dtype(X_df[col]):
                 continue
 
-            if self.tecnica_seleccionada_ == "z-score":
-                if self.parametro_tecnica_.get(col) is None:
-                    self.parametro_tecnica_[col] = {
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+
+
+            if self.log_algoritmo == "z-score":
+                if self.log_params.get(col) is None:
+                    self.log_params[col] = {
                         "mean": X_df[col].mean(),
                         "std": X_df[col].std(ddof=0)
                     }
                     
-                X_df[col] = (X_df[col] - self.parametro_tecnica_[col]["mean"]) / self.parametro_tecnica_[col]["std"]
+                X_df[col] = (X_df[col] - self.log_params[col]["mean"]) / self.log_params[col]["std"]
 
-            elif self.tecnica_seleccionada_ == "box-cox":
+            elif self.log_algoritmo == "box-cox":
                 # Solo si todos los valores son positivos
                 if (X_df[col] > 0).all():
                     X_df[col], _ = stats.boxcox(X_df[col])
 
-            elif self.tecnica_seleccionada_ == "cuadrado":
+            elif self.log_algoritmo == "cuadrado":
                 X_df[col] = X_df[col] ** 2
 
-            elif self.tecnica_seleccionada_ == "sqrt":
+            elif self.log_algoritmo == "sqrt":
                 X_df[col] = np.sqrt(np.abs(X_df[col]))
 
-            elif self.tecnica_seleccionada_ == "ln":
+            elif self.log_algoritmo == "ln":
                 X_df[col] = np.log1p(np.abs(X_df[col]))
 
-            elif self.tecnica_seleccionada_ == "inverso":
+            elif self.log_algoritmo == "inverso":
                 X_df[col] = 1 / (1 + np.abs(X_df[col]))
-
-        self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
 
         return X_df.values if is_numpy else X_df

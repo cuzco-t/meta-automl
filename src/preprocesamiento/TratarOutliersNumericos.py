@@ -19,11 +19,11 @@ class TratarOutliersNumericos(RegistroTecnica):
         """
         # Evitamos re-inicializar si la instancia ya existe
         if not hasattr(self, "_initialized"):
-            self.nombre_fase = "tratar_outliers_numericos"
+            self.log_fase = "tratar_outliers_numericos"
             self.permitir_none = permitir_none
             self.random_state = random_state
-            self.tecnica_seleccionada_ = {}
-            self.parametro_tecnica_ = {}
+            self.log_algoritmo = {}
+            self.log_params = {}
             self._initialized = True
 
     def reiniciar(self):
@@ -31,8 +31,8 @@ class TratarOutliersNumericos(RegistroTecnica):
         Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
         Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
         """
-        self.tecnica_seleccionada_ = None
-        self.parametro_tecnica_ = {}
+        self.log_algoritmo = None
+        self.log_params = {}
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -42,16 +42,16 @@ class TratarOutliersNumericos(RegistroTecnica):
     def fit(self, X, y=None):
         """
         Selecciona aleatoriamente la técnica a aplicar a los outliers numéricos
-        y la guarda en self.tecnica_seleccionada_
+        y la guarda en self.log_algoritmo
         """
-        if self.tecnica_seleccionada_ is not None:
+        if self.log_algoritmo is not None:
             return self
             
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "media", "mediana", "moda", "aleatorio", "media_geometrica", "eliminar"]
         TECNICAS = self._permitir_none(TECNICAS)
 
-        self.tecnica_seleccionada_ = generador_aleatorio.choice(TECNICAS)
+        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
         return self
 
     def transform(self, X, y=None):
@@ -59,8 +59,8 @@ class TratarOutliersNumericos(RegistroTecnica):
         Aplica la técnica seleccionada a los outliers numéricos
         utilizando el método IQR (1.5 * IQR)
         """
-        if self.tecnica_seleccionada_ is None:
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, None)
+        if self.log_algoritmo is None:
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
             return X if y is None else (X, y)
 
         X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
@@ -82,59 +82,59 @@ class TratarOutliersNumericos(RegistroTecnica):
             if not filas_outliers.any():
                 continue
 
-            if self.tecnica_seleccionada_ == "media":
-                if self.parametro_tecnica_.get(col) is None:
-                    self.parametro_tecnica_[col] = X_df[col].mean()
+            if self.log_algoritmo == "media":
+                if self.log_params.get(col) is None:
+                    self.log_params[col] = X_df[col].mean()
 
-                X_df.loc[filas_outliers, col] = self.parametro_tecnica_[col]
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                X_df.loc[filas_outliers, col] = self.log_params[col]
 
-            elif self.tecnica_seleccionada_ == "mediana":
-                if self.parametro_tecnica_.get(col) is None:
-                    self.parametro_tecnica_[col] = X_df[col].median()
+            elif self.log_algoritmo == "mediana":
+                if self.log_params.get(col) is None:
+                    self.log_params[col] = X_df[col].median()
 
-                X_df.loc[filas_outliers, col] = self.parametro_tecnica_[col]
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                X_df.loc[filas_outliers, col] = self.log_params[col]
 
-            elif self.tecnica_seleccionada_ == "moda":
+            elif self.log_algoritmo == "moda":
                 moda = X_df[col].mode()
                 if not moda.empty:
-                    if self.parametro_tecnica_.get(col) is None:
-                        self.parametro_tecnica_[col] = moda.iloc[0]
+                    if self.log_params.get(col) is None:
+                        self.log_params[col] = moda.iloc[0]
                     
-                    X_df.loc[filas_outliers, col] = self.parametro_tecnica_[col]
-                    self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                    X_df.loc[filas_outliers, col] = self.log_params[col]
 
-            elif self.tecnica_seleccionada_ == "aleatorio":
+            elif self.log_algoritmo == "aleatorio":
                 valores_validos = X_df.loc[~filas_outliers, col].values
                 if len(valores_validos) > 0:
+                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, None)
                     X_df.loc[filas_outliers, col] = np.random.choice(
                         valores_validos, filas_outliers.sum()
                     )
-                    self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, None)
 
-            elif self.tecnica_seleccionada_ == "media_geometrica":
+            elif self.log_algoritmo == "media_geometrica":
                 valores = X_df.loc[~filas_outliers, col]
                 valores_pos = valores[valores > 0]
                 if not valores_pos.empty:
-                    if self.parametro_tecnica_.get(col) is None:
-                        self.parametro_tecnica_[col] = stats.gmean(valores_pos)
+                    if self.log_params.get(col) is None:
+                        self.log_params[col] = stats.gmean(valores_pos)
 
-                    X_df.loc[filas_outliers, col] = self.parametro_tecnica_[col]
-                    self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                    X_df.loc[filas_outliers, col] = self.log_params[col]
 
-            elif self.tecnica_seleccionada_ == "eliminar":
+            elif self.log_algoritmo == "eliminar":
                 mask = ~filas_outliers
                 filas_a_eliminar = mask if filas_a_eliminar is None else filas_a_eliminar & mask
 
-        if self.tecnica_seleccionada_ == "eliminar" and filas_a_eliminar is not None:
+        if self.log_algoritmo == "eliminar" and filas_a_eliminar is not None:
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, "outliers_eliminados")
             X_df = X_df.loc[filas_a_eliminar]
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, "outliers_eliminados")
 
         if y is None:
             return X_df
         else:
-            if self.tecnica_seleccionada_ == "eliminar" and filas_a_eliminar is not None:
+            if self.log_algoritmo == "eliminar" and filas_a_eliminar is not None:
                 if isinstance(y, pd.Series):
                     y_clean = y.loc[filas_a_eliminar]
                 else:

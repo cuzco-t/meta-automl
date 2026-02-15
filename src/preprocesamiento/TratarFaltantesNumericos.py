@@ -20,11 +20,11 @@ class TratarFaltantesNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         """
         # Evitamos re-inicializar si ya existe la instancia
         if not hasattr(self, "_initialized"):
-            self.nombre_fase = "tratar_faltantes_numericos"
+            self.log_fase = "tratar_faltantes_numericos"
             self.permitir_none = permitir_none
             self.random_state = random_state
-            self.tecnica_seleccionada_ = None
-            self.parametro_tecnica_ = {}
+            self.log_algoritmo = None
+            self.log_params = {}
             self._initialized = True
 
     def reiniciar(self):
@@ -32,8 +32,8 @@ class TratarFaltantesNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
         Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
         """
-        self.tecnica_seleccionada_ = None
-        self.parametro_tecnica_ = {}
+        self.log_algoritmo = None
+        self.log_params = {}
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -43,16 +43,16 @@ class TratarFaltantesNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
     def fit(self, X, y=None):
         """
         Selecciona aleatoriamente la técnica a aplicar en los valores faltantes
-        y la guarda en self.tecnica_seleccionada_
+        y la guarda en self.log_algoritmo
         """
-        if self.tecnica_seleccionada_ is not None:
+        if self.log_algoritmo is not None:
             return self
 
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "media", "mediana", "moda", "aleatorio", "media_geometrica", "eliminar"]
         TECNICAS = self._permitir_none(TECNICAS)
 
-        self.tecnica_seleccionada_ = generador_aleatorio.choice(TECNICAS)
+        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
 
         return self
 
@@ -60,8 +60,8 @@ class TratarFaltantesNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         """
         Aplica la técnica seleccionada a los valores faltantes numéricos
         """
-        if self.tecnica_seleccionada_ is None:
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, None)
+        if self.log_algoritmo is None:
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, None)
             return X if y is None else (X, y)
 
         X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
@@ -71,59 +71,59 @@ class TratarFaltantesNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
             if not (pd.api.types.is_numeric_dtype(X_df[col]) and X_df[col].isna().any()):
                 continue
 
-            if self.tecnica_seleccionada_ == "media":
-                if self.parametro_tecnica_.get(col) is None:
-                    self.parametro_tecnica_[col] = X_df[col].mean()
+            if self.log_algoritmo == "media":
+                if self.log_params.get(col) is None:
+                    self.log_params[col] = X_df[col].mean()
                     
-                X_df[col] = X_df[col].fillna(self.parametro_tecnica_[col])
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                X_df[col] = X_df[col].fillna(self.log_params[col])
 
-            elif self.tecnica_seleccionada_ == "mediana":
-                if self.parametro_tecnica_.get(col) is None:
-                    self.parametro_tecnica_[col] = X_df[col].median()
+            elif self.log_algoritmo == "mediana":
+                if self.log_params.get(col) is None:
+                    self.log_params[col] = X_df[col].median()
 
-                X_df[col] = X_df[col].fillna(self.parametro_tecnica_[col])
-                self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                X_df[col] = X_df[col].fillna(self.log_params[col])
 
-            elif self.tecnica_seleccionada_ == "moda":
+            elif self.log_algoritmo == "moda":
                 moda = X_df[col].mode()
                 if not moda.empty:
-                    if self.parametro_tecnica_.get(col) is None:
-                        self.parametro_tecnica_[col] = moda.iloc[0]
+                    if self.log_params.get(col) is None:
+                        self.log_params[col] = moda.iloc[0]
 
-                    X_df[col] = X_df[col].fillna(self.parametro_tecnica_[col])
-                    self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                    X_df[col] = X_df[col].fillna(self.log_params[col])
 
-            elif self.tecnica_seleccionada_ == "aleatorio":
+            elif self.log_algoritmo == "aleatorio":
                 valores_validos = X_df[col].dropna().values
                 if len(valores_validos) > 0:
+                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, "valores_validos")
                     X_df.loc[X_df[col].isna(), col] = np.random.choice(
                         valores_validos, X_df[col].isna().sum()
                     )
-                    self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, "valores_validos")
 
-            elif self.tecnica_seleccionada_ == "media_geometrica":
+            elif self.log_algoritmo == "media_geometrica":
                 valores = X_df[col].dropna()
                 valores_pos = valores[valores > 0]
                 if not valores_pos.empty:
-                    if self.parametro_tecnica_.get(col) is None:
-                        self.parametro_tecnica_[col] = stats.gmean(valores_pos)
+                    if self.log_params.get(col) is None:
+                        self.log_params[col] = stats.gmean(valores_pos)
                         
-                    X_df[col] = X_df[col].fillna(self.parametro_tecnica_[col])
-                    self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+                    X_df[col] = X_df[col].fillna(self.log_params[col])
 
-            elif self.tecnica_seleccionada_ == "eliminar":
+            elif self.log_algoritmo == "eliminar":
                 mask = X_df[col].notna()
                 filas_a_eliminar = mask if filas_a_eliminar is None else filas_a_eliminar & mask
 
-        if self.tecnica_seleccionada_ == "eliminar" and filas_a_eliminar is not None:
+        if self.log_algoritmo == "eliminar" and filas_a_eliminar is not None:
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, "filas_nulas")
             X_df = X_df.loc[filas_a_eliminar]
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, "filas_nulas")
 
         if y is None:
             return X_df
         else:
-            if self.tecnica_seleccionada_ == "eliminar" and filas_a_eliminar is not None:
+            if self.log_algoritmo == "eliminar" and filas_a_eliminar is not None:
                 if isinstance(y, pd.Series):
                     y_clean = y.loc[filas_a_eliminar]
                 else:

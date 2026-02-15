@@ -18,11 +18,11 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
         """
         # Evitamos re-inicializar si la instancia ya existe
         if not hasattr(self, "_initialized"):
-            self.nombre_fase = "codificar_variables_categoricas_rango_alto"
+            self.log_fase = "codificar_variables_categoricas_rango_alto"
             self.permitir_none = permitir_none
             self.random_state = random_state
-            self.tecnica_seleccionada_ = None
-            self.parametro_tecnica_ = {}
+            self.log_algoritmo = None
+            self.log_params = {}
             self._initialized = True
 
     def reiniciar(self):
@@ -30,8 +30,8 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
         Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
         Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
         """
-        self.tecnica_seleccionada_ = None
-        self.parametro_tecnica_ = {}
+        self.log_algoritmo = None
+        self.log_params = {}
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -41,16 +41,16 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
     def fit(self, X, y=None):
         """
         Selecciona aleatoriamente la técnica a aplicar a las variables categóricas
-        de rango alto y la guarda en self.tecnica_seleccionada_
+        de rango alto y la guarda en self.log_algoritmo
         """
-        if self.tecnica_seleccionada_ is not None:
+        if self.log_algoritmo is not None:
             return self
         
         generador_aleatorio = np.random.default_rng(self.random_state)
         TECNICAS = [None, "eliminar"]
         TECNICAS = self._permitir_none(TECNICAS)
 
-        self.tecnica_seleccionada_ = generador_aleatorio.choice(TECNICAS)
+        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
         return self
     
     def transform(self, X, y=None):
@@ -58,8 +58,8 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
         Aplica la codificación seleccionada a las variables categóricas de rango alto
         (ratio de valores únicos mayores o iguales a 0.90)
         """
-        if self.tecnica_seleccionada_ is None:
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, None)
+        if self.log_algoritmo is None:
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
             return X if y is None else (X, y)
 
         X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
@@ -69,21 +69,21 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
                 ratio_unicos = X_df[col].nunique() / len(X_df)
 
                 # Dataset de entrenamiento
-                if col not in self.parametro_tecnica_:
+                if col not in self.log_params:
                     if ratio_unicos >= 0.90:
-                        if self.tecnica_seleccionada_ == "eliminar":
+                        if self.log_algoritmo == "eliminar":
                             columnas_a_eliminar.append(col)
                 
                 # Dataset de validacion
                 else:
-                    if self.tecnica_seleccionada_ == "eliminar":
+                    if self.log_algoritmo == "eliminar":
                         pass  # La columna ya se eliminará al final del transform
 
         if columnas_a_eliminar:
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, "eliminar_columnas")
             X_df = X_df.drop(columns=columnas_a_eliminar)
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, "eliminar_columnas")
         else:
-            self.registrar_tecnica(self.nombre_fase, self.tecnica_seleccionada_, self.parametro_tecnica_)
+            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
 
         if y is None:
             return X_df
