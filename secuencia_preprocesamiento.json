@@ -4,16 +4,15 @@
         "parametro": null
     },
     "tratar_faltantes_numericos": {
-        "tecnica": "moda",
-        "parametro": {
-            "age": 16.0,
-            "height_cm": 164.0,
-            "income_usd": 406.13,
-            "satisfaction_1_5": 4.0
-        }
+        "tecnica": "eliminar",
+        "parametro": {}
+    },
+    "tratar_faltantes_strings": {
+        "tecnica": "etiqueta_desconocido",
+        "parametro": {}
     },
     "codificar_variables_binarias": {
-        "tecnica": "label-encoding",
+        "tecnica": "label_encoding",
         "parametro": {
             "owns_car": {
                 "No": 0,
@@ -26,35 +25,16 @@
         }
     },
     "codificar_variables_categoricas_rango_bajo": {
-        "tecnica": "label-encoding",
-        "parametro": {
-            "gender": {
-                "Femenino": 0,
-                "Masculino": 1,
-                "Otro": 2
-            },
-            "marital_status": {
-                "Casado": 0,
-                "Divorciado": 1,
-                "Soltero": 2,
-                "Viudo": 3
-            },
-            "socioeconomic": {
-                "Alto": 0,
-                "Bajo": 1,
-                "Medio": 2
-            },
-            "education": {
-                "Posgrado": 0,
-                "Primaria": 1,
-                "Secundaria": 2,
-                "T\u00e9cnico": 3,
-                "Universitario": 4
-            }
-        }
+        "tecnica": "one-hot-encoding",
+        "parametro": [
+            "gender",
+            "marital_status",
+            "socioeconomic",
+            "education"
+        ]
     },
     "codificar_variables_categoricas_rango_medio": {
-        "tecnica": "frequency-encoding",
+        "tecnica": "eliminar",
         "parametro": {}
     },
     "codificar_variables_categoricas_rango_alto": {
@@ -73,36 +53,38 @@
         }
     },
     "normalizar_datos_numericos": {
-        "tecnica": "ln",
+        "tecnica": "box-cox",
         "parametro": {}
     },
     "crear_nueva_variable": {
-        "tecnica": "resta",
+        "tecnica": "suma",
         "parametro": [
             "commute_min",
-            "owns_car"
+            "socioeconomic_Medio"
         ]
     },
     "seleccion_variables": {
-        "tecnica": "aleatorio",
+        "tecnica": "variance_threshold",
         "parametro": [
-            "satisfaction_1_5",
-            "marital_status",
-            "weight_kg",
             "uses_public_transport",
-            "commute_min",
-            "id",
-            "gender"
+            "gender_Femenino",
+            "gender_Masculino",
+            "marital_status_Casado",
+            "marital_status_Soltero",
+            "socioeconomic_Bajo",
+            "socioeconomic_Medio",
+            "education_Universitario",
+            "suma_commute_min_socioeconomic_Medio"
         ]
     },
     "selector_modelo": {
-        "tecnica": "AdaBoostRegressor",
+        "tecnica": "LinearRegression",
         "parametro": {
-            "estimator": null,
-            "learning_rate": 1.0,
-            "loss": "linear",
-            "n_estimators": 50,
-            "random_state": null
+            "copy_X": true,
+            "fit_intercept": true,
+            "n_jobs": null,
+            "positive": false,
+            "tol": 1e-06
         }
     }
 }
