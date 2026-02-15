@@ -220,16 +220,14 @@ class MineroDePipelines:
             ("codificar_variables_binarias", CodificarVariablesBinarias(PERMITIR_NONE, self._SEMILLA)),
             ("codificar_variables_categoricas_rango_bajo", CodificarVariablesCategoricasRangoBajo(PERMITIR_NONE, self._SEMILLA)),
             ("codificar_variables_categoricas_rango_medio", CodificarVariablesCategoricasRangoMedio(PERMITIR_NONE, self._SEMILLA)),
+            ("codificar_variables_categoricas_rango_alto", CodificarVariablesCategoricasRangoAlto(PERMITIR_NONE, self._SEMILLA)),
         ])
         X_preprocesado = pipeline.fit_transform(X_copy)
 
-        codificar_variables_categoricas_rango_alto = CodificarVariablesCategoricasRangoAlto(PERMITIR_NONE, self._SEMILLA)
         tratar_outliers_numericos = TratarOutliersNumericos(PERMITIR_NONE, self._SEMILLA)
 
-        codificar_variables_categoricas_rango_alto.fit(X_copy, y_copy)
-        X_copy, y_copy = codificar_variables_categoricas_rango_alto.transform(X_copy, y_copy)
-        tratar_outliers_numericos.fit(X_copy, y_copy)
-        X_copy, y_copy = tratar_outliers_numericos.transform(X_copy, y_copy)
+        tratar_outliers_numericos.fit(X_preprocesado, y_copy)
+        X_preprocesado, y_copy = tratar_outliers_numericos.transform(X_preprocesado, y_copy)
 
         pipeline = Pipeline([
             ("escalar_datos_numericos", EscalarDatosNumericos(PERMITIR_NONE, self._SEMILLA)),

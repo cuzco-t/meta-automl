@@ -2,8 +2,9 @@ import numpy as np
 import pandas as pd
 
 from ..RegistroTecnica import RegistroTecnica
+from sklearn.base import BaseEstimator, TransformerMixin
 
-class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
+class CodificarVariablesCategoricasRangoAlto(BaseEstimator, TransformerMixin, RegistroTecnica):
     _instance = None  # Atributo de clase para almacenar la instancia única
 
     def __new__(cls, *args, **kwargs):
@@ -11,18 +12,18 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
             cls._instance = super(CodificarVariablesCategoricasRangoAlto, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, permitir_none=True, random_state=None):
+    def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
-        random_state: para reproducibilidad
+        semilla: para reproducibilidad
         """
         # Evitamos re-inicializar si la instancia ya existe
         if not hasattr(self, "_initialized"):
-            self.log_fase = "codificar_variables_categoricas_rango_alto"
+            RegistroTecnica.__init__(self, log_fase="codificar_variables_categoricas_rango_alto")
             self.permitir_none = permitir_none
-            self.random_state = random_state
-            self.log_algoritmo = None
-            self.log_params = {}
+            self.semilla = semilla
+            self.config_test = config_test
+            self.reiniciar()
             self._initialized = True
 
     def reiniciar(self):
@@ -38,54 +39,65 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
             return [t for t in tecnicas if t is not None]
         return tecnicas
     
-    def fit(self, X, y=None):
+    def fit(self, X: pd.DataFrame, y: pd.Series = None):
         """
-        Selecciona aleatoriamente la técnica a aplicar a las variables categóricas
-        de rango alto y la guarda en self.log_algoritmo
+        Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
         """
-        if self.log_algoritmo is not None:
-            return self
-        
-        generador_aleatorio = np.random.default_rng(self.random_state)
-        TECNICAS = [None, "eliminar"]
-        TECNICAS = self._permitir_none(TECNICAS)
+        if self.config_test is not None:
+            self.log_algoritmo = self.config_test.get("algoritmo")
+            self.log_params = self.config_test.get("params")
 
-        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+        else:
+            generador_aleatorio = np.random.default_rng()
+            TECNICAS = self._permitir_none([
+                None, 
+                "eliminar_columna"
+            ])
+            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+
+            self.registrar_algoritmo(self.log_algoritmo)
+            self._calcular_parametros(X)
+
+        self.registrar_algoritmo(self.log_algoritmo)
         return self
     
-    def transform(self, X, y=None):
+    def transform(self, X: pd.DataFrame, y: pd.Series = None):
         """
         Aplica la codificación seleccionada a las variables categóricas de rango alto
         (ratio de valores únicos mayores o iguales a 0.90)
         """
-        if self.log_algoritmo is None:
-            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
-            return X if y is None else (X, y)
+        match self.log_algoritmo:
+            case None:
+                return X
+            
+            case "eliminar_columna":
+                X_modificado = self._eliminar_columna(X)
+                return X_modificado
 
-        X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
-        columnas_a_eliminar = []
-        for col in X_df.columns:
-            if pd.api.types.is_object_dtype(X_df[col]):
-                ratio_unicos = X_df[col].nunique() / len(X_df)
+            case _:
+                raise ValueError(f"Técnica de codificación desconocida: {self.log_algoritmo}")
+        
+    def _calcular_parametros(self, X: pd.DataFrame):
+        """
+        Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
+        """
+        for col in X.columns:
+            if not pd.api.types.is_object_dtype(X[col]):
+                continue
 
-                # Dataset de entrenamiento
-                if col not in self.log_params:
-                    if ratio_unicos >= 0.90:
-                        if self.log_algoritmo == "eliminar":
-                            columnas_a_eliminar.append(col)
-                
-                # Dataset de validacion
-                else:
-                    if self.log_algoritmo == "eliminar":
-                        pass  # La columna ya se eliminará al final del transform
+            ratio_unicos = X[col].nunique() / len(X)
 
-        if columnas_a_eliminar:
-            self.registrar_tecnica(self.log_fase, self.log_algoritmo, "eliminar_columnas")
-            X_df = X_df.drop(columns=columnas_a_eliminar)
-        else:
-            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+            if ratio_unicos >= 0.90:
+                self.log_params[col] = True
+                self.registrar_parametros(self.log_params)
 
-        if y is None:
-            return X_df
-        else:
-            return X_df, y
+    def _eliminar_columna(self, X_copy: pd.DataFrame) -> pd.DataFrame:
+        """
+        Elimina las columnas categóricas de rango alto codificadas en self.log_params
+        
+        :return: DataFrame con las columnas categóricas de rango alto eliminadas
+        :rtype: DataFrame
+        """
+        columnas_a_eliminar_columna = list(self.log_params.keys())
+        X_df = X_copy.drop(columns=columnas_a_eliminar_columna)
+        return X_df
