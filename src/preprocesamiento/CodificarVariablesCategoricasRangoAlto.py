@@ -43,6 +43,9 @@ class CodificarVariablesCategoricasRangoAlto(BaseEstimator, TransformerMixin, Re
         """
         Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
         """
+        if self.log_algoritmo is not None:
+            return self
+        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
