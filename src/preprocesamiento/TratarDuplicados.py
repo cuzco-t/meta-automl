@@ -59,7 +59,7 @@ class TratarDuplicados(RegistroTecnica):
         self.registrar_tecnica("tratar_duplicados", self.log_algoritmo, None)
         return self
 
-    def transform(self, X: pd.DataFrame, y: pd.Series):
+    def transform(self, X: pd.DataFrame, y: pd.Series) -> tuple[pd.DataFrame, pd.Series]:
         """
         Aplica la técnica seleccionada en fit
         :return: X e y con la técnica aplicada

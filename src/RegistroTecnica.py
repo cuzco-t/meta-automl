@@ -10,6 +10,14 @@ class RegistroTecnica:
         secuencia = SecuenciaPreprocesamiento()
         secuencia.agregar_tecnica(fase, tecnica, parametro)
 
+    def registrar_algoritmo(self, algoritmo):
+        secuencia = SecuenciaPreprocesamiento()
+        secuencia.agregar_tecnica(self.log_fase, algoritmo, self.log_params)
+
+    def registrar_parametros(self, parametros):
+        secuencia = SecuenciaPreprocesamiento()
+        secuencia.agregar_tecnica(self.log_fase, self.log_algoritmo, parametros)
+
     def imprimir_fase(self, fase):
         secuencia = SecuenciaPreprocesamiento()
         print(secuencia.secuencia[fase])

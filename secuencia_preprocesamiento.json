@@ -7,7 +7,7 @@
         "tecnica": "moda",
         "parametro": {
             "age": 16.0,
-            "height_cm": 166.7,
+            "height_cm": 164.0,
             "income_usd": 406.13,
             "satisfaction_1_5": 4.0
         }
@@ -73,45 +73,36 @@
         }
     },
     "normalizar_datos_numericos": {
-        "tecnica": "cuadrado",
+        "tecnica": "ln",
         "parametro": {}
     },
     "crear_nueva_variable": {
-        "tecnica": "ratio",
+        "tecnica": "resta",
         "parametro": [
-            "age",
-            "id"
+            "commute_min",
+            "owns_car"
         ]
     },
     "seleccion_variables": {
-        "tecnica": "variance_threshold",
+        "tecnica": "aleatorio",
         "parametro": [
-            "socioeconomic",
+            "satisfaction_1_5",
+            "marital_status",
+            "weight_kg",
             "uses_public_transport",
-            "ratio_age_id"
+            "commute_min",
+            "id",
+            "gender"
         ]
     },
     "selector_modelo": {
-        "tecnica": "RandomForestRegressor",
+        "tecnica": "AdaBoostRegressor",
         "parametro": {
-            "bootstrap": true,
-            "ccp_alpha": 0.0,
-            "criterion": "squared_error",
-            "max_depth": null,
-            "max_features": 1.0,
-            "max_leaf_nodes": null,
-            "max_samples": null,
-            "min_impurity_decrease": 0.0,
-            "min_samples_leaf": 1,
-            "min_samples_split": 2,
-            "min_weight_fraction_leaf": 0.0,
-            "monotonic_cst": null,
-            "n_estimators": 100,
-            "n_jobs": null,
-            "oob_score": false,
-            "random_state": null,
-            "verbose": 0,
-            "warm_start": false
+            "estimator": null,
+            "learning_rate": 1.0,
+            "loss": "linear",
+            "n_estimators": 50,
+            "random_state": null
         }
     }
 }
