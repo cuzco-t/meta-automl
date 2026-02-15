@@ -4,8 +4,13 @@
         "parametro": null
     },
     "tratar_faltantes_numericos": {
-        "tecnica": "eliminar",
-        "parametro": {}
+        "tecnica": "media_geometrica",
+        "parametro": {
+            "age": 34.84,
+            "height_cm": 166.74,
+            "income_usd": 5081.2,
+            "satisfaction_1_5": 3.39
+        }
     },
     "tratar_faltantes_strings": {
         "tecnica": "etiqueta_desconocido",
@@ -25,13 +30,32 @@
         }
     },
     "codificar_variables_categoricas_rango_bajo": {
-        "tecnica": "one-hot-encoding",
-        "parametro": [
-            "gender",
-            "marital_status",
-            "socioeconomic",
-            "education"
-        ]
+        "tecnica": "label_encoding",
+        "parametro": {
+            "gender": {
+                "Femenino": 0,
+                "Masculino": 1,
+                "Otro": 2
+            },
+            "marital_status": {
+                "Casado": 0,
+                "Divorciado": 1,
+                "Soltero": 2,
+                "Viudo": 3
+            },
+            "socioeconomic": {
+                "Alto": 0,
+                "Bajo": 1,
+                "Medio": 2
+            },
+            "education": {
+                "Posgrado": 0,
+                "Primaria": 1,
+                "Secundaria": 2,
+                "T\u00e9cnico": 3,
+                "Universitario": 4
+            }
+        }
     },
     "codificar_variables_categoricas_rango_medio": {
         "tecnica": "eliminar",
@@ -53,38 +77,34 @@
         }
     },
     "normalizar_datos_numericos": {
-        "tecnica": "box-cox",
+        "tecnica": "inverso",
         "parametro": {}
     },
     "crear_nueva_variable": {
-        "tecnica": "suma",
-        "parametro": [
-            "commute_min",
-            "socioeconomic_Medio"
-        ]
+        "tecnica": "pca",
+        "parametro": 6
     },
     "seleccion_variables": {
-        "tecnica": "variance_threshold",
+        "tecnica": "pca",
         "parametro": [
-            "uses_public_transport",
-            "gender_Femenino",
-            "gender_Masculino",
-            "marital_status_Casado",
-            "marital_status_Soltero",
-            "socioeconomic_Bajo",
-            "socioeconomic_Medio",
-            "education_Universitario",
-            "suma_commute_min_socioeconomic_Medio"
+            "pca_0",
+            "pca_1",
+            "pca_2",
+            "pca_3",
+            "pca_4"
         ]
     },
     "selector_modelo": {
-        "tecnica": "LinearRegression",
+        "tecnica": "KNeighborsRegressor",
         "parametro": {
-            "copy_X": true,
-            "fit_intercept": true,
+            "algorithm": "auto",
+            "leaf_size": 30,
+            "metric": "minkowski",
+            "metric_params": null,
             "n_jobs": null,
-            "positive": false,
-            "tol": 1e-06
+            "n_neighbors": 5,
+            "p": 2,
+            "weights": "uniform"
         }
     }
 }
