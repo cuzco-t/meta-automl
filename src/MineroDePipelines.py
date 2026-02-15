@@ -225,7 +225,6 @@ class MineroDePipelines:
         X_preprocesado = pipeline.fit_transform(X_copy)
 
         tratar_outliers_numericos = TratarOutliersNumericos(PERMITIR_NONE, self._SEMILLA)
-
         tratar_outliers_numericos.fit(X_preprocesado, y_copy)
         X_preprocesado, y_copy = tratar_outliers_numericos.transform(X_preprocesado, y_copy)
 
