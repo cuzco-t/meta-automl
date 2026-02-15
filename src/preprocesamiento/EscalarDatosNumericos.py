@@ -34,7 +34,6 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         self.log_algoritmo = None
         self.log_params = {}
-        self.scaler_ = None
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -105,7 +104,7 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         escalador = self._get_instancia_scaler()
         escalador.fit(X_df[cols_numericas])
 
-        if self.log_algoritmo == "min_max":
+        if self.log_algoritmo == "min_max": 
             self.log_params = {
                 "feature_range": escalador.feature_range,
                 "data_min_": escalador.data_min_.tolist(),

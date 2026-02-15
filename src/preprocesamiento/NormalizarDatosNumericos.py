@@ -13,18 +13,18 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
             cls._instance = super(NormalizarDatosNumericos, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, permitir_none=True, random_state=None):
+    def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
-        random_state: para reproducibilidad
+        semilla: para reproducibilidad
         """
         # Evitamos re-inicializar si la instancia ya existe
         if not hasattr(self, "_initialized"):
-            self.log_fase = "normalizar_datos_numericos"
+            RegistroTecnica.__init__(self, log_fase="normalizar_datos_numericos")
             self.permitir_none = permitir_none
-            self.random_state = random_state
-            self.log_algoritmo = None
-            self.log_params = {}
+            self.semilla = semilla
+            self.config_test = config_test
+            self.reiniciar()
             self._initialized = True
 
     def reiniciar(self):
@@ -40,61 +40,146 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
             return [t for t in tecnicas if t is not None]
         return tecnicas
 
-    def fit(self, X, y=None):
+    def fit(self, X: pd.DataFrame, y: pd.Series = None):
         """
         Selecciona aleatoriamente la técnica de normalización
         """
         if self.log_algoritmo is not None:
             return self
-            
-        generador_aleatorio = np.random.default_rng(self.random_state)
-        TECNICAS = [None, "z-score", "box-cox", "cuadrado", "sqrt", "ln", "inverso"]
-        TECNICAS = self._permitir_none(TECNICAS)
+        
+        if self.config_test is not None:
+            self.log_algoritmo = self.config_test.get("algoritmo")
+            self.log_params = self.config_test.get("params")
 
-        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+        else:
+            generador_aleatorio = np.random.default_rng()
+            TECNICAS = self._permitir_none([
+                None, 
+                "z-score", 
+                "box-cox", 
+                "sqrt", 
+                "ln", 
+                "inverso",
+                "cuadrado", 
+            ])
+            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+
+            self.registrar_algoritmo(self.log_algoritmo)
+            self._calcular_parametros(X)
+
+        self.registrar_algoritmo(self.log_algoritmo)
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X: pd.DataFrame, y: pd.Series = None) -> pd.DataFrame:
         """
         Aplica la técnica seleccionada a las columnas numéricas
         """
-        is_numpy = isinstance(X, np.ndarray)
-        X_df = pd.DataFrame(X) if is_numpy or not isinstance(X, pd.DataFrame) else X.copy()
+        match self.log_algoritmo:
+            case None:
+                return X
+            
+            case "z-score" | "box-cox" | "sqrt" | "ln" | "inverso":
+                X_normalizado = self._normalizar_con_parametros(X.copy())
+                return X_normalizado
+            
+            case "cuadrado":
+                X_normalizado = self._normalizar_con_cuadrado(X.copy())
+                return X_normalizado
+            
+            case _:
+                raise ValueError(f"Técnica de normalización desconocida: {self.log_algoritmo}")
+
+    def _calcular_parametros(self, X_df: pd.DataFrame) -> None:
+        """
+        Calcula los parámetros necesarios para las técnicas matemáticas:
+            None, z-score, box-cox, cuadrado, sqrt, ln, inverso
+        y los guarda en self.log_params para poder aplicarlos luego.
+        """
+        cols_numericas = X_df.select_dtypes(include=np.number).columns
 
         if self.log_algoritmo is None:
-            return X_df.values if is_numpy else X_df
+            self.log_params = {}
+        
+        elif self.log_algoritmo == "cuadrado":
+            self.log_params = {}
 
-        for col in X_df.columns:
-            if not pd.api.types.is_numeric_dtype(X_df[col]):
-                continue
+        elif self.log_algoritmo == "z-score":
+            self.log_params = {
+                "mean": {col: X_df[col].mean() for col in cols_numericas},
+                "std": {col: X_df[col].std(ddof=0) for col in cols_numericas}
+            }
 
-            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
+        elif self.log_algoritmo == "box-cox":
+            self.log_params["lambda"] = {}
+            self.log_params["desplazamiento"] = {}
 
+            for col in cols_numericas:
+                col_data = X_df[col].copy()
+                desplazamiento = 0
 
-            if self.log_algoritmo == "z-score":
-                if self.log_params.get(col) is None:
-                    self.log_params[col] = {
-                        "mean": X_df[col].mean(),
-                        "std": X_df[col].std(ddof=0)
-                    }
+                # Box-Cox requiere datos positivos
+                if (col_data <= 0).any():
+                    desplazamiento = abs(col_data.min()) + 1e-3
+                    col_data = col_data + desplazamiento
+
+                _, lam = stats.boxcox(col_data)
+                self.log_params["lambda"][col] = float(lam)
+                self.log_params["desplazamiento"][col] = float(desplazamiento)
+
+        elif self.log_algoritmo in ["sqrt", "ln", "inverso"]:
+            self.log_params["desplazamiento"] = {}
+            for col in cols_numericas:
+                desplazamiento = 0
+
+                # Solo sqrt, ln e inverso necesitan desplazamiento para evitar <=0
+                if self.log_algoritmo in ["sqrt", "ln", "inverso"] and (X_df[col] <= 0).any():
+                    desplazamiento = abs(X_df[col].min()) + 1e-3
                     
-                X_df[col] = (X_df[col] - self.log_params[col]["mean"]) / self.log_params[col]["std"]
+                self.log_params["desplazamiento"][col] = float(desplazamiento)
+
+        self.registrar_parametros(self.log_params)
+   
+    def _normalizar_con_parametros(self, X_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normaliza usando la técnica seleccionada y los parámetros calculados en fit()
+         - z-score: (X - mean) / std
+         - box-cox: stats.boxcox(X + desplazamiento, lambda)
+         - sqrt: sqrt(X + desplazamiento)
+         - ln: log1p(X + desplazamiento)
+         - inverso: 1 / (1 + X + desplazamiento)
+        """
+        columnas_numericas = X_df.select_dtypes(include=np.number).columns
+
+        for col in columnas_numericas:
+            if self.log_algoritmo == "z-score":
+                X_df[col] = (X_df[col] - self.log_params["mean"][col]) / self.log_params["std"][col]
 
             elif self.log_algoritmo == "box-cox":
-                # Solo si todos los valores son positivos
-                if (X_df[col] > 0).all():
-                    X_df[col], _ = stats.boxcox(X_df[col])
-
-            elif self.log_algoritmo == "cuadrado":
-                X_df[col] = X_df[col] ** 2
+                desplazamiento = self.log_params["desplazamiento"][col]
+                lam = self.log_params["lambda"][col]
+                X_df[col] = stats.boxcox(X_df[col] + desplazamiento, lam)
 
             elif self.log_algoritmo == "sqrt":
-                X_df[col] = np.sqrt(np.abs(X_df[col]))
+                desplazamiento = self.log_params["desplazamiento"][col]
+                X_df[col] = np.sqrt(X_df[col] + desplazamiento)
 
             elif self.log_algoritmo == "ln":
-                X_df[col] = np.log1p(np.abs(X_df[col]))
+                desplazamiento = self.log_params["desplazamiento"][col]
+                X_df[col] = np.log1p(X_df[col] + desplazamiento)
 
             elif self.log_algoritmo == "inverso":
-                X_df[col] = 1 / (1 + np.abs(X_df[col]))
+                desplazamiento = self.log_params["desplazamiento"][col]
+                X_df[col] = 1 / (1 + X_df[col] + desplazamiento)
 
-        return X_df.values if is_numpy else X_df
+        return X_df
+    
+    def _normalizar_con_cuadrado(self, X_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normaliza usando la técnica de cuadrado: X^2
+        """
+        columnas_numericas = X_df.select_dtypes(include=np.number).columns
+
+        for col in columnas_numericas:
+            X_df[col] = X_df[col] ** 2
+
+        return X_df
