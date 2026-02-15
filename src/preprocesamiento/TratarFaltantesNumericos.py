@@ -63,6 +63,8 @@ class TratarFaltantesNumericos(RegistroTecnica):
                 "eliminar"
             ])
             self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+            
+            self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
 
         self.registrar_algoritmo(self.log_algoritmo)
@@ -86,7 +88,7 @@ class TratarFaltantesNumericos(RegistroTecnica):
                 return X_imputado, y
 
             case "eliminar":
-                X_clean, y_clean = self._eliminar(X, y)
+                X_clean, y_clean = self._eliminar(X.copy(), y.copy())
                 return X_clean, y_clean
             
             case _:
@@ -119,6 +121,10 @@ class TratarFaltantesNumericos(RegistroTecnica):
                 else:
                     self.log_params[col] = None
 
+            elif self.log_algoritmo == "aleatorio":
+                valores_validos = X_df[col].dropna().unique()
+                self.log_params[col] = list(valores_validos) if len(valores_validos) > 0 else None
+
             self.registrar_parametros(self.log_params)
 
     def _imputar_con_parametros(self, X_df: pd.DataFrame) -> pd.DataFrame:
@@ -146,10 +152,10 @@ class TratarFaltantesNumericos(RegistroTecnica):
             if not (pd.api.types.is_numeric_dtype(X_df[col]) and X_df[col].isna().any()):
                 continue
 
-            valores_validos = X_df[col].dropna().values
-            if len(valores_validos) == 0:
+            valores_validos = self.log_params.get(col)
+            if valores_validos is None:
                 continue
-            
+
             cantidad_faltantes = X_df[col].isna().sum()
             X_df.loc[X_df[col].isna(), col] = rng.choice(valores_validos, cantidad_faltantes)
 
@@ -162,8 +168,15 @@ class TratarFaltantesNumericos(RegistroTecnica):
         :return: X_df e y sin filas con valores faltantes
         :rtype: tuple[DataFrame, Series]
         """
-        # Mascara de filas completas (sin NaN)
-        mask = ~X_df.isna().any(axis=1)
+        # Seleccionar solo columnas numéricas
+        cols_numericas = X_df.select_dtypes(include=np.number).columns
+
+        if len(cols_numericas) == 0:
+            # No hay columnas numéricas, no eliminamos nada
+            return X_df, y
+
+        # Mascara: True si la fila NO tiene NaN en ninguna columna numérica
+        mask = ~X_df[cols_numericas].isna().any(axis=1)
 
         # Filtrar X_df y y según la máscara
         X_clean = X_df.loc[mask]

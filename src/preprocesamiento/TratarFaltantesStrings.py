@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 
 from ..RegistroTecnica import RegistroTecnica
-from sklearn.base import BaseEstimator, TransformerMixin
 
-class TratarFaltantesStrings(BaseEstimator, TransformerMixin, RegistroTecnica):
+class TratarFaltantesStrings(RegistroTecnica):
     _instance = None  # Atributo de clase para almacenar la instancia única
 
     def __new__(cls, *args, **kwargs):
@@ -12,18 +11,18 @@ class TratarFaltantesStrings(BaseEstimator, TransformerMixin, RegistroTecnica):
             cls._instance = super(TratarFaltantesStrings, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, permitir_none=True, random_state=None):
+    def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
-        random_state: para reproducibilidad
+        semilla: para reproducibilidad
         """
         # Evitamos re-inicializar si ya existe la instancia
         if not hasattr(self, "_initialized"):
-            self.log_fase = "tratar_faltantes_strings"
-            self.log_algoritmo = None
+            RegistroTecnica.__init__(self, log_fase="tratar_faltantes_strings")
             self.permitir_none = permitir_none
-            self.random_state = random_state
-            self.log_params = {}
+            self.semilla = semilla
+            self.config_test = config_test
+            self.reiniciar()
             self._initialized = True
 
     def reiniciar(self):
@@ -42,30 +41,65 @@ class TratarFaltantesStrings(BaseEstimator, TransformerMixin, RegistroTecnica):
 
     def fit(self, X, y=None):
         """
-        Selecciona aleatoriamente la técnica a aplicar a los valores faltantes
-        de tipo string y la guarda en self.log_algoritmo
+        Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
         """
         if self.log_algoritmo is not None:
             return self
-        
-        generador_aleatorio = np.random.default_rng(self.random_state)
-        TECNICAS = [None, "moda", "aleatorio", "eliminar", "etiqueta_desconocido"]
-        TECNICAS = self._permitir_none(TECNICAS)
 
-        self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+        if self.config_test is not None:
+            self.log_algoritmo = self.config_test.get("algoritmo")
+            self.log_params = self.config_test.get("params")
+
+        else:
+            generador_aleatorio = np.random.default_rng()
+            TECNICAS = self._permitir_none([
+                None, 
+                "moda", 
+                "aleatorio", 
+                "eliminar", 
+                "etiqueta_desconocido"
+            ])
+
+            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
+            
+            self.registrar_algoritmo(self.log_algoritmo)
+            self._calcular_parametros(X)
+
+        self.registrar_algoritmo(self.log_algoritmo)
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X: pd.DataFrame, y: pd.Series) -> tuple[pd.DataFrame, pd.Series]:
         """
         Aplica la técnica seleccionada a los valores faltantes de tipo string
         """
-        if self.log_algoritmo is None:
-            self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
-            return X if y is None else (X, y)
 
-        X_df = X.copy() if isinstance(X, pd.DataFrame) else pd.DataFrame(X)
-        filas_a_eliminar = None
+        match self.log_algoritmo:
+            case None:
+                return X, y
+            
+            case "moda":
+                X_imputado = self._imputar_con_parametros(X.copy())
+                return X_imputado, y
+            
+            case "aleatorio":
+                X_imputado = self._imputar_aleatorio(X.copy())
+                return X_imputado, y
+            
+            case "eliminar":
+                X_clean, y_clean = self._eliminar(X.copy(), y.copy())
+                return X_clean, y_clean
+            
+            case "etiqueta_desconocido":
+                X_imputado = self._imputar_etiqueta_desconocido(X.copy())
+                return X_imputado, y
+            
+            case _:
+                raise ValueError(f"Técnica desconocida: {self.log_algoritmo}")
 
+    def _calcular_parametros(self, X_df: pd.DataFrame) -> None:
+        """
+        Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
+        """
         for col in X_df.columns:
             es_texto = (
                 X_df[col].dtype == "object"
@@ -77,44 +111,97 @@ class TratarFaltantesStrings(BaseEstimator, TransformerMixin, RegistroTecnica):
 
             if self.log_algoritmo == "moda":
                 moda = X_df[col].mode()
-                if not moda.empty:
-                    if self.log_params.get(col) is None:
-                        self.log_params[col] = moda.iloc[0]
-
-                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
-                    X_df[col] = X_df[col].fillna(self.log_params[col])
-
+                self.log_params[col] = moda.iloc[0] if not moda.empty else None
+            
             elif self.log_algoritmo == "aleatorio":
-                valores_validos = X_df[col].dropna().values
-                if len(valores_validos) > 0:
-                    self.registrar_tecnica(self.log_fase, self.log_algoritmo, "valores_validos")
-                    X_df.loc[X_df[col].isna(), col] = np.random.choice(
-                        valores_validos, X_df[col].isna().sum()
-                    )
+                valores_validos = X_df[col].dropna().unique()
+                self.log_params[col] = list(valores_validos) if len(valores_validos) > 0 else None
 
             elif self.log_algoritmo == "etiqueta_desconocido":
-                if self.log_params.get(col) is None:
-                    self.log_params[col] = "DESCONOCIDO"
-                    
-                self.registrar_tecnica(self.log_fase, self.log_algoritmo, self.log_params)
-                X_df[col] = X_df[col].fillna(self.log_params[col])
+                self.log_params[col] = "DESCONOCIDO"
 
-            elif self.log_algoritmo == "eliminar":
-                mask = X_df[col].notna()
-                filas_a_eliminar = mask if filas_a_eliminar is None else filas_a_eliminar & mask
+            self.registrar_parametros(self.log_params)
+        
+    def _imputar_con_parametros(self, X_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Imputa los valores faltantes usando los parámetros calculados previamente y guardados en self.log_params
+        
+        :return: DataFrame con los valores faltantes imputados
+        :rtype: DataFrame
+        """
+        for col, valor in self.log_params.items():
+            X_df[col] = X_df[col].fillna(valor)
+        return X_df
+    
+    def _imputar_aleatorio(self, X_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Imputa los valores faltantes de forma aleatoria usando los valores válidos de cada columna
+        
+        :return: DataFrame con los valores faltantes imputados
+        :rtype: DataFrame
+        """
 
-        if self.log_algoritmo == "eliminar" and filas_a_eliminar is not None:
-            self.registrar_tecnica(self.log_fase, self.log_algoritmo, "filas_nulas")
-            X_df = X_df.loc[filas_a_eliminar]
+        rng = np.random.default_rng(self.semilla)
 
-        if y is None:
-            return X_df
-        else:
-            if self.log_algoritmo == "eliminar" and filas_a_eliminar is not None:
-                if isinstance(y, pd.Series):
-                    y_clean = y.loc[filas_a_eliminar]
-                else:
-                    y_arr = np.asarray(y)
-                    y_clean = y_arr[filas_a_eliminar.values]
-                return X_df, y_clean
+        for col in X_df.columns:
+            es_texto = (
+                X_df[col].dtype == "object"
+                or pd.api.types.is_string_dtype(X_df[col])
+            )
+
+            if not (es_texto and X_df[col].isna().any()):
+                continue
+
+            valores_validos = self.log_params.get(col)
+            if valores_validos is None:
+                continue
+
+            cantidad_faltantes = X_df[col].isna().sum()
+            X_df.loc[X_df[col].isna(), col] = rng.choice(valores_validos, cantidad_faltantes)
+
+        return X_df
+    
+    def _eliminar(self, X_df: pd.DataFrame, y: pd.Series) -> tuple[pd.DataFrame, pd.Series]:
+        """
+        Elimina filas con valores faltantes en columnas de tipo string en X_df y las correspondientes en y_df
+        
+        :return: X_df e y_df sin filas con valores faltantes
+        :rtype: tuple[DataFrame, Series]
+        """
+        # Seleccionar solo columnas de tipo string
+        cols_string = X_df.select_dtypes(include="object").columns
+
+        if len(cols_string) == 0:
+            # No hay columnas de tipo string, no eliminamos nada
             return X_df, y
+
+        # Mascara: True si la fila NO tiene NaN en ninguna columna de tipo string
+        mask = ~X_df[cols_string].isna().any(axis=1)
+
+        # Filtrar X_df y y_df según la máscara
+        X_clean = X_df.loc[mask]
+        y_clean = y.loc[mask]
+
+        return X_clean, y_clean
+    
+    def _imputar_etiqueta_desconocido(self, X_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Imputa los valores faltantes con la etiqueta "DESCONOCIDO"
+        
+        :return: DataFrame con los valores faltantes imputados
+        :rtype: DataFrame
+        """
+        for col in X_df.columns:
+            es_texto = (
+                X_df[col].dtype == "object"
+                or pd.api.types.is_string_dtype(X_df[col])
+            )
+
+            if not (es_texto and X_df[col].isna().any()):
+                continue
+
+            valor_desconocido = self.log_params.get(col, "DESCONOCIDO")
+            X_df[col] = X_df[col].fillna(valor_desconocido)
+
+        return X_df
+    
