@@ -114,7 +114,7 @@ class CodificarVariablesCategoricasRangoBajo(BaseEstimator, TransformerMixin, Re
         :return: DataFrame con las columnas categóricas de bajo rango codificadas
         :rtype: DataFrame
         """
-        for col in self.log_params.keys():
+        for col in list(self.log_params.keys()):
             dummies = pd.get_dummies(X_copy[col], prefix=col, dtype=int)
             X_copy = pd.concat([X_copy.drop(columns=[col]), dummies], axis=1)
 
