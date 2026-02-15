@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from pymfe.mfe import MFE
+from toon_format import encode
 from collections.abc import Mapping
 
 class ExtractorMetaFeatures:
@@ -466,3 +467,20 @@ class ExtractorMetaFeatures:
         meta_features_por_columna = self._eliminar_constantes_errores(meta_features_por_columna)
         
         return meta_features_por_columna
+    
+    def meta_features_por_columna_a_toon(self, meta_features):
+        # Se convierte a toon los valores de las meta-features
+        df = pd.DataFrame(meta_features).T
+        valores_meta_features_diccionario = df.to_dict(orient="records")
+        valores_tton = encode(valores_meta_features_diccionario)
+
+        # Se convierte a toon la lista de columnas (features)
+        lista_columnas = list(meta_features.keys())
+        columnas_toon = encode(lista_columnas)
+        
+        toon_data = {
+            "columnas": columnas_toon,
+            "valores_meta_features": valores_tton
+        }
+        
+        return toon_data

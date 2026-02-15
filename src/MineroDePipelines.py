@@ -243,7 +243,7 @@ class MineroDePipelines:
         print("Columnas con NaN:", cols_with_nan)
         print("="*100)
 
-        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, "regresion", self._SEMILLA)
+        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, self._SEMILLA, "regresion")
         seleccionar_variables.fit(X_preprocesado, y_copy)
         X_seleccionado = seleccionar_variables.transform(X_preprocesado, y_copy)
 

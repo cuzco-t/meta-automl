@@ -1,5 +1,8 @@
 import ollama
+import pandas as pd
 import requests.exceptions
+
+from toon_format import encode
 
 class LLM:
     def __init__(self, modelo, timeout=10_800):
@@ -34,8 +37,11 @@ class LLM:
         def seleccionar_variables():
             prompt = f"""
 Eres un experto en selección de variables para modelos de ML en tareas de {kwargs["kwargs"]["tarea"]}. 
-Analiza estas meta‑features (formato TON) por columna que extraje con pymfe:
-{kwargs["kwargs"]["meta_features_por_columna"]}
+Analiza estas meta‑features (formato TOON) por columna que extraje con pymfe:
+Columnas:
+{kwargs["kwargs"]["meta_features_por_columna"]["columnas"]}
+Meta-features por columna:
+{kwargs["kwargs"]["meta_features_por_columna"]["valores_meta_features"]}
 
 Devuélveme **solo una lista Python con los nombres de las variables** que recomiendas para entrenar el modelo.
 Ejemplo: ["variable1", "variable2", "variable3"]

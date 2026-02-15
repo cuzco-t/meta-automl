@@ -4,8 +4,13 @@
         "parametro": null
     },
     "tratar_faltantes_numericos": {
-        "tecnica": "eliminar",
-        "parametro": {}
+        "tecnica": "moda",
+        "parametro": {
+            "age": 16.0,
+            "height_cm": 164.9,
+            "income_usd": 406.13,
+            "satisfaction_1_5": 4.0
+        }
     },
     "tratar_faltantes_strings": {
         "tecnica": "etiqueta_desconocido",
@@ -25,31 +30,12 @@
         }
     },
     "codificar_variables_categoricas_rango_bajo": {
-        "tecnica": "label_encoding",
+        "tecnica": "one_hot_encoding",
         "parametro": {
-            "gender": {
-                "Femenino": 0,
-                "Masculino": 1,
-                "Otro": 2
-            },
-            "marital_status": {
-                "Casado": 0,
-                "Divorciado": 1,
-                "Soltero": 2,
-                "Viudo": 3
-            },
-            "socioeconomic": {
-                "Alto": 0,
-                "Bajo": 1,
-                "Medio": 2
-            },
-            "education": {
-                "Posgrado": 0,
-                "Primaria": 1,
-                "Secundaria": 2,
-                "T\u00e9cnico": 3,
-                "Universitario": 4
-            }
+            "gender": true,
+            "marital_status": true,
+            "socioeconomic": true,
+            "education": true
         }
     },
     "codificar_variables_categoricas_rango_medio": {
@@ -61,138 +47,225 @@
         "parametro": {}
     },
     "tratar_outliers_numericos": {
-        "tecnica": "eliminar",
+        "tecnica": "aleatorio",
         "parametro": {}
     },
     "escalar_datos_numericos": {
-        "tecnica": "standard_scaler",
+        "tecnica": "min_max",
         "parametro": {
-            "with_mean": true,
-            "with_std": true,
-            "mean_": [
-                504.14446227929375,
-                0.521669341894061,
-                36.36115569823435,
-                1.1508828250401284,
-                1.3659711075441412,
-                2.756019261637239,
-                1.0690208667736758,
-                167.76565008025682,
-                68.71139646869983,
-                7225.754141252007,
-                15.590690208667736,
-                2.465987158908507,
-                3.5987158908507224,
-                0.15730337078651685,
-                0.6051364365971108
+            "feature_range": [
+                0,
+                1
             ],
-            "var_": [
-                82043.86998137218,
-                0.2976845327197916,
-                130.18898871251568,
-                1.0269936026424207,
-                0.5049094502085647,
-                1.6226563848617341,
-                0.9502922997250914,
-                84.62247979408909,
-                166.00158761648834,
-                56334115.86302522,
-                263.7249213534675,
-                1.351725149112795,
-                1.2290192178373682,
-                0.13255902032571645,
-                0.23894632969966176
+            "data_min_": [
+                2.0,
+                16.0,
+                0.0,
+                141.1,
+                33.5,
+                406.13,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "data_max_": [
+                999.0,
+                73.0,
+                5.0,
+                197.2,
+                116.9,
+                49678.47,
+                100.0,
+                6.0,
+                5.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "data_range_": [
+                997.0,
+                57.0,
+                5.0,
+                56.099999999999994,
+                83.4,
+                49272.340000000004,
+                100.0,
+                6.0,
+                4.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
             ],
             "scale_": [
-                286.4330113331426,
-                0.5456047403751104,
-                11.410038944390841,
-                1.0134069284558995,
-                0.7105698067104771,
-                1.273835305234446,
-                0.9748293695437635,
-                9.199047765616237,
-                12.884160338046415,
-                7505.605629329669,
-                16.239609642890667,
-                1.1626371528180213,
-                1.1086113917136917,
-                0.36408655609032925,
-                0.4888213678836695
+                0.0010030090270812437,
+                0.017543859649122806,
+                0.2,
+                0.017825311942959002,
+                0.011990407673860911,
+                2.0295362469085086e-05,
+                0.01,
+                0.16666666666666666,
+                0.25,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
             ],
-            "n_features_in_": 15
+            "min_": [
+                -0.0020060180541624875,
+                -0.2807017543859649,
+                0.0,
+                -2.515151515151515,
+                -0.40167865707434053,
+                -0.008242555559569526,
+                0.0,
+                0.0,
+                -0.25,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            "n_features_in_": 26
         }
     },
     "normalizar_datos_numericos": {
-        "tecnica": "box-cox",
+        "tecnica": "inverso",
         "parametro": {
-            "lambda": {
-                "id": 0.7269040244136132,
-                "gender": -0.004778225457228597,
-                "age": 0.6616505093664333,
-                "marital_status": 0.14977892855114108,
-                "socioeconomic": 0.6617921709625746,
-                "education": 0.7756496805658021,
-                "num_children": 0.2682301099230966,
-                "height_cm": 0.9248675600859471,
-                "weight_kg": 0.7876042647126197,
-                "income_usd": 0.1650177970044375,
-                "commute_min": 0.3077338222509195,
-                "ticket_price_usd": 0.7739059940578217,
-                "satisfaction_1_5": 0.8624907010893328,
-                "owns_car": -0.7934545412066679,
-                "uses_public_transport": 0.1699530653688575
-            },
             "desplazamiento": {
-                "id": 1.7580000162124634,
-                "gender": 0.9569999575614929,
-                "age": 1.7850000858306885,
-                "marital_status": 1.1370000839233398,
-                "socioeconomic": 1.9230000972747803,
-                "education": 2.1649999618530273,
-                "num_children": 1.0980000495910645,
-                "height_cm": 3.1610000133514404,
-                "weight_kg": 2.8580000400543213,
-                "income_usd": 0.9099999666213989,
-                "commute_min": 0.9609999656677246,
-                "ticket_price_usd": 2.121999979019165,
-                "satisfaction_1_5": 2.3450000286102295,
-                "owns_car": 0.43299999833106995,
-                "uses_public_transport": 1.2390000820159912
+                "id": 0.0010000000474974513,
+                "age": 0.0010000000474974513,
+                "num_children": 0.0010000000474974513,
+                "height_cm": 0.0010000000474974513,
+                "weight_kg": 0.0010000000474974513,
+                "income_usd": 0.0010000000474974513,
+                "commute_min": 0.0010000000474974513,
+                "ticket_price_usd": 0.0010000000474974513,
+                "satisfaction_1_5": 0.0010000000474974513,
+                "owns_car": 0.0010000000474974513,
+                "uses_public_transport": 0.0010000000474974513,
+                "gender_Femenino": 0.0010000000474974513,
+                "gender_Masculino": 0.0010000000474974513,
+                "gender_Otro": 0.0010000000474974513,
+                "marital_status_Casado": 0.0010000000474974513,
+                "marital_status_Divorciado": 0.0010000000474974513,
+                "marital_status_Soltero": 0.0010000000474974513,
+                "marital_status_Viudo": 0.0010000000474974513,
+                "socioeconomic_Alto": 0.0010000000474974513,
+                "socioeconomic_Bajo": 0.0010000000474974513,
+                "socioeconomic_Medio": 0.0010000000474974513,
+                "education_Posgrado": 0.0010000000474974513,
+                "education_Primaria": 0.0010000000474974513,
+                "education_Secundaria": 0.0010000000474974513,
+                "education_T\u00e9cnico": 0.0010000000474974513,
+                "education_Universitario": 0.0010000000474974513
             }
         }
     },
     "crear_nueva_variable": {
         "tecnica": "pca",
         "parametro": {
-            "n_components": 9
+            "n_components": 20
         }
     },
-    "seleccion_variables": {
-        "tecnica": "aleatorio",
-        "parametro": [
-            "PC6",
-            "PC7",
-            "PC2",
-            "PC8",
-            "PC1",
-            "PC5"
-        ]
+    "seleccionar_variables": {
+        "tecnica": "llm",
+        "parametro": {
+            "columnas": [
+                "PC1",
+                "PC2",
+                "PC3",
+                "PC4",
+                "PC5",
+                "PC6"
+            ]
+        }
     },
     "selector_modelo": {
-        "tecnica": "SVR",
+        "tecnica": "ElasticNet",
         "parametro": {
-            "C": 1.0,
-            "cache_size": 200,
-            "coef0": 0.0,
-            "degree": 3,
-            "epsilon": 0.1,
-            "gamma": "scale",
-            "kernel": "rbf",
-            "max_iter": -1,
-            "shrinking": true,
-            "tol": 0.001,
-            "verbose": false
+            "alpha": 1.0,
+            "copy_X": true,
+            "fit_intercept": true,
+            "l1_ratio": 0.5,
+            "max_iter": 1000,
+            "positive": false,
+            "precompute": false,
+            "random_state": null,
+            "selection": "cyclic",
+            "tol": 0.0001,
+            "warm_start": false
         }
     }
 }
