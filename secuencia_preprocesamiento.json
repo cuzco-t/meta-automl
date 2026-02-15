@@ -1,0 +1,222 @@
+{
+    "tratar_duplicados": {
+        "tecnica": "eliminar",
+        "parametro": null
+    },
+    "tratar_faltantes_numericos": {
+        "tecnica": "media_geometrica",
+        "parametro": {
+            "age": 34.51,
+            "height_cm": 167.12,
+            "income_usd": 5120.48,
+            "satisfaction_1_5": 3.38
+        }
+    },
+    "tratar_faltantes_strings": {
+        "tecnica": "etiqueta_desconocido",
+        "parametro": {}
+    },
+    "codificar_variables_binarias": {
+        "tecnica": "label_encoding",
+        "parametro": {
+            "owns_car": {
+                "No": 0,
+                "Si": 1
+            },
+            "uses_public_transport": {
+                "No": 0,
+                "Si": 1
+            }
+        }
+    },
+    "codificar_variables_categoricas_rango_bajo": {
+        "tecnica": "label_encoding",
+        "parametro": {
+            "gender": {
+                "Femenino": 0,
+                "Masculino": 1,
+                "Otro": 2
+            },
+            "marital_status": {
+                "Casado": 0,
+                "Divorciado": 1,
+                "Soltero": 2,
+                "Viudo": 3
+            },
+            "socioeconomic": {
+                "Alto": 0,
+                "Bajo": 1,
+                "Medio": 2
+            },
+            "education": {
+                "Posgrado": 0,
+                "Primaria": 1,
+                "Secundaria": 2,
+                "T\u00e9cnico": 3,
+                "Universitario": 4
+            }
+        }
+    },
+    "codificar_variables_categoricas_rango_medio": {
+        "tecnica": "frequency_encoding",
+        "parametro": {}
+    },
+    "codificar_variables_categoricas_rango_alto": {
+        "tecnica": "eliminar_columna",
+        "parametro": {}
+    },
+    "tratar_outliers_numericos": {
+        "tecnica": "media",
+        "parametro": {}
+    },
+    "escalar_datos_numericos": {
+        "tecnica": "standard_scaler",
+        "parametro": {
+            "columnas": [
+                "id",
+                "gender",
+                "age",
+                "marital_status",
+                "socioeconomic",
+                "education",
+                "num_children",
+                "height_cm",
+                "weight_kg",
+                "income_usd",
+                "commute_min",
+                "ticket_price_usd",
+                "satisfaction_1_5",
+                "owns_car",
+                "uses_public_transport"
+            ],
+            "params": {
+                "with_mean": true,
+                "with_std": true,
+                "mean_": [
+                    508.1111111111111,
+                    0.521021021021021,
+                    36.32603603603604,
+                    1.1936936936936937,
+                    1.3963963963963963,
+                    2.7522522522522523,
+                    1.0915915915915917,
+                    167.375975975976,
+                    68.89264264264264,
+                    7492.395240240241,
+                    15.396396396396396,
+                    2.473423423423424,
+                    3.5999399399399397,
+                    0.16066066066066065,
+                    0.5930930930930931
+                ],
+                "var_": [
+                    83999.84351017684,
+                    0.28259114970826676,
+                    123.97940831101371,
+                    1.0240443145848548,
+                    0.47950653356058753,
+                    1.6278102426751073,
+                    0.9720914608301994,
+                    86.88023966308653,
+                    165.12164256598945,
+                    71613981.08600391,
+                    251.2692963233504,
+                    1.3674516435354274,
+                    1.1937249213177143,
+                    0.13484881277674074,
+                    0.24133367601836075
+                ],
+                "scale_": [
+                    289.8272649530697,
+                    0.5315930301539579,
+                    11.134604093141961,
+                    1.0119507471141345,
+                    0.6924641027234463,
+                    1.2758566701142833,
+                    0.9859469868254578,
+                    9.320957014335304,
+                    12.849966636765616,
+                    8462.504421623891,
+                    15.85147615597205,
+                    1.1693808804386308,
+                    1.0925771923840046,
+                    0.3672176640314852,
+                    0.4912572401688964
+                ],
+                "n_features_in_": 15
+            }
+        }
+    },
+    "normalizar_datos_numericos": {
+        "tecnica": "z-score",
+        "parametro": {
+            "mean": {
+                "id": 7.469016964023467e-06,
+                "gender": 4.054118107887916e-05,
+                "age": 5.9984108702337835e-06,
+                "marital_status": -1.2002549738099333e-05,
+                "socioeconomic": 0.0002762562653515488,
+                "education": -0.00010060476779472083,
+                "num_children": -4.5032473281025887e-05,
+                "height_cm": 9.016232070280239e-06,
+                "weight_kg": -2.994193664562772e-06,
+                "income_usd": 1.5017506484582555e-05,
+                "commute_min": 4.507757694227621e-06,
+                "ticket_price_usd": 1.500676717114402e-06,
+                "satisfaction_1_5": -0.00010060404747491702,
+                "owns_car": -0.0003603499790187925,
+                "uses_public_transport": -5.55450860701967e-05
+            },
+            "std": {
+                "id": 1.0000056028366089,
+                "gender": 0.9999265074729919,
+                "age": 0.9999592304229736,
+                "marital_status": 1.0002572536468506,
+                "socioeconomic": 1.0001603364944458,
+                "education": 1.000010371208191,
+                "num_children": 0.9999269843101501,
+                "height_cm": 1.0000001192092896,
+                "weight_kg": 1.0000064373016357,
+                "income_usd": 0.9999969601631165,
+                "commute_min": 0.9999961256980896,
+                "ticket_price_usd": 0.9999862313270569,
+                "satisfaction_1_5": 0.999828577041626,
+                "owns_car": 1.0003008842468262,
+                "uses_public_transport": 0.9997084736824036
+            }
+        }
+    },
+    "crear_nueva_variable": {
+        "tecnica": "pca",
+        "parametro": {
+            "n_components": 14
+        }
+    },
+    "seleccionar_variables": {
+        "tecnica": "mutual_info",
+        "parametro": {
+            "threshold": 0.021285465746254673,
+            "columnas": [
+                "PC3",
+                "PC6",
+                "PC10",
+                "PC13"
+            ]
+        }
+    },
+    "selector_modelo": {
+        "tecnica": "knn",
+        "parametro": {
+            "params": {
+                "algorithm": "auto",
+                "leaf_size": 30,
+                "metric": "minkowski",
+                "metric_params": null,
+                "n_jobs": null,
+                "n_neighbors": 5,
+                "p": 2,
+                "weights": "uniform"
+            }
+        }
+    }
+}

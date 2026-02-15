@@ -5,7 +5,6 @@ import pandas as pd
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
-from .SelectorHiperParametros import SelectorHiperParametros
 
 # Modelos lineales
 from sklearn.linear_model import LinearRegression
@@ -70,7 +69,10 @@ class SelectorModeloRegresion(RegistroTecnica):
             self.log_algoritmo = generador_aleatorio.choice(MODELOS)
 
             self.registrar_algoritmo(self.log_algoritmo)
-            self._calcular_parametros(X, y)
+            # self._calcular_parametros(X, y)
+            #! Comentar en produccion
+            self.log_params["params"] = self._get_instancia_modelo().get_params()
+            self.registrar_parametros(self.log_params)
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self

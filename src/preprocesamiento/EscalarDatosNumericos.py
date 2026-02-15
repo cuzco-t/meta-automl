@@ -100,12 +100,13 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         Calcula los parámetros necesarios para la técnica seleccionada y los guarda en self.log_params
         """
         cols_numericas = X_df.select_dtypes(include=np.number).columns
+        self.log_params["columnas"] = cols_numericas.tolist()
 
         escalador = self._get_instancia_scaler()
         escalador.fit(X_df[cols_numericas])
 
         if self.log_algoritmo == "min_max": 
-            self.log_params = {
+            self.log_params["params"] = {
                 "feature_range": escalador.feature_range,
                 "data_min_": escalador.data_min_.tolist(),
                 "data_max_": escalador.data_max_.tolist(),
@@ -116,7 +117,7 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
             }
 
         elif self.log_algoritmo == "standard_scaler":
-            self.log_params = {
+            self.log_params["params"] = {
                 "with_mean": escalador.with_mean,
                 "with_std": escalador.with_std,
                 "mean_": escalador.mean_.tolist() if escalador.with_mean else None,
@@ -126,7 +127,7 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
             }
 
         elif self.log_algoritmo == "robust_scaler":
-            self.log_params = {
+            self.log_params["params"] = {
                 "with_centering": escalador.with_centering,
                 "with_scaling": escalador.with_scaling,
                 "quantile_range": escalador.quantile_range,
@@ -136,7 +137,7 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
             }
 
         elif self.log_algoritmo == "max_abs_scaler":
-            self.log_params = {
+            self.log_params["params"] = {
                 "max_abs_": escalador.max_abs_.tolist(),
                 "scale_": escalador.scale_.tolist(),
                 "n_features_in_": escalador.n_features_in_
@@ -153,7 +154,7 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         escalador = self._get_instancia_scaler()
 
         # Asignar automáticamente todos los parámetros
-        for key, value in self.log_params.items():
+        for key, value in self.log_params["params"].items():
 
             # Convertir listas a numpy cuando corresponda
             if isinstance(value, list):
