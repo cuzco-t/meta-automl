@@ -65,6 +65,7 @@ class SeleccionarVariables(RegistroTecnica):
                 "pca", 
                 "llm"
             ])
+            #! Eliminar esta linea en producción
             TECNICAS.remove("llm")
             self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
 

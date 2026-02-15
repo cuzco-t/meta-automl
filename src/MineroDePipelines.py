@@ -147,14 +147,15 @@ class MineroDePipelines:
             print(f"Tipos de datos del conjunto de entrenamiento:\n{X_train.dtypes}")
             print("="*100)
 
-            X_seleccionado, y_train = self._preprocesar_datos(X_train, y_train)
+            X_seleccionado, y_train = self._preprocesar_datos(X_train.copy(), y_train.copy())
             SecuenciaPreprocesamiento().guardar_secuencia()
             # ====================================================================================================
             # Hasta aquí se ha aplicado la secuencia de preprocesamiento al conjunto de entrenamiento. 
             # Ahora se eligirá el modelo de ML y sus hiperparámetros, para realizar el entrenamiento del modelo.
             # ====================================================================================================
             selector_modelo = SelectorModeloRegresion(self._SEMILLA)
-            modelo_ml = selector_modelo.get_modelo_ml(X_seleccionado, y_train)
+            selector_modelo.fit(X_seleccionado, y_train)
+            modelo_ml = selector_modelo.get_modelo_ml()
 
             modelo_ml.fit(X_seleccionado, y_train)
 
@@ -162,7 +163,7 @@ class MineroDePipelines:
             print("Modelo entrenado. Evaluando en conjunto de validación...".upper())
             print()
 
-            X_val, y_val = self._preprocesar_datos(X_val, y_val)
+            X_val, y_val = self._preprocesar_datos(X_val.copy(), y_val.copy())
             predicciones = modelo_ml.predict(X_val)
 
             mae = mean_absolute_error(y_val, predicciones)
@@ -199,9 +200,7 @@ class MineroDePipelines:
         self._reiniciar_fases_pipeline()
         return None
     
-    def _preprocesar_datos(self, X: pd.DataFrame, y: pd.Series):
-        X_copy = X.copy()
-        y_copy = y.copy()
+    def _preprocesar_datos(self, X_copy: pd.DataFrame, y_copy: pd.Series):
         PERMITIR_NONE = False
         
         # El tratamiento que manipula Y debe hacerse fuera del pipeline

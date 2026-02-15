@@ -15,8 +15,8 @@ class ExtractorMetaFeatures:
         "model-based",
         "info-theory",
         "relative",
-        "clustering",
-        "complexity",
+        # "clustering",
+        # "complexity",
         "itemset",
         "concept"
     ]
@@ -55,6 +55,46 @@ class ExtractorMetaFeatures:
 
         return meta_features, meta_features_vectorizadas
     
+    def extraer_desde_dataframe(self, X_df: pd.DataFrame, y_df: pd.Series, vectorizar=False):
+        meta_features = {}
+
+        X = X_df.to_numpy()
+        y = y_df.to_numpy()
+
+        for grupo in self._GUPOS_META_FEATURES:
+            mfe = MFE(groups=[grupo])
+
+            try:
+                mfe.fit(X, y)
+                ft = mfe.extract()
+                meta_features[grupo] = dict(zip(ft[0], ft[1]))
+
+                if len(meta_features[grupo]) == 0:
+                    print(f"Seteado grupo: {grupo}")
+                    meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+                else:
+                    print(f"Completado grupo: {grupo}")
+
+            except Exception as e:
+                print(f"ERROR grupo: {grupo}")
+                meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+        
+        meta_features = self._mapear_meta_features(meta_features)
+
+        # Se guardar en disco temporalmente para luego agregar el peso en KB como meta-feature personalizada
+        ruta_temporal = "temp_dataset.csv"
+        dataset_temporal = pd.concat([X_df, y_df], axis=1)
+        dataset_temporal.to_csv(ruta_temporal, index=False)
+
+        meta_features = self._agregar_meta_features_personalizadas(ruta_temporal, X, meta_features)
+        os.remove(ruta_temporal)
+
+        meta_features_vectorizadas = None
+        if vectorizar:
+            meta_features_vectorizadas = self._vectorizar_meta_features(meta_features)
+
+        return meta_features, meta_features_vectorizadas
+
     def _leer_dataset(self, ruta_absoluta, target):
         """
         Lee el dataset desde la ruta absoluta proporcionada y separa las características (X) del target (y).
@@ -431,7 +471,7 @@ class ExtractorMetaFeatures:
         return meta_features
     
 
-    def _eliminar_constantes_errores(self, meta_features):
+    def eliminar_constantes_errores(self, meta_features):
         valores_a_eliminar = {self._CONSTANTE_ERROR, self._CONSTANTE_INFINITO}
         for col, subdict in meta_features.items():
             meta_features[col] = {k: v for k, v in subdict.items() if v not in valores_a_eliminar}
@@ -464,11 +504,11 @@ class ExtractorMetaFeatures:
                 print(f"ERROR al extraer meta-features para la columna: {col}")
 
         meta_features_por_columna = self._mapear_meta_features(meta_features_por_columna)
-        meta_features_por_columna = self._eliminar_constantes_errores(meta_features_por_columna)
+        meta_features_por_columna = self.eliminar_constantes_errores(meta_features_por_columna)
         
         return meta_features_por_columna
     
-    def meta_features_por_columna_a_toon(self, meta_features):
+    def formatear_meta_features_por_columna(self, meta_features):
         # Se convierte a toon los valores de las meta-features
         df = pd.DataFrame(meta_features).T
         valores_meta_features_diccionario = df.to_dict(orient="records")
@@ -478,9 +518,15 @@ class ExtractorMetaFeatures:
         lista_columnas = list(meta_features.keys())
         columnas_toon = encode(lista_columnas)
         
-        toon_data = {
-            "columnas": columnas_toon,
-            "valores_meta_features": valores_tton
-        }
+        texto_formateado = f"Columnas:\n{columnas_toon}\nMeta-features por columna:\n{valores_tton}"
+
+        return texto_formateado
+    
+    def formatear_meta_features_globales(self, meta_features):
+        texto_formateado = ""
+        for grupo, features in meta_features.items():
+            texto_formateado += f"Grupo: {grupo}\n"
+            for feature, valor in features.items():
+                texto_formateado += f"{feature}: {valor}\n"
         
-        return toon_data
+        return texto_formateado

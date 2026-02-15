@@ -38,10 +38,7 @@ class LLM:
             prompt = f"""
 Eres un experto en selección de variables para modelos de ML en tareas de {kwargs["kwargs"]["tarea"]}. 
 Analiza estas meta‑features (formato TOON) por columna que extraje con pymfe:
-Columnas:
-{kwargs["kwargs"]["meta_features_por_columna"]["columnas"]}
-Meta-features por columna:
-{kwargs["kwargs"]["meta_features_por_columna"]["valores_meta_features"]}
+{kwargs["kwargs"]["meta_features_por_columna"]}
 
 Devuélveme **solo una lista Python con los nombres de las variables** que recomiendas para entrenar el modelo.
 Ejemplo: ["variable1", "variable2", "variable3"]
