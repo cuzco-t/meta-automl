@@ -1,25 +1,46 @@
 import os
-from dotenv import load_dotenv
 import psycopg
 
-load_dotenv()
+from src.config.Configuracion import Configuracion
 
 
 class BaseDeDatos:
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self):
+        # Evita que se reinicialice si ya se creó la instancia
+        if hasattr(self, "_initialized") and self._initialized:
+            return
+
         self.conn = None
+        self.conectar()
+        self._initialized = True
 
     def conectar(self):
+        configuracion = Configuracion()
+
         if self.conn is None or self.conn.closed:
             self.conn = psycopg.connect(
-                host=os.getenv("DB_HOST"),
-                dbname=os.getenv("DB_NAME"),
-                user=os.getenv("DB_USER"),
-                password=os.getenv("DB_PASSWORD"),
-                port=os.getenv("DB_PORT", 5432),
+                host=configuracion.db_host,
+                dbname=configuracion.db_name,
+                user=configuracion.db_user,
+                password=configuracion.db_password,
+                port=configuracion.db_port,
             )
             print("Conexión a la base de datos establecida.")
-        return self.conn
+    
+    def guardar_meta_features_globales(self, meta_features_json: str, meta_features_vectorizadas: list):
+        query = """
+        INSERT INTO demo (meta_features_json_humano, meta_features_json_binario, meta_features_json_vector)
+        VALUES (%s, %s, %s)
+        """
+        params = (meta_features_json, meta_features_json, meta_features_vectorizadas)
+        self.insertar(query, params)
 
 
     def ejecutar_script_sql(self, ruta_sql):
@@ -42,7 +63,7 @@ class BaseDeDatos:
         """
         Ejecuta un INSERT parametrizado
         """
-        conn = self.conectar()
+        conn = self.conn
         with conn.cursor() as cur:
             cur.execute(query, params)
         conn.commit()

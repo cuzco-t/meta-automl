@@ -1,12 +1,20 @@
-import os
 import pandas as pd
 import numpy as np
 
-from dotenv import load_dotenv
+from src.config.Configuracion import Configuracion
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold, KFold
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, mean_absolute_error, mean_squared_error, r2_score, median_absolute_error, explained_variance_score
+from sklearn.metrics import (
+    accuracy_score, 
+    precision_score, 
+    recall_score, 
+    f1_score, 
+    mean_absolute_error, 
+    mean_squared_error, 
+    r2_score, 
+    median_absolute_error, 
+    explained_variance_score
+)
 
 from .SecuenciaPreprocesamiento import SecuenciaPreprocesamiento
 from .cash.SelectorModeloRegresion import SelectorModeloRegresion
@@ -29,10 +37,8 @@ from src.preprocesamiento.SeleccionarVariables import SeleccionarVariables
 
 class MineroDePipelines:
     def __init__(self):
-        load_dotenv()
-        # self._SEMILLA = int(os.getenv("SEMILLA_ALEATORIA", "42"))
         self._SEMILLA = None
-        self._N_SPLITS = 3
+        self._N_FOLDS = 3
 
     def _leer_dataset(self, ruta_absoluta, target) -> tuple[pd.DataFrame, pd.Series]:
         """
@@ -55,7 +61,7 @@ class MineroDePipelines:
         X_df, y_df = self._leer_dataset(ruta_absoluta, target)
 
         # Se divide el dataset en 3 folds normales
-        skf = StratifiedKFold(n_splits=self._N_SPLITS, shuffle=True, random_state=self._SEMILLA)
+        skf = StratifiedKFold(n_splits=self._N_FOLDS, shuffle=True, random_state=self._SEMILLA)
 
         accuracy_scores = []
         precision_scores = []
@@ -124,12 +130,9 @@ class MineroDePipelines:
 
         return None
     
-    def construir_pipeline_regresion(self, ruta_absoluta, target):
-        # Leer el dataset y separar características y target
-        X_df, y_df = self._leer_dataset(ruta_absoluta, target)
-
+    def construir_pipeline_regresion(self, X_df: pd.DataFrame, y_df: pd.Series):
         # Se divide el dataset en 3 folds normales
-        kf = KFold(n_splits=self._N_SPLITS, shuffle=True, random_state=self._SEMILLA)
+        kf = KFold(n_splits=self._N_FOLDS, shuffle=True, random_state=self._SEMILLA)
 
         mae_scores = []
         mse_scores = []
@@ -142,28 +145,40 @@ class MineroDePipelines:
             X_train, X_val = X_df.iloc[train_idx], X_df.iloc[val_idx]
             y_train, y_val = y_df.iloc[train_idx], y_df.iloc[val_idx]
 
-            print(f"Fold {fold}")
-            print(f"Tamaño del conjunto de entrenamiento: X={X_train.shape}, y={y_train.shape}")
-            print(f"Tipos de datos del conjunto de entrenamiento:\n{X_train.dtypes}")
+            print("="*100)
+            print(f"Fold: {fold}")
             print("="*100)
 
-            X_seleccionado, y_train = self._preprocesar_datos(X_train.copy(), y_train.copy())
-            SecuenciaPreprocesamiento().guardar_secuencia()
-            # ====================================================================================================
-            # Hasta aquí se ha aplicado la secuencia de preprocesamiento al conjunto de entrenamiento. 
-            # Ahora se eligirá el modelo de ML y sus hiperparámetros, para realizar el entrenamiento del modelo.
-            # ====================================================================================================
+            print("Preprocesando datos de entrenamiento...")
+            X_train_preprocesado, y_train_preprocesado = self._preprocesar_datos(
+                X_train.copy(), 
+                y_train.copy(), 
+                imprimir_resultados=True
+            )
+            print("\tDatos de entrenamiento preprocesados con éxito.\n")
+
+            if fold == 1:
+                SecuenciaPreprocesamiento().guardar_secuencia()
+
+            print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
             selector_modelo = SelectorModeloRegresion(self._SEMILLA)
-            selector_modelo.fit(X_seleccionado, y_train)
+            selector_modelo.fit(X_train_preprocesado, y_train_preprocesado)
+            print("\tModelo de ML seleccionado y configurado con éxito.\n")
+
+            print("Entrenando modelo de ML...")
             modelo_ml = selector_modelo.get_modelo_ml()
+            modelo_ml.fit(X_train_preprocesado, y_train_preprocesado)
+            print("\tModelo de ML entrenado con éxito.\n")
 
-            modelo_ml.fit(X_seleccionado, y_train)
+            print("Procesando datos de validación...")
+            X_val, y_val = self._preprocesar_datos(
+                X_val.copy(), 
+                y_val.copy(), 
+                imprimir_resultados=False
+            )
+            print("\tDatos de validación procesados con éxito.\n")
 
-            print()
-            print("Modelo entrenado. Evaluando en conjunto de validación...".upper())
-            print()
-
-            X_val, y_val = self._preprocesar_datos(X_val.copy(), y_val.copy())
+            print("Evaluando modelo de ML en conjunto de validación...")
             predicciones = modelo_ml.predict(X_val)
 
             mae = mean_absolute_error(y_val, predicciones)
@@ -172,6 +187,7 @@ class MineroDePipelines:
             r2 = r2_score(y_val, predicciones)
             medae = median_absolute_error(y_val, predicciones)
             ev = explained_variance_score(y_val, predicciones)
+            print("\tEvaluación completada con éxito.\n")
 
             mae_scores.append(mae)
             mse_scores.append(mse)
@@ -180,80 +196,94 @@ class MineroDePipelines:
             medae_scores.append(medae)
             ev_scores.append(ev)
             
-            print(f"Fold {fold}")
-            print(f"  MAE      : {mae:.4f}")
-            print(f"  MSE      : {mse:.4f}")
-            print(f"  RMSE     : {rmse:.4f}")
-            print(f"  R2       : {r2:.4f}")
-            print(f"  MedAE    : {medae:.4f}")
-            print(f"  EV       : {ev:.4f}")
-            print("=" * 100)
-
-        print("Promedios finales:")
-        print("MAE      :", np.mean(mae_scores))
-        print("MSE      :", np.mean(mse_scores))
-        print("RMSE     :", np.mean(rmse_scores))
-        print("R2       :", np.mean(r2_scores))
-        print("MedAE    :", np.mean(medae_scores))
-        print("EV       :", np.mean(ev_scores))
+        print("="*100)
+        print("Promedios finales".upper())
+        print("="*100)
+        print(f"{'MAE':<8}: {np.mean(mae_scores)}")
+        print(f"{'MSE':<8}: {np.mean(mse_scores)}")
+        print(f"{'RMSE':<8}: {np.mean(rmse_scores)}")
+        print(f"{'R2':<8}: {np.mean(r2_scores)}")
+        print(f"{'MedAE':<8}: {np.mean(medae_scores)}")
+        print(f"{'EV':<8}: {np.mean(ev_scores)}")
         
         self._reiniciar_fases_pipeline()
         return None
     
-    def _preprocesar_datos(self, X_copy: pd.DataFrame, y_copy: pd.Series):
-        PERMITIR_NONE = False
+    def _preprocesar_datos(self, X_copy: pd.DataFrame, y_copy: pd.Series, imprimir_resultados=False):
+        configuracion = Configuracion()
+        PERMITIR_NONE = configuracion.permitir_none
+        PERMITIR_LLM = configuracion.permitir_llm
+        SEMILLA = configuracion.semilla_aleatoria
         
+        # Instanciamos cada fase del pipeline con los parámetros correspondientes.
+        tratar_duplicados = TratarDuplicados(PERMITIR_NONE, SEMILLA)
+        tratar_faltantes_numericos = TratarFaltantesNumericos(PERMITIR_NONE, SEMILLA)
+        tratar_faltantes_strings = TratarFaltantesStrings(PERMITIR_NONE, SEMILLA)
+        codificar_variables_binarias = CodificarVariablesBinarias(PERMITIR_NONE, SEMILLA)
+        codificar_variables_categoricas_rango_bajo = CodificarVariablesCategoricasRangoBajo(PERMITIR_NONE, SEMILLA)
+        codificar_variables_categoricas_rango_medio = CodificarVariablesCategoricasRangoMedio(PERMITIR_NONE, SEMILLA)
+        codificar_variables_categoricas_rango_alto = CodificarVariablesCategoricasRangoAlto(PERMITIR_NONE, SEMILLA)
+        tratar_outliers_numericos = TratarOutliersNumericos(PERMITIR_NONE, SEMILLA)
+        escalar_datos_numericos = EscalarDatosNumericos(PERMITIR_NONE, SEMILLA)
+        normalizar_datos_numericos = NormalizarDatosNumericos(PERMITIR_NONE, SEMILLA)
+        crear_nueva_variable = CrearNuevaVariable(PERMITIR_NONE, SEMILLA)
+        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, SEMILLA, "regresion")
+
         # El tratamiento que manipula Y debe hacerse fuera del pipeline
-        tratar_duplicados = TratarDuplicados(PERMITIR_NONE, self._SEMILLA)
-        tratar_faltantes_numericos = TratarFaltantesNumericos(PERMITIR_NONE, self._SEMILLA)
-        tratar_faltantes_strings = TratarFaltantesStrings(PERMITIR_NONE, self._SEMILLA)
-        
         tratar_duplicados.fit(X_copy, y_copy)
         X_copy, y_copy = tratar_duplicados.transform(X_copy, y_copy)
+
         tratar_faltantes_numericos.fit(X_copy, y_copy)
         X_copy, y_copy = tratar_faltantes_numericos.transform(X_copy, y_copy)
+
         tratar_faltantes_strings.fit(X_copy, y_copy)
         X_copy, y_copy = tratar_faltantes_strings.transform(X_copy, y_copy)
 
         pipeline = Pipeline([
-            ("codificar_variables_binarias", CodificarVariablesBinarias(PERMITIR_NONE, self._SEMILLA)),
-            ("codificar_variables_categoricas_rango_bajo", CodificarVariablesCategoricasRangoBajo(PERMITIR_NONE, self._SEMILLA)),
-            ("codificar_variables_categoricas_rango_medio", CodificarVariablesCategoricasRangoMedio(PERMITIR_NONE, self._SEMILLA)),
-            ("codificar_variables_categoricas_rango_alto", CodificarVariablesCategoricasRangoAlto(PERMITIR_NONE, self._SEMILLA)),
+            ("codificar_variables_binarias", codificar_variables_binarias),
+            ("codificar_variables_categoricas_rango_bajo", codificar_variables_categoricas_rango_bajo),
+            ("codificar_variables_categoricas_rango_medio", codificar_variables_categoricas_rango_medio),
+            ("codificar_variables_categoricas_rango_alto", codificar_variables_categoricas_rango_alto),
         ])
-        X_preprocesado = pipeline.fit_transform(X_copy)
+        X_copy = pipeline.fit_transform(X_copy)
 
-        tratar_outliers_numericos = TratarOutliersNumericos(PERMITIR_NONE, self._SEMILLA)
-        tratar_outliers_numericos.fit(X_preprocesado, y_copy)
-        X_preprocesado, y_copy = tratar_outliers_numericos.transform(X_preprocesado, y_copy)
+        tratar_outliers_numericos.fit(X_copy, y_copy)
+        X_copy, y_preprocesado = tratar_outliers_numericos.transform(X_copy, y_copy)
 
         pipeline = Pipeline([
-            ("escalar_datos_numericos", EscalarDatosNumericos(PERMITIR_NONE, self._SEMILLA)),
-            ("normalizar_datos_numericos", NormalizarDatosNumericos(PERMITIR_NONE, self._SEMILLA)),
-            ("crear_nueva_variable", CrearNuevaVariable(PERMITIR_NONE, self._SEMILLA)),
+            ("escalar_datos_numericos", escalar_datos_numericos),
+            ("normalizar_datos_numericos", normalizar_datos_numericos),
+            ("crear_nueva_variable", crear_nueva_variable),
         ])
+        X_copy = pipeline.fit_transform(X_copy, y_preprocesado)
         
-        X_preprocesado = pipeline.fit_transform(X_preprocesado, y_copy)
-        
-        cols_with_nan = X_preprocesado.columns[X_preprocesado.isnull().any()].tolist()
-        print("PIPELINE COMPLETADO")
-        print(f"Tamaño del conjunto de entrenamiento después del pipeline: {X_preprocesado.shape}, {y_copy.shape}")
-        print(f"Tipos de datos del conjunto de entrenamiento después del pipeline: \n{X_preprocesado.dtypes}")
-        print("Columnas con NaN:", cols_with_nan)
-        print("="*100)
+        seleccionar_variables.fit(X_copy, y_preprocesado)
+        X_preprocesado = seleccionar_variables.transform(X_copy, y_preprocesado)
 
-        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, self._SEMILLA, "regresion")
-        seleccionar_variables.fit(X_preprocesado, y_copy)
-        X_seleccionado = seleccionar_variables.transform(X_preprocesado, y_copy)
+        if imprimir_resultados:
+            self._imprimir_resultado_pipeline(X_preprocesado, y_preprocesado)
 
-        print("SELECCIÓN DE VARIABLES COMPLETADA")
-        print(f"Tamaño del conjunto de entrenamiento preprocesado: {X_seleccionado.shape}, {y_copy.shape}")
-        print(f"Tipos de datos del conjunto de entrenamiento preprocesado: \n{X_seleccionado.dtypes}")
-        print("="*100)
-
-        return X_seleccionado, y_copy
-
+        return X_preprocesado, y_preprocesado
     
+    def _imprimir_resultado_pipeline(self, X_df, y_df):
+        cols_with_nan = X_df.columns[X_df.isna().any()].tolist()
+
+        print("\tPIPELINE COMPLETADO")
+
+        # Forma y tamaño de X y y
+        print(f"\tX: {X_df.shape}")
+        print(f"\ty: {y_df.shape}\n")
+
+        # Tipos de datos
+        print("\tTipos de datos:")
+        max_len = max(len(col) for col in X_df.columns)  # ancho dinámico
+        for col, tipo in X_df.dtypes.items():
+            print(f"\t{col:<{max_len}} : {tipo}")
+
+        # Columnas con NaN
+        print(f"\tColumnas con NaN: {cols_with_nan}")
+        print("")
+
     def _reiniciar_fases_pipeline(self):
         fases = {
             "tratar_duplicados": TratarDuplicados(),
@@ -274,11 +304,14 @@ class MineroDePipelines:
         [fase.reiniciar() for fase in fases.values()]
 
         def imprimir_valores_por_defecto():
+            print("Valores por defecto de las fases:")
             for nombre, fase in fases.items():
                 print(f"{nombre}: {fase.log_params}")    
         
-        print("Valores por defecto después de reiniciar:")
-        imprimir_valores_por_defecto()
+        print("="*100)
+        print("Fases del pipeline reiniciadas a sus valores por defecto.")
+        # imprimir_valores_por_defecto()
+        print("="*100)
 
     def imprimir_secuencia_preprocesamiento(self):
         secuencia = SecuenciaPreprocesamiento()

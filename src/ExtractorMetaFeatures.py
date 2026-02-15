@@ -15,8 +15,8 @@ class ExtractorMetaFeatures:
         "model-based",
         "info-theory",
         "relative",
-        # "clustering",
-        # "complexity",
+        "clustering",
+        "complexity",
         "itemset",
         "concept"
     ]

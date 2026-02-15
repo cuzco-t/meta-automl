@@ -30,7 +30,6 @@ class SecuenciaPreprocesamiento:
             print(f"Fase: {fase}, Técnica: {info['tecnica']}, Parámetro: {info['parametro']}\n")
 
     def guardar_secuencia(self, ruta_archivo="secuencia_preprocesamiento.json"):
-        print(f"Guardando secuencia de preprocesamiento en {ruta_archivo}...")
-        print(f"Secuencia a guardar: {self.secuencia}")
+        print(f"Guardando secuencia de preprocesamiento en {ruta_archivo}...\n")
         with open(ruta_archivo, "w") as f:
             json.dump(self.secuencia, f, indent=4)
