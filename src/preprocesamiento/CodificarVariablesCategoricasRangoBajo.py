@@ -97,8 +97,7 @@ class CodificarVariablesCategoricasRangoBajo(BaseEstimator, TransformerMixin, Re
 
             if ratio_unicos <= 0.05:
                 if self.log_algoritmo == "one_hot_encoding":
-                    self.log_params[col] = True
-                    continue
+                    self.log_params[col] = X[col].dropna().unique().tolist()
 
                 elif self.log_algoritmo == "label_encoding":
                     categorias = sorted(X[col].dropna().unique())
@@ -114,8 +113,15 @@ class CodificarVariablesCategoricasRangoBajo(BaseEstimator, TransformerMixin, Re
         :return: DataFrame con las columnas categóricas de bajo rango codificadas
         :rtype: DataFrame
         """
-        for col in list(self.log_params.keys()):
+        for col, valores in self.log_params.items():
+            # Crear dummies para los valores presentes en X_copy
             dummies = pd.get_dummies(X_copy[col], prefix=col, dtype=int)
+            
+            # Reindexar para asegurar que existan todas las columnas de entrenamiento
+            columnas_esperadas = [f"{col}_{v}" for v in valores]
+            dummies = dummies.reindex(columns=columnas_esperadas, fill_value=0)
+            
+            # Reemplazar columna original con dummies
             X_copy = pd.concat([X_copy.drop(columns=[col]), dummies], axis=1)
 
         return X_copy

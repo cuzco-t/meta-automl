@@ -86,7 +86,7 @@ class TratarFaltantesStrings(RegistroTecnica):
                 return X_imputado, y
             
             case "eliminar":
-                X_clean, y_clean = self._eliminar(X.copy(), y.copy())
+                X_clean, y_clean = self._eliminar(X.copy(), y.copy() if y is not None else None)
                 return X_clean, y_clean
             
             case "etiqueta_desconocido":
@@ -180,7 +180,7 @@ class TratarFaltantesStrings(RegistroTecnica):
 
         # Filtrar X_df y y_df según la máscara
         X_clean = X_df.loc[mask]
-        y_clean = y.loc[mask]
+        y_clean = y.loc[mask] if y is not None else None
 
         return X_clean, y_clean
     

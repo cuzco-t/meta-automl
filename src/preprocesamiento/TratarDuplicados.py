@@ -70,7 +70,7 @@ class TratarDuplicados(RegistroTecnica):
             case None:
                 return X, y
             case "eliminar":
-                return self._eliminar(X, y)
+                return self._eliminar(X, y if y is not None else None)
             case _:
                 raise ValueError(f"Técnica desconocida: {self.log_algoritmo}")
     
@@ -84,6 +84,6 @@ class TratarDuplicados(RegistroTecnica):
         mask = ~X_df.duplicated()
 
         X_clean = X_df.loc[mask]
-        y_clean = y_df.loc[mask]
+        y_clean = y_df.loc[mask] if y_df is not None else None
 
         return X_clean, y_clean

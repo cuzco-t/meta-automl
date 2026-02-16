@@ -59,7 +59,7 @@ class ExtractorMetaFeatures:
         meta_features = {}
 
         X = X_df.to_numpy()
-        y = y_df.to_numpy()
+        y = y_df.to_numpy() if y_df is not None else None
 
         for grupo in self._GUPOS_META_FEATURES:
             mfe = MFE(groups=[grupo])
@@ -83,7 +83,10 @@ class ExtractorMetaFeatures:
 
         # Se guardar en disco temporalmente para luego agregar el peso en KB como meta-feature personalizada
         ruta_temporal = "temp_dataset.csv"
-        dataset_temporal = pd.concat([X_df, y_df], axis=1)
+        if y_df is not None:
+            dataset_temporal = pd.concat([X_df, y_df], axis=1)
+        else:
+            dataset_temporal = X_df.copy()
         dataset_temporal.to_csv(ruta_temporal, index=False)
 
         meta_features = self._agregar_meta_features_personalizadas(ruta_temporal, X, meta_features)
@@ -497,7 +500,7 @@ class ExtractorMetaFeatures:
         for col in X.columns:
             X_col = X[[col]].to_numpy()
             try:
-                mfe.fit(X_col, np.array(y))
+                mfe.fit(X_col, np.array(y) if y is not None else None)
                 ft = mfe.extract()
                 meta_features_por_columna[col] = dict(zip(ft[0], ft[1]))
             except Exception as e:

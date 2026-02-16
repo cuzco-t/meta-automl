@@ -26,9 +26,13 @@ def main():
     # target = "purchase_amount_usd"
     # tarea = "regresion"
     
-    carpeta_datasets = "./data/clasificacion"
-    target = "Survived"
-    tarea = "clasificacion"
+    # carpeta_datasets = "./data/clasificacion"
+    # target = "Survived"
+    # tarea = "clasificacion"
+    
+    carpeta_datasets = "./data/clustering"
+    target = None
+    tarea = "clustering"
 
     silenciar_logs()
     silenciar_warnings()
@@ -41,8 +45,12 @@ def main():
         print(f"Procesando dataset: {ruta_absoluta_csv}...")
         df_main = pd.read_csv(ruta_absoluta_csv)
 
-        X_df = df_main.drop(columns=[target])
-        y_df = df_main[target]
+        if tarea != "clustering":
+            X_df = df_main.drop(columns=[target])
+            y_df = df_main[target]
+        
+        else:
+            X_df = df_main.copy()
 
         # meta_features, meta_features_vectorizadas = extractor.extraer_desde_dataframe(
         #     X_df.copy(), 
@@ -57,6 +65,9 @@ def main():
 
         elif tarea == "clasificacion":
             minero.construir_pipeline_clasificacion(X_df, y_df)
+
+        elif tarea == "clustering":
+            minero.construir_pipeline_clustering(X_df)
 
         if PRIMERA_EJECUCION:
             break

@@ -121,6 +121,8 @@ class SeleccionarVariables(RegistroTecnica):
                 mi_scores = mutual_info_classif(X, y, discrete_features=True)
             elif self.tarea == "regresion":
                 mi_scores = mutual_info_regression(X, y, discrete_features=False)
+            elif self.tarea == "clustering":
+                return None
             
             mi_df = pd.DataFrame({'Feature': X.columns, 'MI': mi_scores})
             
@@ -140,6 +142,8 @@ class SeleccionarVariables(RegistroTecnica):
                 model = RandomForestClassifier(n_estimators=100, random_state=self.semilla)
             elif self.tarea == "regresion":
                 model = RandomForestRegressor(n_estimators=100, random_state=self.semilla)
+            elif self.tarea == "clustering":
+                return None
 
             selector = SelectFromModel(model)
             selector.fit(X, y)

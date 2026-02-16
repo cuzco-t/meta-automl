@@ -204,6 +204,6 @@ class TratarOutliersNumericos(RegistroTecnica):
 
         # Filtrar X_df y y según la máscara
         X_clean = X_df.loc[mask]
-        y_clean = y.loc[mask]
+        y_clean = y.loc[mask] if y is not None else None
 
         return X_clean, y_clean

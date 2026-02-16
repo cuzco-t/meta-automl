@@ -13,11 +13,15 @@ from sklearn.metrics import (
     mean_squared_error, 
     r2_score, 
     median_absolute_error, 
-    explained_variance_score
+    explained_variance_score,
+    silhouette_score,
+    calinski_harabasz_score,
+    davies_bouldin_score
 )
 
 from .SecuenciaPreprocesamiento import SecuenciaPreprocesamiento
 from .cash.SelectorModeloRegresion import SelectorModeloRegresion
+from .cash.SelectorModeloClustering import SelectorModeloClustering
 from .cash.SelectorModeloClasificacion import SelectorModeloClasificacion
 
 from src.preprocesamiento.BalanceadorDeClases import BalanceadorDeClases
@@ -102,6 +106,7 @@ class MineroDePipelines:
             )
 
             print("Evaluando modelo de ML en conjunto de validación...")
+            print(f"Columnas con nulos: {X_val.columns[X_val.isna().any()].tolist()}")
             predicciones = modelo_ml.predict(X_val)
 
             accuracy = accuracy_score(y_val, predicciones)
@@ -119,10 +124,10 @@ class MineroDePipelines:
         print("="*100)
         print("Promedios finales".upper())
         print("="*100)
-        print(f"{'Accuracy':<8}: {np.mean(accuracy_scores)}")
-        print(f"{'Precision':<8}: {np.mean(precision_scores)}")
-        print(f"{'Recall':<8}: {np.mean(recall_scores)}")
-        print(f"{'F1':<8}: {np.mean(f1_scores)}")
+        print(f"{'Accuracy':<10}: {np.mean(accuracy_scores)}")
+        print(f"{'Precision':<10}: {np.mean(precision_scores)}")
+        print(f"{'Recall':<10}: {np.mean(recall_scores)}")
+        print(f"{'F1':<10}: {np.mean(f1_scores)}")
         
         self._reiniciar_fases_pipeline()
 
@@ -202,6 +207,73 @@ class MineroDePipelines:
         print(f"{'R2':<8}: {np.mean(r2_scores)}")
         print(f"{'MedAE':<8}: {np.mean(medae_scores)}")
         print(f"{'EV':<8}: {np.mean(ev_scores)}")
+        
+        self._reiniciar_fases_pipeline()
+        return None
+    
+    def construir_pipeline_clustering(self, X_df: pd.DataFrame):
+        X_train = X_df.copy()
+
+        print("Preprocesando datos de entrenamiento...")
+        X_train_preprocesado, _ = self._preprocesar_datos(
+            X_train.copy(), 
+            None, 
+            tarea="clustering",
+            imprimir_resultados=False
+        )
+
+        SecuenciaPreprocesamiento().guardar_secuencia()
+
+        print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
+        selector_modelo = SelectorModeloClustering(self._SEMILLA)
+        selector_modelo.fit(X_train_preprocesado)
+
+        print("Entrenando modelo de ML...")
+        modelo_ml = selector_modelo.get_modelo_ml()
+        etiquetas = modelo_ml.fit_predict(X_train_preprocesado)
+
+        numero_etiquetas = len(set(etiquetas)) - (1 if -1 in etiquetas else 0)
+
+        silhouette = None
+        # El Silhouette Score falla si solo hay 1 grupo o si cada punto es su propio grupo
+        if 1 < numero_etiquetas < len(X_train_preprocesado):
+            try:
+                # Usar 'sample_size' para velocidad en Big Data
+                # Si X tiene < 10k filas, usa todo. Si tiene más, usa una muestra de 10k.
+                tamaño_muestra = 10_000 if X_train_preprocesado.shape[0] > 10_000 else None
+                
+                silhouette = silhouette_score(
+                    X_train_preprocesado, 
+                    etiquetas, 
+                    metric='euclidean', 
+                    sample_size=tamaño_muestra,  # ¡Esto salva tu CPU!
+                    random_state=42
+                )
+
+            except Exception as e:
+                silhouette = -1.0 # Error en cálculo
+        else:
+            # Castigo fuerte si el algoritmo colapsó todo en 1 solo grupo
+            silhouette = -1.0
+    
+        calinski = None
+        try:
+            calinski = calinski_harabasz_score(X_train_preprocesado, etiquetas)
+        except:
+            calinski = 0.0
+
+        davies = None
+        try:
+            davies = davies_bouldin_score(X_train_preprocesado, etiquetas)
+        except:
+            davies = 999.0 # Valor malo por defecto
+        
+        print("="*100)
+        print("Resultados finales".upper())
+        print("="*100)
+        print(f"{'Silhouette':<8}: {silhouette}")
+        print(f"{'Calinski-Harabasz':<8}: {calinski}")
+        print(f"{'Davies-Bouldin':<8}: {davies}")
         
         self._reiniciar_fases_pipeline()
         return None

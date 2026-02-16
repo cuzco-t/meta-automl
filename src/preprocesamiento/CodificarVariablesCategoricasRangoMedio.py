@@ -112,7 +112,9 @@ class CodificarVariablesCategoricasRangoMedio(BaseEstimator, TransformerMixin, R
         """
         for col, freqs in self.log_params.items():
             if col in X_copy.columns:
-                X_copy[col] = X_copy[col].map(freqs)
+                frecuencia_minima = freqs.min()
+                X_copy[col] = X_copy[col].map(freqs).fillna(frecuencia_minima)
+                print(f"Columna '{col}': {X_copy[col].isna().sum()}")
 
         return X_copy
     
