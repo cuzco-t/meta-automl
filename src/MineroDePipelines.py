@@ -18,6 +18,7 @@ from sklearn.metrics import (
 
 from .SecuenciaPreprocesamiento import SecuenciaPreprocesamiento
 from .cash.SelectorModeloRegresion import SelectorModeloRegresion
+from .cash.SelectorModeloClasificacion import SelectorModeloClasificacion
 
 from src.preprocesamiento.BalanceadorDeClases import BalanceadorDeClases
 from src.preprocesamiento.TratarDuplicados import TratarDuplicados
@@ -56,10 +57,7 @@ class MineroDePipelines:
 
         return X_df, y_df
 
-    def construir_pipeline_clasificacion(self, ruta_absoluta, target):
-        # Leer el dataset y separar características y target
-        X_df, y_df = self._leer_dataset(ruta_absoluta, target)
-
+    def construir_pipeline_clasificacion(self, X_df: pd.DataFrame, y_df: pd.Series) -> None:
         # Se divide el dataset en 3 folds normales
         skf = StratifiedKFold(n_splits=self._N_FOLDS, shuffle=True, random_state=self._SEMILLA)
 
@@ -72,59 +70,59 @@ class MineroDePipelines:
             X_train, X_val = X_df.iloc[train_idx], X_df.iloc[val_idx]
             y_train, y_val = y_df.iloc[train_idx], y_df.iloc[val_idx]
 
-            print(f"Fold {fold}")
-            print(f"\tTamaño del conjunto de entrenamiento: X={X_train.shape}, y={y_train.shape}")
-            print(f"\tTipos de datos del conjunto de entrenamiento:\n{X_train.dtypes}")
+            print("="*100)
+            print(f"Fold: {fold}")
             print("="*100)
 
-            X_seleccionado, y_train = self._preprocesar_datos(X_train, y_train)
-            SecuenciaPreprocesamiento().guardar_secuencia()
-            # ====================================================================================================
-            # Hasta aquí se ha aplicado la secuencia de preprocesamiento al conjunto de entrenamiento. 
-            # Ahora se eligirá el modelo de ML y sus hiperparámetros, para realizar el entrenamiento del modelo.
-            # ====================================================================================================
-            selector_modelo = SelectorModeloRegresion(self._SEMILLA)
-            modelo_ml = selector_modelo.get_modelo_ml(X_seleccionado, y_train)
+            print("Preprocesando datos de entrenamiento...")
+            X_train_preprocesado, y_train_preprocesado = self._preprocesar_datos(
+                X_train.copy(), 
+                y_train.copy(),
+                tarea="clasificacion", 
+                imprimir_resultados=False
+            )
 
-            modelo_ml.fit(X_seleccionado, y_train)
+            if fold == 1:
+                SecuenciaPreprocesamiento().guardar_secuencia()
 
-            print()
-            print("Modelo entrenado. Evaluando en conjunto de validación...".upper())
-            print()
+            print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
+            selector_modelo = SelectorModeloClasificacion(self._SEMILLA)
+            selector_modelo.fit(X_train_preprocesado, y_train_preprocesado)
 
-            X_val, y_val = self._preprocesar_datos(X_val, y_val)
+            print("Entrenando modelo de ML...")
+            modelo_ml = selector_modelo.get_modelo_ml()
+            modelo_ml.fit(X_train_preprocesado, y_train_preprocesado)
+
+            print("Procesando datos de validación...")
+            X_val, y_val = self._preprocesar_datos(
+                X_val.copy(), 
+                y_val.copy(),
+                tarea="clasificacion",
+                imprimir_resultados=False
+            )
+
+            print("Evaluando modelo de ML en conjunto de validación...")
             predicciones = modelo_ml.predict(X_val)
 
-            mae = mean_absolute_error(y_val, predicciones)
-            mse = mean_squared_error(y_val, predicciones)
-            rmse = np.sqrt(mse)
-            r2 = r2_score(y_val, predicciones)
-            medae = median_absolute_error(y_val, predicciones)
-            ev = explained_variance_score(y_val, predicciones)
+            accuracy = accuracy_score(y_val, predicciones)
+            precision = precision_score(y_val, predicciones, average="weighted", zero_division=0)
+            recall = recall_score(y_val, predicciones, average="weighted", zero_division=0)
+            f1 = f1_score(y_val, predicciones, average="weighted", zero_division=0)
 
-            acc = accuracy_score(y_val, predicciones)
-            prec = precision_score(y_val, predicciones)
-            rec = recall_score(y_val, predicciones)
-            f1 = f1_score(y_val, predicciones)
-
-            accuracy_scores.append(acc)
-            precision_scores.append(prec)
-            recall_scores.append(rec)
+            accuracy_scores.append(accuracy)
+            precision_scores.append(precision)
+            recall_scores.append(recall)
             f1_scores.append(f1)
+
+            print(f"Fold: {fold} procesado con éxito")
             
-
-            print(f"Fold {fold}")
-            print(f"\tAccuracy : {acc:.4f}")
-            print(f"\tPrecision: {prec:.4f}")
-            print(f"\tRecall   : {rec:.4f}")
-            print(f"\tF1       : {f1:.4f}")
-            print("=" * 100)
-
-        print("Promedios finales:")
-        print("Accuracy :", np.mean(accuracy_scores))
-        print("Precision:", np.mean(precision_scores))
-        print("Recall   :", np.mean(recall_scores))
-        print("F1       :", np.mean(f1_scores))
+        print("="*100)
+        print("Promedios finales".upper())
+        print("="*100)
+        print(f"{'Accuracy':<8}: {np.mean(accuracy_scores)}")
+        print(f"{'Precision':<8}: {np.mean(precision_scores)}")
+        print(f"{'Recall':<8}: {np.mean(recall_scores)}")
+        print(f"{'F1':<8}: {np.mean(f1_scores)}")
         
         self._reiniciar_fases_pipeline()
 
@@ -153,6 +151,7 @@ class MineroDePipelines:
             X_train_preprocesado, y_train_preprocesado = self._preprocesar_datos(
                 X_train.copy(), 
                 y_train.copy(), 
+                tarea="regresion",
                 imprimir_resultados=False
             )
 
@@ -171,6 +170,7 @@ class MineroDePipelines:
             X_val, y_val = self._preprocesar_datos(
                 X_val.copy(), 
                 y_val.copy(), 
+                tarea="regresion",
                 imprimir_resultados=False
             )
 
@@ -206,7 +206,7 @@ class MineroDePipelines:
         self._reiniciar_fases_pipeline()
         return None
     
-    def _preprocesar_datos(self, X_copy: pd.DataFrame, y_copy: pd.Series, imprimir_resultados=False):
+    def _preprocesar_datos(self, X_copy: pd.DataFrame, y_copy: pd.Series, tarea: str, imprimir_resultados=False):
         configuracion = Configuracion()
         PERMITIR_NONE = configuracion.permitir_none
         PERMITIR_LLM = configuracion.permitir_llm
@@ -224,7 +224,7 @@ class MineroDePipelines:
         escalar_datos_numericos = EscalarDatosNumericos(PERMITIR_NONE, SEMILLA)
         normalizar_datos_numericos = NormalizarDatosNumericos(PERMITIR_NONE, SEMILLA)
         crear_nueva_variable = CrearNuevaVariable(PERMITIR_NONE, SEMILLA)
-        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, SEMILLA, "regresion")
+        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, SEMILLA, tarea)
 
         # El tratamiento que manipula Y debe hacerse fuera del pipeline
         tratar_duplicados.fit(X_copy, y_copy)

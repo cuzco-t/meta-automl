@@ -110,7 +110,7 @@ class TratarFaltantesNumericos(RegistroTecnica):
 
             elif self.log_algoritmo == "moda":
                 moda = X_df[col].mode()
-                self.log_params[col] = moda.iloc[0] if not moda.empty else None
+                self.log_params[col] = float(moda.iloc[0]) if not moda.empty else None
 
             elif self.log_algoritmo == "media_geometrica":
                 valores = X_df[col].dropna()

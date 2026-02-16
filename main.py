@@ -22,9 +22,13 @@ def generador_csv(carpeta_datasets):
 
 def main():
     PRIMERA_EJECUCION = True
-    carpeta_datasets = "./data"
-    target = "purchase_amount_usd"
-    tarea = "regresion"
+    # carpeta_datasets = "./data/regresion"
+    # target = "purchase_amount_usd"
+    # tarea = "regresion"
+    
+    carpeta_datasets = "./data/clasificacion"
+    target = "Survived"
+    tarea = "clasificacion"
 
     silenciar_logs()
     silenciar_warnings()
@@ -47,8 +51,12 @@ def main():
         # )
 
         # db.guardar_meta_features_globales(json.dumps(meta_features), meta_features_vectorizadas)
-    
-        minero.construir_pipeline_regresion(X_df, y_df)
+
+        if tarea == "regresion":
+            minero.construir_pipeline_regresion(X_df, y_df)
+
+        elif tarea == "clasificacion":
+            minero.construir_pipeline_clasificacion(X_df, y_df)
 
         if PRIMERA_EJECUCION:
             break
