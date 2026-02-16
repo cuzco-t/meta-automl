@@ -153,9 +153,8 @@ class MineroDePipelines:
             X_train_preprocesado, y_train_preprocesado = self._preprocesar_datos(
                 X_train.copy(), 
                 y_train.copy(), 
-                imprimir_resultados=True
+                imprimir_resultados=False
             )
-            print("\tDatos de entrenamiento preprocesados con éxito.\n")
 
             if fold == 1:
                 SecuenciaPreprocesamiento().guardar_secuencia()
@@ -163,12 +162,10 @@ class MineroDePipelines:
             print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
             selector_modelo = SelectorModeloRegresion(self._SEMILLA)
             selector_modelo.fit(X_train_preprocesado, y_train_preprocesado)
-            print("\tModelo de ML seleccionado y configurado con éxito.\n")
 
             print("Entrenando modelo de ML...")
             modelo_ml = selector_modelo.get_modelo_ml()
             modelo_ml.fit(X_train_preprocesado, y_train_preprocesado)
-            print("\tModelo de ML entrenado con éxito.\n")
 
             print("Procesando datos de validación...")
             X_val, y_val = self._preprocesar_datos(
@@ -176,7 +173,6 @@ class MineroDePipelines:
                 y_val.copy(), 
                 imprimir_resultados=False
             )
-            print("\tDatos de validación procesados con éxito.\n")
 
             print("Evaluando modelo de ML en conjunto de validación...")
             predicciones = modelo_ml.predict(X_val)
@@ -187,7 +183,6 @@ class MineroDePipelines:
             r2 = r2_score(y_val, predicciones)
             medae = median_absolute_error(y_val, predicciones)
             ev = explained_variance_score(y_val, predicciones)
-            print("\tEvaluación completada con éxito.\n")
 
             mae_scores.append(mae)
             mse_scores.append(mse)
@@ -195,6 +190,8 @@ class MineroDePipelines:
             r2_scores.append(r2)
             medae_scores.append(medae)
             ev_scores.append(ev)
+
+            print(f"Fold: {fold} procesado con éxito")
             
         print("="*100)
         print("Promedios finales".upper())
