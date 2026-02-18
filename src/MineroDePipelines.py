@@ -305,6 +305,9 @@ class MineroDePipelines:
         tratar_duplicados.fit(X_copy, y_copy)
         X_copy, y_copy = tratar_duplicados.transform(X_copy, y_copy)
 
+        codificar_variables_binarias.fit(X_copy, y_copy)
+        X_copy = codificar_variables_binarias.transform(X_copy)
+
         tratar_faltantes_numericos.fit(X_copy, y_copy)
         X_copy, y_copy = tratar_faltantes_numericos.transform(X_copy, y_copy)
 
@@ -312,7 +315,6 @@ class MineroDePipelines:
         X_copy, y_copy = tratar_faltantes_strings.transform(X_copy, y_copy)
 
         pipeline = Pipeline([
-            ("codificar_variables_binarias", codificar_variables_binarias),
             ("codificar_variables_categoricas_rango_bajo", codificar_variables_categoricas_rango_bajo),
             ("codificar_variables_categoricas_rango_medio", codificar_variables_categoricas_rango_medio),
             ("codificar_variables_categoricas_rango_alto", codificar_variables_categoricas_rango_alto),

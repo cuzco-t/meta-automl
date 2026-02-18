@@ -106,6 +106,6 @@ class CodificarVariablesBinarias(BaseEstimator, TransformerMixin, RegistroTecnic
         """
         for col, mapa in self.log_params.items():
             if col in X_copy.columns:
-                X_copy[col] = X_copy[col].map(mapa).astype(int)
+                X_copy[col] = X_copy[col].map(mapa).astype(float)
         
         return X_copy
