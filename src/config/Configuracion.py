@@ -26,6 +26,9 @@ class Configuracion:
         self.db_password = os.getenv('DB_PASSWORD')
         
         self.semilla_aleatoria = int(os.getenv('SEMILLA_ALEATORIA', 42))
+
+        self.silenciar_pymfe_warnings = os.getenv('SILENCIAR_PYMFE_WARNINGS').lower() == 'true'
+
         self.etiqueta_error = os.getenv('ETIQUETA_ERROR', 'ERROR')
         self.permitir_none = os.getenv('PERMITIR_NONE').lower() == 'true'
         self.permitir_llm = os.getenv('PERMITIR_LLM').lower() == 'true'

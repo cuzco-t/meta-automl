@@ -1,4 +1,6 @@
 import os
+import warnings
+
 import math
 import numpy as np
 import pandas as pd
@@ -6,6 +8,9 @@ import pandas as pd
 from pymfe.mfe import MFE
 from toon_format import encode
 from collections.abc import Mapping
+
+from contextlib import contextmanager
+from src.config.Configuracion import Configuracion
 
 class ExtractorMetaFeatures:
     _GUPOS_META_FEATURES = [
@@ -15,16 +20,17 @@ class ExtractorMetaFeatures:
         "model-based",
         "info-theory",
         "relative",
-        "clustering",
-        "complexity",
-        "itemset",
-        "concept"
+        # "clustering",
+        # "complexity",
+        # "itemset",
+        # "concept"
     ]
     _CONSTANTE_ERROR = -1111.0
     _CONSTANTE_INFINITO = 2222.0
 
     def __init__(self):
         self.df = None
+        self.warnings_pymfe = Configuracion().silenciar_pymfe_warnings
 
     def extraer(self, ruta_absoluta, target):
         meta_features = {}
@@ -35,15 +41,16 @@ class ExtractorMetaFeatures:
             mfe = MFE(groups=[grupo])
 
             try:
-                mfe.fit(X, y)
-                ft = mfe.extract()
-                meta_features[grupo] = dict(zip(ft[0], ft[1]))
+                with self.silenciar_warnings_pymfe():
+                    mfe.fit(X, y)
+                    ft = mfe.extract()
+                    meta_features[grupo] = dict(zip(ft[0], ft[1]))
 
-                if len(meta_features[grupo]) == 0:
-                    print(f"Seteado grupo: {grupo}")
-                    meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
-                else:
-                    print(f"Completado grupo: {grupo}")
+                    if len(meta_features[grupo]) == 0:
+                        print(f"Seteado grupo: {grupo}")
+                        meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+                    else:
+                        print(f"Completado grupo: {grupo}")
 
             except Exception as e:
                 print(f"ERROR grupo: {grupo}")
@@ -58,22 +65,23 @@ class ExtractorMetaFeatures:
     def extraer_desde_dataframe(self, X_df: pd.DataFrame, y_df: pd.Series, vectorizar=False):
         meta_features = {}
 
-        X = X_df.to_numpy()
-        y = y_df.to_numpy() if y_df is not None else None
+        X = X_df.copy().to_numpy()
+        y = y_df.copy().to_numpy() if y_df is not None else None
 
         for grupo in self._GUPOS_META_FEATURES:
             mfe = MFE(groups=[grupo])
 
             try:
-                mfe.fit(X, y)
-                ft = mfe.extract()
-                meta_features[grupo] = dict(zip(ft[0], ft[1]))
+                with self.silenciar_warnings_pymfe():
+                    mfe.fit(X, y)
+                    ft = mfe.extract()
+                    meta_features[grupo] = dict(zip(ft[0], ft[1]))
 
-                if len(meta_features[grupo]) == 0:
-                    print(f"Seteado grupo: {grupo}")
-                    meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
-                else:
-                    print(f"Completado grupo: {grupo}")
+                    if len(meta_features[grupo]) == 0:
+                        print(f"Seteado grupo: {grupo}")
+                        meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+                    else:
+                        print(f"Completado grupo: {grupo}")
 
             except Exception as e:
                 print(f"ERROR grupo: {grupo}")
@@ -500,9 +508,10 @@ class ExtractorMetaFeatures:
         for col in X.columns:
             X_col = X[[col]].to_numpy()
             try:
-                mfe.fit(X_col, np.array(y) if y is not None else None)
-                ft = mfe.extract()
-                meta_features_por_columna[col] = dict(zip(ft[0], ft[1]))
+                with self.silenciar_warnings_pymfe():
+                    mfe.fit(X_col, np.array(y) if y is not None else None)
+                    ft = mfe.extract()
+                    meta_features_por_columna[col] = dict(zip(ft[0], ft[1]))
             except Exception as e:
                 print(f"ERROR al extraer meta-features para la columna: {col}")
 
@@ -533,3 +542,15 @@ class ExtractorMetaFeatures:
                 texto_formateado += f"{feature}: {valor}\n"
         
         return texto_formateado
+
+    @contextmanager
+    def silenciar_warnings_pymfe(self):
+        """
+        Context manager para silenciar warnings mientras se ejecuta pymfe.
+        """
+        if self.warnings_pymfe:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                yield
+        else:
+            yield  # No silencia nada
