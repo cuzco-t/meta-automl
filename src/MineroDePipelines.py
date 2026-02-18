@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import numpy as np
 
@@ -335,6 +337,160 @@ class MineroDePipelines:
 
         return X_preprocesado, y_preprocesado
     
+    def pipeline_supervisado(self, X_df: pd.DataFrame, y_df: pd.Series, tarea: str):
+
+        def get_k_fold_coss_validation(n_folds: int = 3) -> StratifiedKFold | KFold:
+            """
+            Devuelve un objeto de validación cruzada K-Fold o Stratified K-Fold según la tarea.
+            
+            :param n_folds: Número de folds para la validación cruzada.
+            :return: Un objeto de validación cruzada K-Fold o Stratified K-Fold configurado
+             con el número de folds y la semilla aleatoria.
+            :rtype: StratifiedKFold | KFold
+            """
+            if tarea == "clasificacion":
+                kf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=self._SEMILLA)
+            else:
+                kf = KFold(n_splits=n_folds, shuffle=True, random_state=self._SEMILLA)
+            
+            return kf
+        
+        def get_listas_metricas_inicializadas() -> dict[str, list[float]]:
+            """
+            Inicializa un diccionario de listas para almacenar las métricas de evaluación según la tarea.
+            
+            :return: Un diccionario donde las claves son los nombres de las métricas 
+             y los valores son listas vacías para almacenar los resultados de cada fold.
+            :rtype: dict[str, list[float]]
+            """
+            diccionario_metricas = None
+            if tarea == "clasificacion":
+                diccionario_metricas = {
+                    "accuracy_scores": [],
+                    "precision_scores": [],
+                    "recall_scores": [],
+                    "f1_scores": [],
+                }
+            else:
+                diccionario_metricas = {
+                    "mae_scores": [],
+                    "mse_scores": [],
+                    "rmse_scores": [],
+                    "r2_scores": [],
+                    "medae_scores": [],
+                    "ev_scores": [],
+                }
+
+            return diccionario_metricas
+
+        def actualizar_metricas_fold(y_true, y_pred, metricas: dict[str, list[float]]) -> None:
+            """
+            Actualiza las listas de métricas con los resultados del fold actual.
+            
+            :param y_true: Las etiquetas verdaderas del conjunto de validación.
+            :param y_pred: Las etiquetas predichas por el modelo para el conjunto de validación.
+            :param metricas: Un diccionario de listas donde se almacenan las métricas de evaluación.
+            """
+            if tarea == "clasificacion":
+                accuracy = accuracy_score(y_true, y_pred)
+                precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
+                recall = recall_score(y_true, y_pred, average="weighted", zero_division=0)
+                f1 = f1_score(y_true, y_pred, average="weighted", zero_division=0)
+
+                metricas["accuracy_scores"].append(accuracy)
+                metricas["precision_scores"].append(precision)
+                metricas["recall_scores"].append(recall)
+                metricas["f1_scores"].append(f1)
+
+            else:
+                mae = mean_absolute_error(y_true, y_pred)
+                mse = mean_squared_error(y_true, y_pred)
+                rmse = np.sqrt(mse)
+                r2 = r2_score(y_true, y_pred)
+                medae = median_absolute_error(y_true, y_pred)
+                ev = explained_variance_score(y_true, y_pred)
+
+                metricas["mae_scores"].append(mae)
+                metricas["mse_scores"].append(mse)
+                metricas["rmse_scores"].append(rmse)
+                metricas["r2_scores"].append(r2)
+                metricas["medae_scores"].append(medae)
+                metricas["ev_scores"].append(ev)
+
+            return None
+
+        def get_selector_modelo() -> SelectorModeloClasificacion | SelectorModeloRegresion:
+            """
+            Devuelve un selector de modelo de ML configurado según la tarea.
+            
+            :return: Un objeto SelectorModeloClasificacion si la tarea es de
+             clasificación, o un objeto SelectorModeloRegresion si la tarea es
+             de regresión, ambos configurados con la semilla
+            :rtype: SelectorModeloClasificacion | SelectorModeloRegresion
+            """
+            selector_modelo = None
+            if tarea == "clasificacion":
+                selector_modelo = SelectorModeloClasificacion(self._SEMILLA)
+
+            else:
+                selector_modelo = SelectorModeloRegresion(self._SEMILLA)
+
+            return selector_modelo
+            
+        
+        kf = get_k_fold_coss_validation()
+        metricas = get_listas_metricas_inicializadas()
+
+        tiempo_inicio = time.time()
+        for fold, (train_idx, val_idx) in enumerate(kf.split(X_df, y_df), 1):
+            X_train, X_val = X_df.iloc[train_idx], X_df.iloc[val_idx]
+            y_train, y_val = y_df.iloc[train_idx], y_df.iloc[val_idx]
+
+            print("="*100)
+            print(f"Fold: {fold}")
+            print("="*100)
+
+            print("Preprocesando datos de entrenamiento...")
+            X_train_preprocesado, y_train_preprocesado = self._preprocesar_datos(
+                X_train.copy(), 
+                y_train.copy(), 
+                tarea=tarea,
+                imprimir_resultados=False
+            )
+
+            if fold == 1:
+                SecuenciaPreprocesamiento().guardar_secuencia()
+
+            print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
+            selector_modelo = get_selector_modelo()
+            selector_modelo.fit(X_train_preprocesado, y_train_preprocesado)
+
+            print("Entrenando modelo de ML...")
+            modelo_ml = selector_modelo.get_modelo_ml()
+            modelo_ml.fit(X_train_preprocesado, y_train_preprocesado)
+
+            print("Procesando datos de validación...")
+            X_val, y_val = self._preprocesar_datos(
+                X_val.copy(), 
+                y_val.copy(), 
+                tarea=tarea,
+                imprimir_resultados=False
+            )
+
+            print("Evaluando modelo de ML en conjunto de validación...")
+            predicciones = modelo_ml.predict(X_val)
+    
+            actualizar_metricas_fold(y_val, predicciones, metricas)
+
+            print(f"Fold: {fold} procesado con éxito")
+
+        self._reiniciar_fases_pipeline()
+
+        tiempo_fin = time.time()
+        tiempo_total = tiempo_fin - tiempo_inicio
+
+        return metricas, tiempo_total
+
     def _imprimir_resultado_pipeline(self, X_df, y_df):
         cols_with_nan = X_df.columns[X_df.isna().any()].tolist()
 

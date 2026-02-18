@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from ..RegistroTecnica import RegistroTecnica
 from sklearn.base import BaseEstimator, TransformerMixin
+from pandas.api.types import is_object_dtype, is_categorical_dtype
+
+from ..RegistroTecnica import RegistroTecnica
 
 class CodificarVariablesCategoricasRangoBajo(BaseEstimator, TransformerMixin, RegistroTecnica):
     _instance = None  # Atributo de clase para almacenar la instancia única
@@ -90,7 +92,7 @@ class CodificarVariablesCategoricasRangoBajo(BaseEstimator, TransformerMixin, Re
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
         for col in X.columns:
-            if not pd.api.types.is_object_dtype(X[col]):
+            if not (is_object_dtype(X[col]) or is_categorical_dtype(X[col])):
                 continue
 
             ratio_unicos = X[col].nunique() / len(X)
@@ -135,6 +137,6 @@ class CodificarVariablesCategoricasRangoBajo(BaseEstimator, TransformerMixin, Re
         """
         for col, mapa in self.log_params.items():
             if col in X_copy.columns:
-                X_copy[col] = X_copy[col].map(mapa)
+                X_copy[col] = X_copy[col].map(mapa).astype(int)
 
         return X_copy

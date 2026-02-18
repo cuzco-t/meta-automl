@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from ..RegistroTecnica import RegistroTecnica
 from sklearn.base import BaseEstimator, TransformerMixin
+from pandas.api.types import is_object_dtype, is_categorical_dtype
+
+from ..RegistroTecnica import RegistroTecnica
 
 class CodificarVariablesCategoricasRangoMedio(BaseEstimator, TransformerMixin, RegistroTecnica):
     _instance = None  # Atributo de clase para la instancia única
@@ -90,7 +92,7 @@ class CodificarVariablesCategoricasRangoMedio(BaseEstimator, TransformerMixin, R
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
         for col in X.columns:
-            if not pd.api.types.is_object_dtype(X[col]):
+            if not (is_object_dtype(X[col]) or is_categorical_dtype(X[col])):
                 continue
 
             ratio_unicos = X[col].nunique() / len(X)
@@ -113,7 +115,7 @@ class CodificarVariablesCategoricasRangoMedio(BaseEstimator, TransformerMixin, R
         for col, freqs in self.log_params.items():
             if col in X_copy.columns:
                 frecuencia_minima = freqs.min()
-                X_copy[col] = X_copy[col].map(freqs).fillna(frecuencia_minima)
+                X_copy[col] = X_copy[col].map(freqs).fillna(frecuencia_minima).astype(float)
                 print(f"Columna '{col}': {X_copy[col].isna().sum()}")
 
         return X_copy
