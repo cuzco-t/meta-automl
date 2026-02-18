@@ -33,10 +33,17 @@ class SecuenciaPreprocesamiento:
     def guardar_secuencia(self, ruta_archivo="secuencia_preprocesamiento.json"):
         print(f"Guardando secuencia de preprocesamiento en {ruta_archivo}...")
         try:
-            with open(ruta_archivo, "w") as f:
-                json.dump(self.secuencia, f, indent=4)
+            ruta_temp = ruta_archivo + ".tmp"
+            json_str = json.dumps(self.secuencia, indent=4)
+
+            with open(ruta_temp, "w") as f:
+                f.write(json_str)
                 f.flush()
                 os.fsync(f.fileno())
+
+            os.replace(ruta_temp, ruta_archivo)
+
             print("Secuencia guardada exitosamente.")
+
         except Exception as e:
             print(f"Error al guardar la secuencia: {e}")

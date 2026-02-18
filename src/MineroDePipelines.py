@@ -222,7 +222,6 @@ class MineroDePipelines:
             imprimir_resultados=False
         )
 
-        SecuenciaPreprocesamiento().guardar_secuencia()
 
         print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
         selector_modelo = SelectorModeloClustering(self._SEMILLA)
@@ -230,6 +229,8 @@ class MineroDePipelines:
 
         print("Entrenando modelo de ML...")
         modelo_ml = selector_modelo.get_modelo_ml()
+        SecuenciaPreprocesamiento().guardar_secuencia()
+        
         etiquetas = modelo_ml.fit_predict(X_train_preprocesado)
 
         numero_etiquetas = len(set(etiquetas)) - (1 if -1 in etiquetas else 0)
