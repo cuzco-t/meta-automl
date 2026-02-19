@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterator
 
 from src import Result, ExtractorMetaFeatures, MineroDePipelines, BaseDeDatos
+from src.PipelineLogger import PipelineLogger
 
 
 def get_archivos(carpeta: str) -> list[Path]:
@@ -149,6 +150,9 @@ def guardar_dataset(
 def main():
     RUTA_CARPETA_IDENTIFICADORES = "./data/datasets_identificadores/"
     RUTA_CARPETA_DATSETS_DESCARGADOS = "./data/"
+
+    # Configuración única
+    PipelineLogger().get_logger()
 
     extractor = ExtractorMetaFeatures()
     minero = MineroDePipelines()

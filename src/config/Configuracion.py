@@ -29,6 +29,10 @@ class Configuracion:
 
         self.silenciar_pymfe_warnings = os.getenv('SILENCIAR_PYMFE_WARNINGS').lower() == 'true'
 
+        self.loki_url = os.getenv('LOKI_URL')
+        self.loki_username = os.getenv('LOKI_USERNAME')
+        self.loki_api_key = os.getenv('LOKI_API_KEY')
+
         self.etiqueta_error = os.getenv('ETIQUETA_ERROR', 'ERROR')
         self.permitir_none = os.getenv('PERMITIR_NONE').lower() == 'true'
         self.permitir_llm = os.getenv('PERMITIR_LLM').lower() == 'true'

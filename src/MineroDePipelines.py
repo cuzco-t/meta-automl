@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 from src.config.Configuracion import Configuracion
+from .PipelineLogger import PipelineLogger
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.metrics import (
@@ -46,6 +47,8 @@ class MineroDePipelines:
     def __init__(self):
         self._SEMILLA = None
         self._N_FOLDS = 3
+        self._logger = PipelineLogger().get_logger()
+        self._numero_ejecuciones = 0
 
     def _leer_dataset(self, ruta_absoluta, target) -> tuple[pd.DataFrame, pd.Series]:
         """
@@ -63,156 +66,6 @@ class MineroDePipelines:
 
         return X_df, y_df
 
-    def construir_pipeline_clasificacion(self, X_df: pd.DataFrame, y_df: pd.Series) -> None:
-        # Se divide el dataset en 3 folds normales
-        skf = StratifiedKFold(n_splits=self._N_FOLDS, shuffle=True, random_state=self._SEMILLA)
-
-        accuracy_scores = []
-        precision_scores = []
-        recall_scores = []
-        f1_scores = []
-
-        for fold, (train_idx, val_idx) in enumerate(skf.split(X_df, y_df), 1):
-            X_train, X_val = X_df.iloc[train_idx], X_df.iloc[val_idx]
-            y_train, y_val = y_df.iloc[train_idx], y_df.iloc[val_idx]
-
-            print("="*100)
-            print(f"Fold: {fold}")
-            print("="*100)
-
-            print("Preprocesando datos de entrenamiento...")
-            X_train_preprocesado, y_train_preprocesado = self._preprocesar_datos(
-                X_train.copy(), 
-                y_train.copy(),
-                tarea="clasificacion", 
-                imprimir_resultados=False
-            )
-
-            if fold == 1:
-                SecuenciaPreprocesamiento().guardar_secuencia()
-
-            print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
-            selector_modelo = SelectorModeloClasificacion(self._SEMILLA)
-            selector_modelo.fit(X_train_preprocesado, y_train_preprocesado)
-
-            print("Entrenando modelo de ML...")
-            modelo_ml = selector_modelo.get_modelo_ml()
-            modelo_ml.fit(X_train_preprocesado, y_train_preprocesado)
-
-            print("Procesando datos de validación...")
-            X_val, y_val = self._preprocesar_datos(
-                X_val.copy(), 
-                y_val.copy(),
-                tarea="clasificacion",
-                imprimir_resultados=False
-            )
-
-            print("Evaluando modelo de ML en conjunto de validación...")
-            print(f"Columnas con nulos: {X_val.columns[X_val.isna().any()].tolist()}")
-            predicciones = modelo_ml.predict(X_val)
-
-            accuracy = accuracy_score(y_val, predicciones)
-            precision = precision_score(y_val, predicciones, average="weighted", zero_division=0)
-            recall = recall_score(y_val, predicciones, average="weighted", zero_division=0)
-            f1 = f1_score(y_val, predicciones, average="weighted", zero_division=0)
-
-            accuracy_scores.append(accuracy)
-            precision_scores.append(precision)
-            recall_scores.append(recall)
-            f1_scores.append(f1)
-
-            print(f"Fold: {fold} procesado con éxito")
-            
-        print("="*100)
-        print("Promedios finales".upper())
-        print("="*100)
-        print(f"{'Accuracy':<10}: {np.mean(accuracy_scores)}")
-        print(f"{'Precision':<10}: {np.mean(precision_scores)}")
-        print(f"{'Recall':<10}: {np.mean(recall_scores)}")
-        print(f"{'F1':<10}: {np.mean(f1_scores)}")
-        
-        self._reiniciar_fases_pipeline()
-
-        return None
-    
-    def construir_pipeline_regresion(self, X_df: pd.DataFrame, y_df: pd.Series):
-        # Se divide el dataset en 3 folds normales
-        kf = KFold(n_splits=self._N_FOLDS, shuffle=True, random_state=self._SEMILLA)
-
-        mae_scores = []
-        mse_scores = []
-        rmse_scores = []
-        r2_scores = []
-        medae_scores = []
-        ev_scores = []
-
-        for fold, (train_idx, val_idx) in enumerate(kf.split(X_df, y_df), 1):
-            X_train, X_val = X_df.iloc[train_idx], X_df.iloc[val_idx]
-            y_train, y_val = y_df.iloc[train_idx], y_df.iloc[val_idx]
-
-            print("="*100)
-            print(f"Fold: {fold}")
-            print("="*100)
-
-            print("Preprocesando datos de entrenamiento...")
-            X_train_preprocesado, y_train_preprocesado = self._preprocesar_datos(
-                X_train.copy(), 
-                y_train.copy(), 
-                tarea="regresion",
-                imprimir_resultados=False
-            )
-
-            if fold == 1:
-                SecuenciaPreprocesamiento().guardar_secuencia()
-
-            print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
-            selector_modelo = SelectorModeloRegresion(self._SEMILLA)
-            selector_modelo.fit(X_train_preprocesado, y_train_preprocesado)
-
-            print("Entrenando modelo de ML...")
-            modelo_ml = selector_modelo.get_modelo_ml()
-            modelo_ml.fit(X_train_preprocesado, y_train_preprocesado)
-
-            print("Procesando datos de validación...")
-            X_val, y_val = self._preprocesar_datos(
-                X_val.copy(), 
-                y_val.copy(), 
-                tarea="regresion",
-                imprimir_resultados=False
-            )
-
-            print("Evaluando modelo de ML en conjunto de validación...")
-            predicciones = modelo_ml.predict(X_val)
-
-            mae = mean_absolute_error(y_val, predicciones)
-            mse = mean_squared_error(y_val, predicciones)
-            rmse = np.sqrt(mse)
-            r2 = r2_score(y_val, predicciones)
-            medae = median_absolute_error(y_val, predicciones)
-            ev = explained_variance_score(y_val, predicciones)
-
-            mae_scores.append(mae)
-            mse_scores.append(mse)
-            rmse_scores.append(rmse)
-            r2_scores.append(r2)
-            medae_scores.append(medae)
-            ev_scores.append(ev)
-
-            print(f"Fold: {fold} procesado con éxito")
-            
-        print("="*100)
-        print("Promedios finales".upper())
-        print("="*100)
-        print(f"{'MAE':<8}: {np.mean(mae_scores)}")
-        print(f"{'MSE':<8}: {np.mean(mse_scores)}")
-        print(f"{'RMSE':<8}: {np.mean(rmse_scores)}")
-        print(f"{'R2':<8}: {np.mean(r2_scores)}")
-        print(f"{'MedAE':<8}: {np.mean(medae_scores)}")
-        print(f"{'EV':<8}: {np.mean(ev_scores)}")
-        
-        self._reiniciar_fases_pipeline()
-        return None
-    
     def construir_pipeline_clustering(self, X_df: pd.DataFrame):
         X_train = X_df.copy()
 
@@ -439,7 +292,9 @@ class MineroDePipelines:
 
             return selector_modelo
             
-        
+        self._numero_ejecuciones += 1
+        self._logger.info(f"Procesando ejecucion {self._numero_ejecuciones}", extra={"fase": "Minero"})
+
         kf = get_k_fold_coss_validation()
         metricas = get_listas_metricas_inicializadas()
 
