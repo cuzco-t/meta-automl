@@ -3,37 +3,26 @@ import pandas as pd
 from scipy import stats
 
 from ..RegistroTecnica import RegistroTecnica
-from sklearn.base import BaseEstimator, TransformerMixin
 
-class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
-    _instance = None  # Atributo de clase para la instancia única
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(NormalizarDatosNumericos, cls).__new__(cls)
-        return cls._instance
-
+class NormalizarDatosNumericos(RegistroTecnica):
     def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
         semilla: para reproducibilidad
         """
-        # Evitamos re-inicializar si la instancia ya existe
-        if not hasattr(self, "_initialized"):
-            RegistroTecnica.__init__(self, log_fase="normalizar_datos_numericos")
-            self.permitir_none = permitir_none
-            self.semilla = semilla
-            self.config_test = config_test
-            self.reiniciar()
-            self._initialized = True
-
-    def reiniciar(self):
-        """
-        Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
-        Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
-        """
-        self.log_algoritmo = None
-        self.log_params = {}
+        RegistroTecnica.__init__(self, log_fase="normalizar_datos_numericos")
+        self.permitir_none = permitir_none
+        self.semilla = semilla
+        self.config_test = config_test
+        self.ALGORITMOS = [
+            None, 
+            "z-score", 
+            "box-cox", 
+            "sqrt", 
+            "ln", 
+            "inverso",
+            "cuadrado"
+        ]
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -43,27 +32,12 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
     def fit(self, X: pd.DataFrame, y: pd.Series = None):
         """
         Selecciona aleatoriamente la técnica de normalización
-        """
-        if self.log_algoritmo is not None:
-            return self
-        
+        """        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            TECNICAS = self._permitir_none([
-                None, 
-                "z-score", 
-                "box-cox", 
-                "sqrt", 
-                "ln", 
-                "inverso",
-                "cuadrado", 
-            ])
-            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
 
@@ -76,15 +50,15 @@ class NormalizarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica)
         """
         match self.log_algoritmo:
             case None:
-                return X
+                return X, y
             
             case "z-score" | "box-cox" | "sqrt" | "ln" | "inverso":
                 X_normalizado = self._normalizar_con_parametros(X.copy())
-                return X_normalizado
+                return X_normalizado, y
             
             case "cuadrado":
                 X_normalizado = self._normalizar_con_cuadrado(X.copy())
-                return X_normalizado
+                return X_normalizado, y
             
             case _:
                 raise ValueError(f"Técnica de normalización desconocida: {self.log_algoritmo}")

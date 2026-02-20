@@ -33,7 +33,7 @@ class SelectorModeloRegresion(RegistroTecnica):
         super().__init__(log_fase="selector_modelo")
         self.random_state = random_state
         self.config_test = config_test
-        self.reiniciar()
+        
 
     def reiniciar(self):
         self.log_algoritmo = None

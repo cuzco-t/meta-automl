@@ -1,40 +1,24 @@
 import numpy as np
 import pandas as pd
 
-from sklearn.base import BaseEstimator, TransformerMixin
 from pandas.api.types import is_object_dtype, is_categorical_dtype
 
 from ..RegistroTecnica import RegistroTecnica
 
-class CodificarVariablesCategoricasRangoAlto(BaseEstimator, TransformerMixin, RegistroTecnica):
-    _instance = None  # Atributo de clase para almacenar la instancia única
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(CodificarVariablesCategoricasRangoAlto, cls).__new__(cls)
-        return cls._instance
-
+class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
     def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
         semilla: para reproducibilidad
         """
-        # Evitamos re-inicializar si la instancia ya existe
-        if not hasattr(self, "_initialized"):
-            RegistroTecnica.__init__(self, log_fase="codificar_variables_categoricas_rango_alto")
-            self.permitir_none = permitir_none
-            self.semilla = semilla
-            self.config_test = config_test
-            self.reiniciar()
-            self._initialized = True
-
-    def reiniciar(self):
-        """
-        Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
-        Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
-        """
-        self.log_algoritmo = None
-        self.log_params = {}
+        RegistroTecnica.__init__(self, log_fase="codificar_variables_categoricas_rango_alto")
+        self.permitir_none = permitir_none
+        self.semilla = semilla
+        self.config_test = config_test
+        self.ALGORITMOS = [
+            None, 
+            "eliminar_columna"
+        ]
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -44,22 +28,12 @@ class CodificarVariablesCategoricasRangoAlto(BaseEstimator, TransformerMixin, Re
     def fit(self, X: pd.DataFrame, y: pd.Series = None):
         """
         Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
-        """
-        if self.log_algoritmo is not None:
-            return self
-        
+        """        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            TECNICAS = self._permitir_none([
-                None, 
-                "eliminar_columna"
-            ])
-            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
 
@@ -73,11 +47,11 @@ class CodificarVariablesCategoricasRangoAlto(BaseEstimator, TransformerMixin, Re
         """
         match self.log_algoritmo:
             case None:
-                return X
+                return X, y
             
             case "eliminar_columna":
                 X_modificado = self._eliminar_columna(X)
-                return X_modificado
+                return X_modificado, y
 
             case _:
                 raise ValueError(f"Técnica de codificación desconocida: {self.log_algoritmo}")

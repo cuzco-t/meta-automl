@@ -19,7 +19,7 @@ class BaseDeDatos:
 
         self.conn = None
         self.conectar()
-        self._initialized = True
+        
 
     def conectar(self):
         configuracion = Configuracion()

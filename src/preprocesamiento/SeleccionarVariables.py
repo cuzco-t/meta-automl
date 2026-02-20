@@ -11,32 +11,26 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.decomposition import PCA
 
 class SeleccionarVariables(RegistroTecnica):
-    _instance = None  # Atributo de clase para almacenar la instancia única
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(SeleccionarVariables, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self, permitir_none=True, semilla=None, tarea="clasificacion", config_test=None):
         """
         permitir_none: si True, permite que no se seleccione ninguna técnica
         tarea: 'clasificacion' o 'regresion'
         semilla: para reproducibilidad
         """
-        # Evitamos re-inicializar si la instancia ya existe
-        if not hasattr(self, "_initialized"):
-            RegistroTecnica.__init__(self, log_fase="seleccionar_variables")
-            self.permitir_none = permitir_none
-            self.tarea = tarea
-            self.semilla = semilla
-            self.config_test = config_test
-            self.reiniciar()
-            self._initialized = True
-
-    def reiniciar(self):
-        self.log_algoritmo = None
-        self.log_params = {}
+        RegistroTecnica.__init__(self, log_fase="seleccionar_variables")
+        self.permitir_none = permitir_none
+        self.tarea = tarea
+        self.semilla = semilla
+        self.config_test = config_test
+        self.ALGORITMOS = [
+            None, 
+            "aleatorio", 
+            "variance_threshold", 
+            "mutual_info",
+            "select_from_model", 
+            "pca", 
+            "llm"
+        ]
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -46,29 +40,12 @@ class SeleccionarVariables(RegistroTecnica):
     def fit(self, X: pd.DataFrame, y: pd.Series):
         """
         Selecciona aleatoriamente la técnica de selección de variables
-        """
-        if self.log_algoritmo is not None:
-            return self
-        
+        """        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            TECNICAS = self._permitir_none([
-                None, 
-                "aleatorio", 
-                "variance_threshold", 
-                "mutual_info",
-                "select_from_model", 
-                "pca", 
-                "llm"
-            ])
-            #! Eliminar esta linea en producción
-            TECNICAS.remove("llm")
-            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X, y)
 
@@ -81,15 +58,15 @@ class SeleccionarVariables(RegistroTecnica):
         """
         match self.log_algoritmo:
             case None:
-                return X
+                return X, y
             
             case "aleatorio" | "variance_threshold" | "mutual_info" | "select_from_model" | "llm":
                 X_reducido = self._seleccionar_columnas_con_parametros(X.copy())
-                return X_reducido
+                return X_reducido, y
             
             case "pca":
                 X_pca = self._seleccionar_columnas_con_pca(X.copy())
-                return X_pca
+                return X_pca, y
             
             case _:
                 raise ValueError(f"Técnica de selección de variables no reconocida: {self.log_algoritmo}")                

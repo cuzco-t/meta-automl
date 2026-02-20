@@ -2,38 +2,25 @@ import numpy as np
 import pandas as pd
 
 from ..RegistroTecnica import RegistroTecnica
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler, MaxAbsScaler
 
-class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
-    _instance = None  # Atributo de clase para almacenar la instancia única
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(EscalarDatosNumericos, cls).__new__(cls)
-        return cls._instance
-
+class EscalarDatosNumericos(RegistroTecnica):
     def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
         semilla: para reproducibilidad
         """
-        # Evitamos re-inicializar si la instancia ya existe
-        if not hasattr(self, "_initialized"):
-            RegistroTecnica.__init__(self, log_fase="escalar_datos_numericos")
-            self.permitir_none = permitir_none
-            self.semilla = semilla
-            self.config_test = config_test
-            self.reiniciar()
-            self._initialized = True
-
-    def reiniciar(self):
-        """
-        Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
-        Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
-        """
-        self.log_algoritmo = None
-        self.log_params = {}
+        RegistroTecnica.__init__(self, log_fase="escalar_datos_numericos")
+        self.permitir_none = permitir_none
+        self.semilla = semilla
+        self.config_test = config_test
+        self.ALGORITMOS = [
+            None, 
+            "min_max", 
+            "max_abs_scaler", 
+            "standard_scaler", 
+            "robust_scaler"
+        ]
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -44,24 +31,11 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
         """
-        if self.log_algoritmo is not None:
-            return self
-        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            TECNICAS = self._permitir_none([
-                None, 
-                "min_max", 
-                "max_abs_scaler", 
-                "standard_scaler", 
-                "robust_scaler"
-            ])
-            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
 
@@ -74,11 +48,11 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         match self.log_algoritmo:
             case None:
-                return X
+                return X, y
             
             case "min_max" | "standard_scaler" | "robust_scaler" | "max_abs_scaler":
                 X_escalado = self._escalar_con_parametros(X.copy())
-                return X_escalado
+                return X_escalado, y
             
             case _:
                 raise ValueError(f"Técnica de escalado desconocida: {self.log_algoritmo}")
@@ -101,6 +75,11 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         cols_numericas = X_df.select_dtypes(include=np.number).columns
         self.log_params["columnas"] = cols_numericas.tolist()
+
+        if len(cols_numericas) == 0:
+            self.log_params["params"] = {}
+            self.registrar_parametros(self.log_params)
+            return
 
         escalador = self._get_instancia_scaler()
         escalador.fit(X_df[cols_numericas])
@@ -164,6 +143,9 @@ class EscalarDatosNumericos(BaseEstimator, TransformerMixin, RegistroTecnica):
 
         cols_numericas = X_df.select_dtypes(include=np.number).columns
 
+        if len(cols_numericas) == 0:
+            return X_df
+        
         X_scaled = escalador.transform(X_df[cols_numericas])
         X_df[cols_numericas] = np.round(X_scaled, 3).astype(np.float32)
 

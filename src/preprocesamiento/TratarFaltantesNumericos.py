@@ -6,34 +6,24 @@ from scipy import stats
 from ..RegistroTecnica import RegistroTecnica
 
 class TratarFaltantesNumericos(RegistroTecnica):
-    _instance = None  # Atributo de clase para almacenar la instancia única
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(TratarFaltantesNumericos, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se aplique ninguna técnica
         semilla: para reproducibilidad
         """
-        # Evitamos re-inicializar si ya existe la instancia
-        if not hasattr(self, "_initialized"):
-            RegistroTecnica.__init__(self, log_fase="tratar_faltantes_numericos")
-            self.permitir_none = permitir_none
-            self.semilla = semilla
-            self.config_test = config_test
-            self.reiniciar()
-            self._initialized = True
-
-    def reiniciar(self):
-        """
-        Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
-        Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
-        """
-        self.log_algoritmo = None
-        self.log_params = {}
+        RegistroTecnica.__init__(self, log_fase="tratar_faltantes_numericos")
+        self.permitir_none = permitir_none
+        self.semilla = semilla
+        self.config_test = config_test
+        self.ALGORITMOS = [
+            None, 
+            "media", 
+            "mediana", 
+            "moda", 
+            "media_geometrica", 
+            "aleatorio", 
+            "eliminar"
+        ]
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -44,26 +34,11 @@ class TratarFaltantesNumericos(RegistroTecnica):
         """
         Decide aleatoriamente la técnica a aplicar y la guarda en self.log_algoritmo
         """
-        if self.log_algoritmo is not None:
-            return self
-
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
-        else:
-            generador_aleatorio = np.random.default_rng()
-            TECNICAS = self._permitir_none([
-                None, 
-                "media", 
-                "mediana", 
-                "moda", 
-                "media_geometrica", 
-                "aleatorio", 
-                "eliminar"
-            ])
-            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
-            
+        else:            
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
 
@@ -134,7 +109,12 @@ class TratarFaltantesNumericos(RegistroTecnica):
         :return: DataFrame con los valores faltantes imputados
         :rtype: DataFrame
         """
+        if self.log_params is None:
+            return X_df
+
         for col, valor in self.log_params.items():
+            if not (pd.api.types.is_numeric_dtype(X_df[col]) and X_df[col].isna().any()):
+                continue
             X_df[col] = X_df[col].fillna(valor)
         return X_df
     

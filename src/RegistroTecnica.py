@@ -4,7 +4,7 @@ class RegistroTecnica:
     def __init__(self, log_fase=None, log_algoritmo=None, log_params=None):
         self.log_fase = log_fase
         self.log_algoritmo = log_algoritmo
-        self.log_params = log_params
+        self.log_params = log_params if log_params is not None else {}
 
     def registrar_tecnica(self, fase, tecnica, parametro):
         secuencia = SecuenciaPreprocesamiento()

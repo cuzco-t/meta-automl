@@ -176,17 +176,17 @@ def main():
             dataset_name, X, y = result_datos_openml.get_value()
             guardar_dataset(X, y, tarea_pipeline, dataset_name, RUTA_CARPETA_DATSETS_DESCARGADOS)
 
-            print("Tipos de datos obtenidos:")
-            print("X dtype:", X.dtypes)
-            print("y dtype:", y.dtype)
+            # print("Tipos de datos obtenidos:")
+            # print("X dtype:", X.dtypes)
+            # print("y dtype:", y.dtype)
 
-            print("=" * 100)
-            print("Meta-features progreso:")
-            meta_features, meta_features_vectorizadas = extractor.extraer_desde_dataframe(
-                X, 
-                y, 
-                vectorizar=False
-            )
+            # print("=" * 100)
+            # print("Meta-features progreso:")
+            # meta_features, meta_features_vectorizadas = extractor.extraer_desde_dataframe(
+            #     X, 
+            #     y, 
+            #     vectorizar=False
+            # )
 
             print("=" * 100)
             print(f"Dataset: {dataset_name}")
@@ -196,15 +196,15 @@ def main():
             # print("Meta-features extraídas:", meta_features)
             print("=" * 100)
 
-            metricas, tiempo_total = minero.pipeline_supervisado(X, y, tarea_pipeline)
+            pipeline, metricas, tiempo_total = minero.pipeline_supervisado(X, y, tarea_pipeline)
 
             print("")
             print("Pipeline supervisado finalizado.")
-            print(f"Tiempo de ejecución: {tiempo_total:.2f} segundos")
-            print("Promedios de métricas:")
-            for metrica, valores in metricas.items():
-                promedio = sum(valores) / len(valores)
-                print(f"\t{metrica:<20}: {promedio}")
+            # print(f"Tiempo de ejecución: {tiempo_total:.2f} segundos")
+            # print("Promedios de métricas:")
+            # for metrica, valores in metricas.items():
+            #     promedio = sum(valores) / len(valores)
+            #     print(f"\t{metrica:<20}: {promedio}")
 
             contador += 1
             if contador >= 10:  # Limitar a los primeros 5 datasets para la demo

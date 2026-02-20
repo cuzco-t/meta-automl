@@ -1,10 +1,14 @@
 import ast
+from queue import Queue
+import signal
+
 import numpy as np
 import pandas as pd
 
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
+from ..Result import Result
 
 # Modelos lineales
 from sklearn.linear_model import (
@@ -43,50 +47,38 @@ from sklearn.discriminant_analysis import (
 
 
 class SelectorModeloClasificacion(RegistroTecnica):
-    def __init__(self, random_state=None, config_test=None):
+    def __init__(self, config_test=None):
         super().__init__(log_fase="selector_modelo")
-        self.random_state = random_state
         self.config_test = config_test
-        self.reiniciar()
-
-    def reiniciar(self):
-        self.log_algoritmo = None
-        self.log_params = {}
-
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> "SelectorModeloClasificacion":
+        self.ALGORITMOS = [
+            "logistic_regression",
+            "sgd_classifier",
+            "ridge_classifier",
+            "decision_tree",
+            "random_forest",
+            "gradient_boosting",
+            "hist_gradient_boosting",
+            "ada_boost",
+            "svc",
+            "linear_svc",
+            "knn",
+            "gaussian_nb",
+            "multinomial_nb",
+            "mlp_classifier",
+            "linear_discriminant_analysis",
+            "quadratic_discriminant_analysis"
+        ]
+        
+    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series) -> None:
         """
         Selecciona aleatoriamente el modelo de clasificación a usar, y configura sus
         hiperparámetros.
-        """
-        if self.log_algoritmo is not None:
-            return self
-        
+        """        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            MODELOS = [
-                "logistic_regression",
-                "sgd_classifier",
-                "ridge_classifier",
-                "decision_tree",
-                "random_forest",
-                "gradient_boosting",
-                "hist_gradient_boosting",
-                "ada_boost",
-                "svc",
-                "linear_svc",
-                "knn",
-                "gaussian_nb",
-                "multinomial_nb",
-                "mlp_classifier",
-                "linear_discriminant_analysis",
-                "quadratic_discriminant_analysis"
-            ]
-            self.log_algoritmo = generador_aleatorio.choice(MODELOS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             # self._calcular_parametros(X, y)
             #! Comentar en produccion
@@ -94,15 +86,32 @@ class SelectorModeloClasificacion(RegistroTecnica):
             self.registrar_parametros(self.log_params)
 
         self.registrar_algoritmo(self.log_algoritmo)
-        return self
-        
-    def get_modelo_ml(self):
+        return None
+    
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Timeout: el entrenamiento excedio el limite de tiempo")
+
+    def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
         modelo = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
-
         modelo.set_params(**hiper_parametros)
 
-        return modelo
+        signal.signal(signal.SIGALRM, self.timeout_handler)
+        signal.alarm(5)
+        
+        result_entrenamiento = None
+        try:
+            modelo.fit(X, y)
+        except TimeoutError as e:
+            result_entrenamiento = Result.fail(str(e))
+        except Exception as e:
+            result_entrenamiento = Result.fail(f"Error durante entrenamiento:\n{str(e)}")
+        else:
+            result_entrenamiento = Result.ok(modelo)
+        finally:
+            signal.alarm(0)
+
+        return result_entrenamiento
     
     def _get_instancia_modelo(self):
         match self.log_algoritmo:

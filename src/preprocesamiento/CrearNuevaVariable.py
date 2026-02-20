@@ -1,41 +1,29 @@
 import numpy as np
 import pandas as pd
-import random
 
 from ..RegistroTecnica import RegistroTecnica
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.decomposition import PCA
 
-class CrearNuevaVariable(BaseEstimator, TransformerMixin, RegistroTecnica):
-    _instance = None  # Atributo de clase para la instancia única
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(CrearNuevaVariable, cls).__new__(cls)
-        return cls._instance
-
+class CrearNuevaVariable(RegistroTecnica):
     def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se cree ninguna variable nueva
         semilla: para reproducibilidad
         """
-        # Evitamos re-inicializar si la instancia ya existe
-        if not hasattr(self, "_initialized"):
-            RegistroTecnica.__init__(self, log_fase="crear_nueva_variable")
-            self.log_fase = "crear_nueva_variable"
-            self.permitir_none = permitir_none
-            self.semilla = semilla
-            self.config_test = config_test
-            self.reiniciar()
-            self._initialized = True
-
-    def reiniciar(self):
-        """
-        Reinicia valores de logs de selección de técnica y parámetros para la próxima ejecución del pipeline.
-        Esto es necesario porque esta clase es un singleton y se reutiliza en cada fold del pipeline
-        """
-        self.log_algoritmo = None
-        self.log_params = {}
+        RegistroTecnica.__init__(self, log_fase="crear_nueva_variable")
+        self.log_fase = "crear_nueva_variable"
+        self.permitir_none = permitir_none
+        self.semilla = semilla
+        self.config_test = config_test
+        
+        self.ALGORITMOS = [
+            None, 
+            "suma", 
+            "resta", 
+            "multiplicacion", 
+            "ratio", 
+            "pca"
+        ]
 
     def _permitir_none(self, tecnicas):
         if not self.permitir_none:
@@ -46,25 +34,11 @@ class CrearNuevaVariable(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         Selecciona aleatoriamente la técnica para crear nueva variable
         """
-        if self.log_algoritmo is not None:
-            return self
-        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            TECNICAS = self._permitir_none([
-                None, 
-                "suma", 
-                "resta", 
-                "multiplicacion", 
-                "ratio", 
-                "pca"
-            ])
-            self.log_algoritmo = generador_aleatorio.choice(TECNICAS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
 
@@ -77,15 +51,15 @@ class CrearNuevaVariable(BaseEstimator, TransformerMixin, RegistroTecnica):
         """
         match self.log_algoritmo:
             case None:
-                return X
+                return X, y
             
             case "suma" | "resta" | "multiplicacion" | "ratio":
                 X_nueva = self._crear_variable_con_operaciones_aritmeticas(X.copy())
-                return X_nueva
+                return X_nueva, y
             
             case "pca":
                 X_nueva = self._crear_variable_con_pca(X.copy())
-                return X_nueva
+                return X_nueva, y
             
             case _:
                 raise ValueError(f"Técnica no reconocida: {self.log_algoritmo}")
@@ -118,6 +92,9 @@ class CrearNuevaVariable(BaseEstimator, TransformerMixin, RegistroTecnica):
         :return: DataFrame con la nueva variable creada
         :rtype: DataFrame
         """
+        if len(self.log_params) != 2:
+            return X_df
+
         col1 = self.log_params["col1"]
         col2 = self.log_params["col2"]
 

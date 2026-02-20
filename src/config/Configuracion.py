@@ -15,7 +15,7 @@ class Configuracion:
         # Ojo: __init__ se ejecuta cada vez que llamas a la clase
         if not hasattr(self, "_initialized"):
             self._cargar_configuracion()
-            self._initialized = True
+            
 
     def _cargar_configuracion(self):
         load_dotenv()
