@@ -1,6 +1,6 @@
 import ast
-from queue import Queue
 import signal
+import time
 
 import numpy as np
 import pandas as pd
@@ -87,7 +87,8 @@ class SelectorModeloClasificacion(RegistroTecnica):
 
         self.registrar_algoritmo(self.log_algoritmo)
         return None
-    
+
+    @staticmethod
     def timeout_handler(signum, frame):
         raise TimeoutError("Timeout: el entrenamiento excedio el limite de tiempo")
 

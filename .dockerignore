@@ -1,0 +1,63 @@
+# Entorno virtual
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+.pytest_cache/
+demo_*.py
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Datos de prueba/cache
+.cache/
+*.cache
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentación y archivos no necesarios
+README.md
+docs/
+
+# Node modules (si existe)
+node_modules/
