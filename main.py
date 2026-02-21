@@ -146,111 +146,73 @@ def guardar_dataset(
     
     return None
 
-def vectorizar_pipeline(pipeline: dict) -> list[float]:
-    fases_acciones_indice = {
-        "tratar_duplicados": {
-            "eliminar": 184,
-            None: 185
-        },
-        "tratar_faltantes_numericos": {
-            "aleatorio": 186,
-            "eliminar": 187,
-            "media": 188,
-            "media_geometrica": 189,
-            "mediana": 190,
-            "moda": 191,
-            None: 192
-        },
-        "tratar_faltantes_strings": {
-            "aleatorio": 193,
-            "eliminar": 194,
-            "etiqueta_desconocido": 195,
-            "moda": 196,
-        },
-        "codificar_variables_binarias": {
-            "label_encoding": 197,
-            None: 198
-        },
-        "codificar_variables_categoricas_rango_bajo": {
-            "label_encoding": 199,
-            "one_hot_encoding": 200,
-        },
-        "codificar_variables_categoricas_rango_medio": {
-            "eliminar_variable": 201,
-            "frequency_encoding": 202,
-        },
-        "codificar_variables_categoricas_rango_alto": {
-            "eliminar_columna": 203
-        },
-        "tratar_outliers_numericos": {
-            "aleatorio": 204,
-            "eliminar": 205,
-            "media": 206,
-            "media_geometrica": 207,
-            "mediana": 208,
-            "moda": 209,
-            None: 210
-        },
-        "escalar_datos_numericos": {
-            "max_abs_scaler": 211,
-            "min_max": 212,
-            None: 213,
-            "robust_scaler": 214,
-            "standard_scaler": 215,
-        },
-        "normalizar_datos_numericos": {
-            "box_cox": 216,
-            "cuadrado": 217,
-            "inverso": 218,
-            "ln": 219,
-            None: 220,
-            "sqrt": 221,
-            "z_score": 222,
-        },
-        "crear_nueva_variable": {
-            "llm": 223,
-            None: 224
-        },
-        "seleccionar_variables": {
-            "select_from_model": 225,
-            "llm": 226,
-            "mutual_info": 227,
-            None: 228,
-            "pca_90": 229,
-            "pca_95": 230,
-            "pca_99": 231,
-            "umap_20": 232,
-            "umap_50": 233,
-            "umap_80": 234,
-            "variance_threshold": 235,
-        }
-    }
+def crear_mapa_indices() -> tuple[dict, int]:
+    """
+    Crear un mapa de índices para cada fase del pipeline, cada algoritmo dentro de cada fase,
+    y cada modelo ML dentro de cada fase.
+    
+    :return: Un diccionario con los mapas de índices y el número total de dimensiones.
+    :rtype: tuple[dict, int]
+    """
 
-    for fase, acciones in fases_acciones_indice.items():
-        for accion, indice in acciones.items():
-            # Ajustar índices para que comiencen desde 0
-            fases_acciones_indice[fase][accion] = indice - 184
+    contador = 0
+    mapa_indices = {}
 
-    cantidad_total_acciones = sum(len(acciones) for acciones in fases_acciones_indice.values())
-    acciones_vectorizadas = [0.0] * cantidad_total_acciones
-    for fase, accion in pipeline.items():
-        indice = fases_acciones_indice[fase][accion]
-        acciones_vectorizadas[indice] = 1.0
+    tareas = ["clasificacion", "regresion", "clustering"]
+    for tarea in tareas:
+        mapa_indices[tarea] = contador
+        contador += 1
 
-    return acciones_vectorizadas
 
-def promediar_metricas(metricas: dict[str, dict[str, list]]) -> dict[str, float]:
-    if metricas is None:
-        return {}
+    minero = MineroDePipelines()
+    fases_instancias = minero.crear_fases_instancias()
 
-    promedios = {
-        ejecucion: (sum(valores) / len(valores) if len(valores) == 3 else 0.0)
-        for numero_ejecucion in metricas.values()
-        for ejecucion, valores in numero_ejecucion.items()
-    }
+    for fase, instancia in fases_instancias.items():
+        algoritmos = instancia.ALGORITMOS
+        mapa_indices[fase] = {}
+        for algoritmo in algoritmos:
+            mapa_indices[fase][algoritmo] = contador
+            contador += 1
 
-    return promedios
+    selectores_modelos = minero.crear_selectores_modelos()
+    instancias_selectores = list(selectores_modelos.values())
+    for i, tarea in enumerate(tareas):
+        instancia_selector = instancias_selectores[i]
+        mapa_indices[f"modelos_{tarea}"] = {}
+        for algoritmo in instancia_selector.ALGORITMOS:
+            mapa_indices[f"modelos_{tarea}"][algoritmo] = contador
+            contador += 1
 
+    return mapa_indices, contador
+
+def vectorizar_pipeline(mapa_indices, dimensiones, tarea, pipeline, modelo) -> list:
+    """
+    Crea una lista de vectores paso a paso usando copias del último estado.
+    
+    Cada elemento de la lista representa el estado del vector después de cada activación.
+    """
+    vector = [0] * dimensiones
+    historia = [vector.copy()]  # primer elemento: todo cero
+
+    # Activamos el índice de la tarea
+    vector_nuevo = historia[-1].copy()
+    indice_tarea = mapa_indices[tarea]
+    vector_nuevo[indice_tarea] = 1
+    historia.append(vector_nuevo)
+
+    # Activamos índices de cada fase/algoritmo paso a paso
+    for fase, algoritmo in pipeline.items():
+        vector_nuevo = historia[-1].copy()
+        vector_nuevo[mapa_indices[fase][algoritmo]] = 1
+        historia.append(vector_nuevo)
+
+    # Activamos el índice del modelo
+    vector_nuevo = historia[-1].copy()
+    indice_modelo = mapa_indices[f"modelos_{tarea}"][modelo]
+    vector_nuevo[indice_modelo] = 1
+    historia.append(vector_nuevo)
+
+    return historia
 
 def main():
     RUTA_CARPETA_IDENTIFICADORES = "./data/datasets_identificadores/"
@@ -258,6 +220,8 @@ def main():
 
     # Configuración única
     logger = PipelineLogger().get_logger()
+
+    mapa_indices, dimensiones = crear_mapa_indices()
 
     extractor = ExtractorMetaFeatures()
     minero = MineroDePipelines()
@@ -351,7 +315,7 @@ def main():
                         "tarea": tarea_pipeline,
                         "dataset_name": dataset_name,
                         "num_pipeline": i + 1,
-                        "exitoso": True if lista_modelos_ml is not None else False,
+                        "exitoso": True if metricas is not None else False,
                         "pipeline": pipeline,
                         "metricas": metricas,
                         "lista_modelos_ml": lista_modelos_ml,
@@ -359,11 +323,18 @@ def main():
                     }
                 )
 
-                pipeline_vectorizado = vectorizar_pipeline(pipeline)
+                for modelo in lista_modelos_ml:
+                    pipeline_vectorizado = vectorizar_pipeline(
+                        mapa_indices, 
+                        dimensiones, 
+                        tarea_pipeline, 
+                        pipeline, 
+                        modelo
+                    )
 
                 #TODO: Formatear segun sea exito o error, y guardar en base de datos
                 print("")
-                if lista_modelos_ml is None:
+                if metricas is None:
                     print("Pipeline mal configurado")
             
             print(f"Dataset: {dataset_name}")

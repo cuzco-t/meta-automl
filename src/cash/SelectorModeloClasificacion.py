@@ -48,7 +48,7 @@ from sklearn.discriminant_analysis import (
 
 class SelectorModeloClasificacion(RegistroTecnica):
     def __init__(self, config_test=None):
-        super().__init__(log_fase="selector_modelo")
+        super().__init__(log_fase="selector_modelo_clasificacion")
         self.config_test = config_test
         self.ALGORITMOS = [
             "logistic_regression",

@@ -367,7 +367,7 @@ class MineroDePipelines:
                 X_train_procesado, y_train_procesado = X_train.copy(), y_train.copy()
                 X_val_procesado, y_val_procesado = X_val.copy(), y_val.copy()
 
-                fases_instancias_fold_n = self._crear_fases_instancias()
+                fases_instancias_fold_n = self.crear_fases_instancias()
                 self._configurar_instancias(fases_instancias_fold_n, pipeline_aleatorio, tarea)
 
                 for fase, instancia in fases_instancias_fold_n.items():
@@ -411,7 +411,7 @@ class MineroDePipelines:
         self._id_pipeline += 1
         logger = PipelineLogger().get_logger()
 
-        fases_instancias_un_solo_uso = self._crear_fases_instancias()
+        fases_instancias_un_solo_uso = self.crear_fases_instancias()
         pipeline_aleatorio = self._generar_pipeline_aleatorio(fases_instancias_un_solo_uso)
 
         logger.info(
@@ -438,7 +438,10 @@ class MineroDePipelines:
             return {
                 "pipeline": pipeline_aleatorio,
                 "metricas": None,
-                "lista_modelos_ml": None,
+                "lista_modelos_ml": [
+                    str(self._selector_aleatorio.choice(get_selector_modelo().ALGORITMOS))
+                    for _ in range(10)
+                ],
                 "tiempos_pipeline_modelos": None
             }
 
@@ -539,31 +542,7 @@ class MineroDePipelines:
 
         return datos_pipeline
 
-    def _imprimir_resultado_pipeline(self, X_df, y_df):
-        cols_with_nan = X_df.columns[X_df.isna().any()].tolist()
-
-        print("\tPIPELINE COMPLETADO")
-
-        # Forma y tamaño de X y y
-        print(f"\tX: {X_df.shape}")
-        print(f"\ty: {y_df.shape}\n")
-
-        # Tipos de datos
-        print("\tTipos de datos:")
-        max_len = max(len(col) for col in X_df.columns)  # ancho dinámico
-        for col, tipo in X_df.dtypes.items():
-            print(f"\t{col:<{max_len}} : {tipo}")
-
-        # Columnas con NaN
-        print(f"\tColumnas con NaN: {cols_with_nan}")
-        print("")
-
-    def imprimir_secuencia_preprocesamiento(self):
-        secuencia = SecuenciaPreprocesamiento()
-        secuencia.imprimir_secuencia()
-        print("=" * 100)
-
-    def _crear_fases_instancias(self) -> dict[str, object]:
+    def crear_fases_instancias(self) -> dict[str, object]:
         """
         Devuelve un diccionario con instancias de cada fase del pipeline.
         Estas instancias son nuevas y no tienen ninguna configuración previa.
@@ -637,3 +616,10 @@ class MineroDePipelines:
             instancia.log_algoritmo = algoritmo
 
         fases_instancias["seleccionar_variables"].tarea = tarea
+
+    def crear_selectores_modelos(self):
+        return {
+            "selector_modelo_clasificacion": SelectorModeloClasificacion(),
+            "selector_modelo_regresion": SelectorModeloRegresion(),
+            "selector_modelo_clustering": SelectorModeloClustering()
+        }

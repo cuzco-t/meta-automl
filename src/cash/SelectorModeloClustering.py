@@ -27,9 +27,17 @@ from sklearn.cluster import Birch
 
 class SelectorModeloClustering(RegistroTecnica):
     def __init__(self, random_state=None, config_test=None):
-        super().__init__(log_fase="selector_modelo")
+        super().__init__(log_fase="selector_modelo_clustering")
         self.random_state = random_state
         self.config_test = config_test
+        self.ALGORITMOS = [
+            "kmeans",
+            "dbscan",
+            "agglomerative_clustering",
+            "mean_shift",
+            "spectral_clustering",
+            "birch"
+        ]
         
 
     def reiniciar(self):
@@ -41,25 +49,11 @@ class SelectorModeloClustering(RegistroTecnica):
         Selecciona aleatoriamente el modelo de clustering a usar, y configura sus
         hiperparámetros.
         """
-        if self.log_algoritmo is not None:
-            return self
-        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            MODELOS = [
-                "kmeans",
-                "dbscan",
-                "agglomerative_clustering",
-                "mean_shift",
-                "spectral_clustering",
-                "birch"
-            ]
-            self.log_algoritmo = generador_aleatorio.choice(MODELOS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             # self._calcular_parametros(X)
             #! Comentar en produccion
