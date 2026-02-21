@@ -276,52 +276,93 @@ def main():
 
             if not result_datos_openml.is_success:
                 print(f"Error al obtener datos para Task ID {task_id}: {result_datos_openml.get_error()}")
-
+                logger.error(
+                    "Descargar de dataset fallida", 
+                    extra={
+                        "task_id": task_id, 
+                        "tarea": tarea_pipeline, 
+                        "error": result_datos_openml.get_error()
+                    }
+                )
                 continue
 
             dataset_name, X, y = result_datos_openml.get_value()
             guardar_dataset(X, y, tarea_pipeline, dataset_name, RUTA_CARPETA_DATSETS_DESCARGADOS)
 
-            # print("Tipos de datos obtenidos:")
-            # print("X dtype:", X.dtypes)
-            # print("y dtype:", y.dtype)
-
-            # print("=" * 100)
-            # print("Meta-features progreso:")
+            logger.info(
+                "Dataset descargado exitosamente",
+                extra={
+                    "task_id": task_id,
+                    "tarea": tarea_pipeline,
+                    "dataset_name": dataset_name
+                }
+            )
+            
+            logger.info(
+                "Iniciando extraccion de meta-features",
+                extra={
+                    "task_id": task_id,
+                    "tarea": tarea_pipeline,
+                    "dataset_name": dataset_name
+                }
+            )
             # meta_features, meta_features_vectorizadas = extractor.extraer_desde_dataframe(
             #     X, 
             #     y, 
             #     vectorizar=False
             # )
 
-            print("=" * 100)
-            print(f"Dataset: {dataset_name}")
-            print(f"Task ID: {task_id}")
-            print("X shape:", X.shape)
-            print("y shape:", y.shape)
-            # print("Meta-features extraídas:", meta_features)
-            print("=" * 100)
+            logger.info(
+                "Meta-features extraidas exitosamente",
+                extra={
+                    "task_id": task_id,
+                    "tarea": tarea_pipeline,
+                    "dataset_name": dataset_name
+                }
+            )
 
             if task_id == 10:
                 print("Task ID:", task_id)
 
-            pipeline, metricas, tiempo_total = minero.pipeline_supervisado(X, y, tarea_pipeline)
+            contador_pipeline_dataset = 0
+            #! Cambiar en producción para que se ejecute N veces
+            for i in range(3):
+                logger.info(
+                    "Iniciando construccion de pipeline",
+                    extra={
+                        "task_id": task_id,
+                        "tarea": tarea_pipeline,
+                        "dataset_name": dataset_name,
+                        "num_pipeline": i + 1
+                    }
+                )
 
-            pipeline_vectorizado = vectorizar_pipeline(pipeline)
-            # metricas_promediadas = promediar_metricas(metricas)
+                pipeline, metricas, tiempo_total = minero.pipeline_supervisado(X, y, tarea_pipeline)
 
-            #TODO: Formatear segun sea exito o error, y guardar en base de datos
-            print("")
-            if metricas is None:
-                print("Pipeline mal configurado")
+                logger.info(
+                    "Contruccion de pipeline finalizada",
+                    extra={
+                        "task_id": task_id,
+                        "tarea": tarea_pipeline,
+                        "dataset_name": dataset_name,
+                        "num_pipeline": i + 1,
+                        "exitoso": True if metricas is not None else False,
+                        "pipeline": pipeline,
+                        "metricas": metricas,
+                        "tiempo_total": tiempo_total
+                    }
+                )
+
+                pipeline_vectorizado = vectorizar_pipeline(pipeline)
+
+                #TODO: Formatear segun sea exito o error, y guardar en base de datos
+                print("")
+                if metricas is None:
+                    print("Pipeline mal configurado")
             
             print(f"Dataset: {dataset_name}")
+            print(f"Task ID: {task_id}")
             print("Pipeline supervisado finalizado.")
-            # print(f"Tiempo de ejecución: {tiempo_total:.2f} segundos")
-            # print("Promedios de métricas:")
-            # for metrica, valores in metricas.items():
-            #     promedio = sum(valores) / len(valores)
-            #     print(f"\t{metrica:<20}: {promedio}")
 
             contador += 1
             # if contador >= 10:  # Limitar a los primeros 5 datasets para la demo

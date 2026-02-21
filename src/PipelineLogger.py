@@ -18,7 +18,7 @@ class PipelineLogger:
         config = Configuracion()
 
         formatter = jsonlogger.JsonFormatter(
-            '%(asctime)s %(name)s %(levelname)s %(fase)s %(message)s'
+            '%(asctime)s %(name)s %(levelname)s %(message)s'
         )
 
         # Verificamos que Loki esté correctamente configurado

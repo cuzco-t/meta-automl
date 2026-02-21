@@ -409,19 +409,26 @@ class MineroDePipelines:
         # ============================================================================================
 
         self._id_pipeline += 1
+        logger = PipelineLogger().get_logger()
 
         fases_instancias_un_solo_uso = self._crear_fases_instancias()
         pipeline_aleatorio = self._generar_pipeline_aleatorio(fases_instancias_un_solo_uso)
 
-        self._logger.info(
-            f"id_pipeline: {self._id_pipeline}",
+        logger.info(
+            "Pipeline generado aleatoriamente",
             extra={
-                "fase": "Minero",
                 "pipeline": pipeline_aleatorio
             }
         )
 
         metricas = get_diccionario_metricas_inicializadas()
+
+        logger.info(
+            "Iniciando preprocesamiento en folds",
+            extra={
+                "pipeline": pipeline_aleatorio
+            }
+        )
 
         tiempo_inicio_pipeline_folds = time.perf_counter()
         result_folds_procesados = procesar_datos_pipeline_por_cada_fold(X_df, y_df, pipeline_aleatorio)
@@ -512,7 +519,7 @@ class MineroDePipelines:
         tiempos_totales_pipeline_modelos = tiempos_totales_pipeline_modelos.tolist()
 
         metricas_promediadas = {
-            key: {num: float(np.mean(scores)) for num, scores in value.items()} 
+            key: [float(np.mean(scores)) for num, scores in value.items()]
             for key, value in metricas.items()
         }
 
