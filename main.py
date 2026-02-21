@@ -257,7 +257,7 @@ def main():
     RUTA_CARPETA_DATSETS_DESCARGADOS = "./data/"
 
     # Configuración única
-    PipelineLogger().get_logger()
+    logger = PipelineLogger().get_logger()
 
     extractor = ExtractorMetaFeatures()
     minero = MineroDePipelines()
@@ -276,6 +276,7 @@ def main():
 
             if not result_datos_openml.is_success:
                 print(f"Error al obtener datos para Task ID {task_id}: {result_datos_openml.get_error()}")
+
                 continue
 
             dataset_name, X, y = result_datos_openml.get_value()
@@ -307,7 +308,7 @@ def main():
             pipeline, metricas, tiempo_total = minero.pipeline_supervisado(X, y, tarea_pipeline)
 
             pipeline_vectorizado = vectorizar_pipeline(pipeline)
-            metricas_promediadas = promediar_metricas(metricas)
+            # metricas_promediadas = promediar_metricas(metricas)
 
             #TODO: Formatear segun sea exito o error, y guardar en base de datos
             print("")

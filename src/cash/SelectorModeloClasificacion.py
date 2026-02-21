@@ -71,8 +71,8 @@ class SelectorModeloClasificacion(RegistroTecnica):
         
     def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series) -> None:
         """
-        Selecciona aleatoriamente el modelo de clasificación a usar, y configura sus
-        hiperparámetros.
+        Consulta al LLM para obtener los hiperparámetros recomendados para el modelo seleccionado,
+        basándose en las meta-features del dataset.
         """        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
@@ -93,6 +93,10 @@ class SelectorModeloClasificacion(RegistroTecnica):
         raise TimeoutError("Timeout: el entrenamiento excedio el limite de tiempo")
 
     def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
+        """
+        Entrena una nueva instancia del modelo seleccionado con los hiperparámetros
+        configurados. Si el entrenamiento excede el tiempo límite, se lanza una excepción.
+        """
         modelo = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
         modelo.set_params(**hiper_parametros)

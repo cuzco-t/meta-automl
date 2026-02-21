@@ -262,61 +262,57 @@ class MineroDePipelines:
             """
             if tarea == "clasificacion":
                 if y_true is None or y_pred is None:
-                    # Si no se pudieron calcular las predicciones
-                    accuracy = 0.0
-                    precision = 0.0
-                    recall = 0.0
-                    f1 = 0.0
+                    # Si no se pudieron calcular las predicciones, se castiga
+                    metricas["accuracy_scores"][numero_ejecucion_modelo] = [-1.0] * self._N_FOLDS
+                    metricas["precision_scores"][numero_ejecucion_modelo] = [-1.0] * self._N_FOLDS
+                    metricas["recall_scores"][numero_ejecucion_modelo] = [-1.0] * self._N_FOLDS
+                    metricas["f1_scores"][numero_ejecucion_modelo] = [-1.0] * self._N_FOLDS
+                    return None
                 
-                else:
-                    accuracy = accuracy_score(y_true, y_pred)
-                    precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
-                    recall = recall_score(y_true, y_pred, average="weighted", zero_division=0)
-                    f1 = f1_score(y_true, y_pred, average="weighted", zero_division=0)
+                accuracy = accuracy_score(y_true, y_pred)
+                precision = precision_score(y_true, y_pred, average="weighted", zero_division=0)
+                recall = recall_score(y_true, y_pred, average="weighted", zero_division=0)
+                f1 = f1_score(y_true, y_pred, average="weighted", zero_division=0)
 
-                if metricas.get("accuracy_scores").get(numero_ejecucion_modelo) is None:
-                    metricas["accuracy_scores"][numero_ejecucion_modelo] = []
-                    metricas["precision_scores"][numero_ejecucion_modelo] = []
-                    metricas["recall_scores"][numero_ejecucion_modelo] = []
-                    metricas["f1_scores"][numero_ejecucion_modelo] = []
+                valores_metricas = {
+                    "accuracy_scores": accuracy,
+                    "precision_scores": precision,
+                    "recall_scores": recall,
+                    "f1_scores": f1,
+                }
 
-                metricas["accuracy_scores"][numero_ejecucion_modelo].append(accuracy)
-                metricas["precision_scores"][numero_ejecucion_modelo].append(precision)
-                metricas["recall_scores"][numero_ejecucion_modelo].append(recall)
-                metricas["f1_scores"][numero_ejecucion_modelo].append(f1)
+                for key, value in valores_metricas.items():
+                    metricas[key].setdefault(numero_ejecucion_modelo, []).append(value)
 
             else:
                 if y_true is None or y_pred is None:
-                    # Si no se pudieron calcular las predicciones
-                    mae = 999.0
-                    mse = 999.0
-                    rmse = 999.0
-                    r2 = -1.0
-                    medae = 999.0
-                    ev = -1.0
+                    # Si no se pudieron calcular las predicciones, se castiga
+                    metricas["mae_scores"][numero_ejecucion_modelo] = [999.0] * self._N_FOLDS
+                    metricas["mse_scores"][numero_ejecucion_modelo] = [999.0] * self._N_FOLDS
+                    metricas["rmse_scores"][numero_ejecucion_modelo] = [999.0] * self._N_FOLDS
+                    metricas["r2_scores"][numero_ejecucion_modelo] = [-1.0] * self._N_FOLDS
+                    metricas["medae_scores"][numero_ejecucion_modelo] = [999.0] * self._N_FOLDS
+                    metricas["ev_scores"][numero_ejecucion_modelo] = [-1.0] * self._N_FOLDS
+                    return None
 
-                else:
-                    mae = mean_absolute_error(y_true, y_pred)
-                    mse = mean_squared_error(y_true, y_pred)
-                    rmse = np.sqrt(mse)
-                    r2 = r2_score(y_true, y_pred)
-                    medae = median_absolute_error(y_true, y_pred)
-                    ev = explained_variance_score(y_true, y_pred)
+                mae = mean_absolute_error(y_true, y_pred)
+                mse = mean_squared_error(y_true, y_pred)
+                rmse = np.sqrt(mse)
+                r2 = r2_score(y_true, y_pred)
+                medae = median_absolute_error(y_true, y_pred)
+                ev = explained_variance_score(y_true, y_pred)
 
-                if metricas.get("mae_scores").get(numero_ejecucion_modelo) is None:
-                    metricas["mae_scores"][numero_ejecucion_modelo] = []
-                    metricas["mse_scores"][numero_ejecucion_modelo] = []
-                    metricas["rmse_scores"][numero_ejecucion_modelo] = []
-                    metricas["r2_scores"][numero_ejecucion_modelo] = []
-                    metricas["medae_scores"][numero_ejecucion_modelo] = []
-                    metricas["ev_scores"][numero_ejecucion_modelo] = []
+                valores_metricas = {
+                    "mae_scores": mae,
+                    "mse_scores": mse,
+                    "rmse_scores": rmse,
+                    "r2_scores": r2,
+                    "medae_scores": medae,
+                    "ev_scores": ev,
+                }
 
-                metricas["mae_scores"][numero_ejecucion_modelo].append(mae)
-                metricas["mse_scores"][numero_ejecucion_modelo].append(mse)
-                metricas["rmse_scores"][numero_ejecucion_modelo].append(rmse)
-                metricas["r2_scores"][numero_ejecucion_modelo].append(r2)
-                metricas["medae_scores"][numero_ejecucion_modelo].append(medae)
-                metricas["ev_scores"][numero_ejecucion_modelo].append(ev)
+                for key, value in valores_metricas.items():
+                    metricas[key].setdefault(numero_ejecucion_modelo, []).append(value)
 
             return None
 
@@ -450,18 +446,18 @@ class MineroDePipelines:
         tiempo_total_ejecuciones_modelos = []
         #! Cambiar en produccion para que se ejecute N veces y no solo 1
         for numero_ejecucion_modelo in range(10):
-            algoritmo_seleccionado = self._selector_aleatorio.choice(algoritmos_disponibles).item()
+            algoritmo_seleccionado = str(self._selector_aleatorio.choice(algoritmos_disponibles))
             selector_modelo.log_algoritmo = algoritmo_seleccionado
 
-            tiempos_modelos_por_fold = []
-            for fold, datos in folds_procesados.items():
-                tiempo_inicio_entrenamiento = time.perf_counter()
-                selector_modelo.calcular_hiper_parametros(datos["X_train"], datos["y_train"])
-                result_modelo = selector_modelo.entrenar_modelo(datos["X_train"], datos["y_train"])
+            #? Meta-features globales
+            X_global = pd.concat([folds_procesados[1]["X_train"], folds_procesados[1]["X_val"]])
+            y_global = pd.concat([folds_procesados[1]["y_train"], folds_procesados[1]["y_val"]])
+            selector_modelo.calcular_hiper_parametros(X_global, y_global)
 
-                tiempo_final_entrenamiento = time.perf_counter()
-                tiempo_total_entrenamiento = tiempo_final_entrenamiento - tiempo_inicio_entrenamiento
-                tiempos_modelos_por_fold.append(tiempo_total_entrenamiento)
+
+            tiempo_inicio_entrenamiento = time.perf_counter()
+            for fold, datos in folds_procesados.items():
+                result_modelo = selector_modelo.entrenar_modelo(datos["X_train"], datos["y_train"])
 
                 if result_modelo.is_failure:
                     self._logger.error(
@@ -507,12 +503,20 @@ class MineroDePipelines:
 
                 actualizar_metricas_fold(datos["y_val"], predicciones, numero_ejecucion_modelo, metricas)
 
-            tiempo_total_ejecuciones_modelos.append(sum(tiempos_modelos_por_fold))
+            tiempo_final_entrenamiento = time.perf_counter()
+            tiempo_total_entrenamiento = tiempo_final_entrenamiento - tiempo_inicio_entrenamiento
+
+            tiempo_total_ejecuciones_modelos.append(tiempo_total_entrenamiento)
 
         tiempos_totales_pipeline_modelos = np.array(tiempo_total_ejecuciones_modelos) + tiempo_total_pipeline_folds
         tiempos_totales_pipeline_modelos = tiempos_totales_pipeline_modelos.tolist()
 
-        return pipeline_aleatorio, metricas, tiempos_totales_pipeline_modelos
+        metricas_promediadas = {
+            key: {num: float(np.mean(scores)) for num, scores in value.items()} 
+            for key, value in metricas.items()
+        }
+
+        return pipeline_aleatorio, metricas_promediadas, tiempos_totales_pipeline_modelos
 
     def _imprimir_resultado_pipeline(self, X_df, y_df):
         cols_with_nan = X_df.columns[X_df.isna().any()].tolist()

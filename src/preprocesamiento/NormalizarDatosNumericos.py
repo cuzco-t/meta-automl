@@ -52,8 +52,12 @@ class NormalizarDatosNumericos(RegistroTecnica):
             case None:
                 return X, y
             
-            case "z_score" | "box_cox" | "sqrt" | "ln" | "inverso":
+            case "z_score" | "box_cox" | "sqrt" | "ln":
                 X_normalizado = self._normalizar_con_parametros(X.copy())
+                return X_normalizado, y
+            
+            case "inverso":
+                X_normalizado = self._normalizar_con_inverso(X.copy())
                 return X_normalizado, y
             
             case "cuadrado":
@@ -100,16 +104,19 @@ class NormalizarDatosNumericos(RegistroTecnica):
                 self.log_params["lambda"][col] = float(lam)
                 self.log_params["desplazamiento"][col] = float(desplazamiento)
 
-        elif self.log_algoritmo in ["sqrt", "ln", "inverso"]:
+        elif self.log_algoritmo in ["sqrt", "ln"]:
             self.log_params["desplazamiento"] = {}
             for col in cols_numericas:
                 desplazamiento = 0
 
                 # Solo sqrt, ln e inverso necesitan desplazamiento para evitar <=0
-                if self.log_algoritmo in ["sqrt", "ln", "inverso"] and (X_df[col] <= 0).any():
+                if self.log_algoritmo in ["sqrt", "ln"] and (X_df[col] <= 0).any():
                     desplazamiento = abs(X_df[col].min()) + 1e-3
                     
                 self.log_params["desplazamiento"][col] = float(desplazamiento)
+        
+        elif self.log_algoritmo == "inverso":
+            self.log_params = {}
 
         self.registrar_parametros(self.log_params)
    
@@ -120,7 +127,6 @@ class NormalizarDatosNumericos(RegistroTecnica):
          - box_cox: stats.boxcox(X + desplazamiento, lambda)
          - sqrt: sqrt(X + desplazamiento)
          - ln: log1p(X + desplazamiento)
-         - inverso: 1 / (1 + X + desplazamiento)
         """
         columnas_numericas = X_df.select_dtypes(include=np.number).columns
 
@@ -141,10 +147,6 @@ class NormalizarDatosNumericos(RegistroTecnica):
                 desplazamiento = self.log_params["desplazamiento"][col]
                 X_df[col] = np.log1p(X_df[col] + desplazamiento)
 
-            elif self.log_algoritmo == "inverso":
-                desplazamiento = self.log_params["desplazamiento"][col]
-                X_df[col] = 1 / (1 + X_df[col] + desplazamiento)
-
         return X_df
     
     def _normalizar_con_cuadrado(self, X_df: pd.DataFrame) -> pd.DataFrame:
@@ -155,5 +157,16 @@ class NormalizarDatosNumericos(RegistroTecnica):
 
         for col in columnas_numericas:
             X_df[col] = X_df[col] ** 2
+
+        return X_df
+    
+    def _normalizar_con_inverso(self, X_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Normaliza usando la técnica de inverso: 1 / X
+        """
+        columnas_numericas = X_df.select_dtypes(include=np.number).columns
+
+        for col in columnas_numericas:
+            X_df[col] = 1 / X_df[col]
 
         return X_df
