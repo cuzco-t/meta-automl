@@ -337,7 +337,12 @@ def main():
                     }
                 )
 
-                pipeline, metricas, tiempo_total = minero.pipeline_supervisado(X, y, tarea_pipeline)
+                datos_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline)
+
+                pipeline = datos_pipeline["pipeline"]
+                metricas = datos_pipeline["metricas"]
+                lista_modelos_ml = datos_pipeline["lista_modelos_ml"]
+                tiempos_totales = datos_pipeline["tiempos_pipeline_modelos"]
 
                 logger.info(
                     "Contruccion de pipeline finalizada",
@@ -346,10 +351,11 @@ def main():
                         "tarea": tarea_pipeline,
                         "dataset_name": dataset_name,
                         "num_pipeline": i + 1,
-                        "exitoso": True if metricas is not None else False,
+                        "exitoso": True if lista_modelos_ml is not None else False,
                         "pipeline": pipeline,
                         "metricas": metricas,
-                        "tiempo_total": tiempo_total
+                        "lista_modelos_ml": lista_modelos_ml,
+                        "tiempos_totales": tiempos_totales
                     }
                 )
 
@@ -357,7 +363,7 @@ def main():
 
                 #TODO: Formatear segun sea exito o error, y guardar en base de datos
                 print("")
-                if metricas is None:
+                if lista_modelos_ml is None:
                     print("Pipeline mal configurado")
             
             print(f"Dataset: {dataset_name}")

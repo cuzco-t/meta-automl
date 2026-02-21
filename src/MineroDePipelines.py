@@ -435,7 +435,12 @@ class MineroDePipelines:
         tiempo_final_pipeline_folds = time.perf_counter()
 
         if result_folds_procesados.is_failure:
-            return pipeline_aleatorio, None, None
+            return {
+                "pipeline": pipeline_aleatorio,
+                "metricas": None,
+                "lista_modelos_ml": None,
+                "tiempos_pipeline_modelos": None
+            }
 
         folds_procesados = result_folds_procesados.get_value()
 
@@ -451,10 +456,12 @@ class MineroDePipelines:
         algoritmos_disponibles = selector_modelo.ALGORITMOS
 
         tiempo_total_ejecuciones_modelos = []
+        lista_modelos_ml = []
         #! Cambiar en produccion para que se ejecute N veces y no solo 1
         for numero_ejecucion_modelo in range(10):
             algoritmo_seleccionado = str(self._selector_aleatorio.choice(algoritmos_disponibles))
             selector_modelo.log_algoritmo = algoritmo_seleccionado
+            lista_modelos_ml.append(algoritmo_seleccionado)
 
             #? Meta-features globales
             X_global = pd.concat([folds_procesados[1]["X_train"], folds_procesados[1]["X_val"]])
@@ -523,7 +530,14 @@ class MineroDePipelines:
             for key, value in metricas.items()
         }
 
-        return pipeline_aleatorio, metricas_promediadas, tiempos_totales_pipeline_modelos
+        datos_pipeline = {
+            "pipeline": pipeline_aleatorio,
+            "metricas": metricas_promediadas,
+            "lista_modelos_ml": lista_modelos_ml,
+            "tiempos_pipeline_modelos": tiempos_totales_pipeline_modelos
+        }
+
+        return datos_pipeline
 
     def _imprimir_resultado_pipeline(self, X_df, y_df):
         cols_with_nan = X_df.columns[X_df.isna().any()].tolist()
