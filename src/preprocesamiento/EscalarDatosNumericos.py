@@ -15,11 +15,11 @@ class EscalarDatosNumericos(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
-            "min_max", 
             "max_abs_scaler", 
-            "standard_scaler", 
+            "min_max", 
+            None, 
             "robust_scaler"
+            "standard_scaler", 
         ]
 
     def _permitir_none(self, tecnicas):

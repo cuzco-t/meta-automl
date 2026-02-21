@@ -17,8 +17,8 @@ class CodificarVariablesBinarias(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
-            "label_encoding"
+            "label_encoding",
+            None
         ]
 
     def _permitir_none(self, tecnicas):

@@ -17,8 +17,8 @@ class CodificarVariablesCategoricasRangoBajo(RegistroTecnica):
         self.config_test = config_test
         
         self.ALGORITMOS = [
-            "one_hot_encoding", 
-            "label_encoding"
+            "label_encoding",
+            "one_hot_encoding"
         ]
 
     def _permitir_none(self, tecnicas):

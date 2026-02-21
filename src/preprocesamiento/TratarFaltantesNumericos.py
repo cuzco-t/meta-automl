@@ -16,13 +16,13 @@ class TratarFaltantesNumericos(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
-            "media", 
-            "mediana", 
-            "moda", 
-            "media_geometrica", 
             "aleatorio", 
             "eliminar"
+            "media", 
+            "media_geometrica", 
+            "mediana", 
+            "moda", 
+            None
         ]
 
     def _permitir_none(self, tecnicas):

@@ -1,5 +1,6 @@
 import ast
 import toonstream
+import umap
 import numpy as np
 import pandas as pd
 
@@ -23,14 +24,18 @@ class SeleccionarVariables(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
-            "variance_threshold", 
-            "mutual_info",
-            "select_from_model", 
-            "pca_99",
-            "pca_95",
-            "pca_90", 
             "llm"
+            "mutual_info_25",
+            "mutual_info_50",
+            "mutual_info_75",
+            None, 
+            "pca_90", 
+            "pca_95",
+            "pca_99",
+            "select_from_model", 
+            "umap_20",
+            "umap_50",
+            "umap_80",
         ]
 
     def _permitir_none(self, tecnicas):
@@ -76,23 +81,13 @@ class SeleccionarVariables(RegistroTecnica):
         """
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(42)
 
         if self.log_algoritmo == "aleatorio":
             columnas_aleatorias = rng.choice(X.columns, size=rng.integers(1, X.shape[1] + 1), replace=False)
             self.log_params["columnas"] = columnas_aleatorias.tolist()
-        
-        elif self.log_algoritmo == "variance_threshold":
-            threshold = rng.uniform(0.0, 0.2)
-            selector = VarianceThreshold(threshold=threshold)
-            selector.fit(X)
 
-            columnas_seleccionadas = X.columns[selector.get_support(indices=True)]
-
-            self.log_params["threshold"] = threshold
-            self.log_params["columnas"] = columnas_seleccionadas.tolist()
-
-        elif self.log_algoritmo == "mutual_info":
+        elif "mutual_info" in self.log_algoritmo:
             mi_scores = None
 
             if self.tarea == "clasificacion":
@@ -108,7 +103,7 @@ class SeleccionarVariables(RegistroTecnica):
                 columnas_seleccionadas = []
             else:
                 # Solo pasan aquellas con un score mayor o igual a la mitad del máximo
-                threshold = 0.5 * mi_df['MI'].max()
+                threshold = (float(self.log_algoritmo.split("_")[-1]) / 100) * mi_df['MI'].max()
                 columnas_seleccionadas = mi_df[mi_df['MI'] >= threshold]['Feature'].tolist()
 
             self.log_params["threshold"] = threshold
@@ -117,9 +112,9 @@ class SeleccionarVariables(RegistroTecnica):
         elif self.log_algoritmo == "select_from_model":
             model = None
             if self.tarea == "clasificacion":
-                model = RandomForestClassifier(n_estimators=100, random_state=self.semilla)
+                model = RandomForestClassifier(n_estimators=100, random_state=42)
             elif self.tarea == "regresion":
-                model = RandomForestRegressor(n_estimators=100, random_state=self.semilla)
+                model = RandomForestRegressor(n_estimators=100, random_state=42)
             elif self.tarea == "clustering":
                 return None
 
@@ -129,10 +124,17 @@ class SeleccionarVariables(RegistroTecnica):
             columnas_seleccionadas = X.columns[selector.get_support(indices=True)]
             self.log_params["columnas"] = columnas_seleccionadas.tolist()
 
-        elif self.log_algoritmo == "pca":
-            cols_numericas = X.select_dtypes(include=np.number).columns
-            n_components = rng.integers(2, len(cols_numericas))
+        elif self.log_algoritmo in ["pca_90", "pca_95", "pca_99"]:
+            self.log_params["porcentaje_varianza"] = float(self.log_algoritmo.split("_")[1]) / 100
 
+        elif self.log_algoritmo in ["umap_20", "umap_50", "umap_80"]:
+            porcentaje_componentes = int(self.log_algoritmo.split("_")[1]) / 100
+            columnas_numericas = X.select_dtypes(include=np.number).columns
+
+            n_components = max(
+                2, 
+                min(int(columnas_numericas * porcentaje_componentes), columnas_numericas - 1)
+            )
             self.log_params["n_components"] = int(n_components)
 
         elif self.log_algoritmo == "llm":
@@ -168,7 +170,7 @@ class SeleccionarVariables(RegistroTecnica):
         """
         Aplica PCA con el número de componentes indicado en self.log_params["n_components"]
         """
-        porcentaje_varianza = float(self.log_algoritmo.split("_")[1]) / 100
+        porcentaje_varianza = self.log_params["porcentaje_varianza"]
         numeric_cols = X_df.select_dtypes(include=np.number).columns
 
         pca = PCA(n_components=porcentaje_varianza, random_state=self.semilla)
@@ -180,3 +182,18 @@ class SeleccionarVariables(RegistroTecnica):
 
         # Solo devolvemos las columnas PCA
         return df_pca
+
+    def seleccionar_columnas_con_umap(self, X_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Aplica UMAP con el número de componentes indicado en self.log_params["n_components"]
+        """
+        n_components = self.log_params["n_components"]
+        numeric_cols = X_df.select_dtypes(include=np.number).columns
+
+        reducer = umap.UMAP(n_components=n_components, random_state=42)
+        embedding = reducer.fit_transform(X_df[numeric_cols])
+
+        umap_cols = [f'UMAP{i+1}' for i in range(embedding.shape[1])]
+        df_umap = pd.DataFrame(embedding, columns=umap_cols, index=X_df.index)
+
+        return df_umap

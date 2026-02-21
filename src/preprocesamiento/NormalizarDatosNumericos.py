@@ -15,13 +15,13 @@ class NormalizarDatosNumericos(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
-            "z_score", 
             "box_cox", 
-            "sqrt", 
-            "ln", 
-            "inverso",
             "cuadrado"
+            "inverso",
+            "ln", 
+            None, 
+            "sqrt", 
+            "z_score", 
         ]
 
     def _permitir_none(self, tecnicas):

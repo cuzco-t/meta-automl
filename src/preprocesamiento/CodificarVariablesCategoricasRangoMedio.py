@@ -16,8 +16,8 @@ class CodificarVariablesCategoricasRangoMedio(RegistroTecnica):
         self.random_state = random_state
         self.config_test = config_test
         self.ALGORITMOS = [
-            "frequency_encoding", 
-            "eliminar_variable"
+            "eliminar_variable",
+            "frequency_encoding" 
         ]
     
     def _permitir_none(self, tecnicas):

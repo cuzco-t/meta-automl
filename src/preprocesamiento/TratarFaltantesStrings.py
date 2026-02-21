@@ -14,10 +14,10 @@ class TratarFaltantesStrings(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            "moda", 
             "aleatorio", 
             "eliminar", 
             "etiqueta_desconocido"
+            "moda", 
         ]
 
     def _permitir_none(self, tecnicas):
