@@ -1,9 +1,11 @@
 {
   "name": "Python Dev Container",
-  "build": {
-    "dockerfile": "../Dockerfile",
-    "context": ".."
-  },
+  "image": "meta-automl:latest",
+  "runArgs": [
+    "--name", "pydev",
+    "--pull", "never",
+    "--network", "red_automl"
+  ],
   "workspaceFolder": "/app",
   "mounts": [
     "source=${localWorkspaceFolder},target=/app,type=bind"

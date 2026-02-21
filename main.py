@@ -58,7 +58,7 @@ def get_generador_tasks_ids(ruta_archivo: Path) -> Iterator[int]:
 def get_datos_openml(
     task_id: int
 ) -> Result[
-    tuple[str, pd.DataFrame, pd.Series],
+    tuple[str, str, pd.DataFrame, pd.Series],
     str
 ]:
     """
@@ -67,8 +67,8 @@ def get_datos_openml(
     :param task_id: El ID de la tarea en OpenML para la cual se desean obtener los datos.
     :type task_id: int
     :return: Un objeto Result que contiene una tupla con el nombre del dataset,
-     el DataFrame de características (X) y la Serie de etiquetas (y) si la operación
-     fue exitosa, o un mensaje de error si la operación falló.
+     la descripción del dataset, el DataFrame de características (X) y la Serie 
+     de etiquetas (y) si la operación fue exitosa, o un mensaje de error si la operación falló.
     :rtype: Result
     """
 
@@ -112,6 +112,10 @@ def get_datos_openml(
     if hasattr(dataset, "default_target_attribute"):
         target_name = dataset.default_target_attribute
 
+    descripcion = ""
+    if hasattr(dataset, "description"):
+        descripcion = dataset.description
+
     X, y, _, _ = dataset.get_data(target=target_name)
 
     X = asegurar_dataframe(X)
@@ -120,7 +124,7 @@ def get_datos_openml(
     if X is None or y is None:
         return Result.fail("No se pudo convertir X o y a DataFrame/Series")
     
-    return Result.ok((dataset_name, X, y))
+    return Result.ok((dataset_name, descripcion, X, y))
 
 def guardar_dataset(
         X: pd.DataFrame, 
@@ -250,7 +254,7 @@ def main():
                 )
                 continue
 
-            dataset_name, X, y = result_datos_openml.get_value()
+            dataset_name, descripcion, X, y = result_datos_openml.get_value()
             guardar_dataset(X, y, tarea_pipeline, dataset_name, RUTA_CARPETA_DATSETS_DESCARGADOS)
 
             logger.info(
@@ -301,7 +305,7 @@ def main():
                     }
                 )
 
-                datos_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline)
+                datos_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline, descripcion)
 
                 pipeline = datos_pipeline["pipeline"]
                 metricas = datos_pipeline["metricas"]

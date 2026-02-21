@@ -12,13 +12,17 @@ services:
       # Montar resultados y logs
       - ./errors:/app/errors
       - ./docs:/app/docs
-    environment:
-      # Aquí puedes añadir variables de entorno si es necesario
-      # Por ejemplo, si tienes un archivo .env
-      - PYTHONUNBUFFERED=1
-    # Descomentar si necesitas una API con puerto expuesto
-    # ports:
-    #   - "8000:8000"
-    # Para ejecutar modo interactivo, descomentar:
-    # stdin_open: true
-    # tty: true
+    depends_on:
+      - llm-service
+
+  llm-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.llm
+    container_name: llm-service
+    ports:
+      - "11434:11434"
+    volumes:
+      - C:\Users\Asus\.ollama:/root/.ollama
+    mem_limit: 8g
+    cpus: 4

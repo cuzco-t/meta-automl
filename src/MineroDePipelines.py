@@ -199,7 +199,8 @@ class MineroDePipelines:
         self, 
         X_df: pd.DataFrame, 
         y_df: pd.Series, 
-        tarea: str
+        tarea: str,
+        descripcion: str | None = None
     ) -> tuple[dict[str, str | None], dict[str, dict], list[float]]:
 
         def get_k_fold_coss_validation(n_folds: int = 3) -> StratifiedKFold | KFold:
@@ -379,6 +380,10 @@ class MineroDePipelines:
                     # X_val_procesado, y_val_procesado = instancia.transform(X_val_copy, y_val_copy)
 
                     try:
+                        if fase == "crear_nueva_variable":
+                            instancia.tarea = tarea
+                            instancia.descripcion = descripcion
+
                         instancia.fit(X_train_copy, y_train_copy)
                         X_train_procesado, y_train_procesado = instancia.transform(X_train_copy, y_train_copy)
                         X_val_procesado, y_val_procesado = instancia.transform(X_val_copy, y_val_copy)
@@ -584,6 +589,9 @@ class MineroDePipelines:
 
             while True:
                 algoritmo_seleccionado = self._selector_aleatorio.choice(algoritmos_disponibles)
+
+                if fase == "crear_nueva_variable":
+                    print("")
 
                 if not permitir_none and algoritmo_seleccionado is None:
                     continue  # Reintentar si None no está permitido

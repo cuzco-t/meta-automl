@@ -2,14 +2,24 @@ import ollama
 import pandas as pd
 import requests.exceptions
 
+from .config.Configuracion import Configuracion
+
 from toon_format import encode
 
 class LLM:
-    def __init__(self, modelo, timeout=10_800):
+    def __init__(self):
         # timeout en segundos para la llamada al servidor
+        config = Configuracion()
 
-        self.client = ollama.Client(timeout=timeout)
-        self.modelo = modelo
+        self.llm_host = config.llm_host
+        self.llm_timeout = config.llm_timeout
+
+        self.client = ollama.Client(
+            host=config.llm_host,
+            timeout=config.llm_timeout
+        )
+        self.modelo = config.llm_modelo
+        self.num_ctx = config.llm_num_ctx
     
     def generar_respuesta(self, prompt):
         try:
@@ -17,7 +27,7 @@ class LLM:
                 model=self.modelo,
                 messages=[{"role": "user", "content": prompt}],
                 options={
-                    "num_ctx": 20_000  # Ajusta el contexto del modelo si es necesario
+                    "num_ctx": self.num_ctx  # Ajusta el contexto del modelo si es necesario
                 }
             )
             print("Respuesta del modelo:")
@@ -65,10 +75,46 @@ ni formato diferente a un diccionario python.
 Aqui tienes un ejemplo de como debe ser tu respuesta: {{'hiperparametro_1': valor_1, 'hiperparametro_2': valor_2}}
 """
             return prompt
+        
+        def crear_nueva_variable():
+            prompt = f"""
+Actúa como un experto en feature engineering para machine learning. Estoy trabajando con un dataset
+de {kwargs["tarea"]} y necesito generar una nueva variable que pueda mejorar el rendimiento de un modelo. 
+
+Te proporcionaré:
+1. La lista de columnas del dataset.
+2. Una descripción del dataset (puede estar vacía; si es así, usa únicamente los nombres de las columnas
+para inferir relaciones).
+
+Tu tarea es generar hasta 5 nuevas variables siguiendo estas reglas:
+
+- Devuelve únicamente un diccionario de Python donde:
+    - La clave es el nombre de la nueva variable.
+    - El valor es un string con la operación aritmética que define la nueva variable usando
+    los nombres exactos de las columnas proporcionadas encerradas entre backticks. 
+    Esta operación debe ser válida como entrada para eval() en pandas.
+- No es obligatorio generar 5 variables; pueden ser entre 1 y 5, dependiendo de lo que
+tenga sentido según la información disponible.
+- Las operaciones deben tener sentido en función de la descripción del dataset y/o 
+los nombres de las columnas, buscando crear características útiles para {kwargs["tarea"]}.
+- Evita generar variables que sean trivialmente iguales a columnas existentes o combinaciones redundantes.
+- Si no encuentras ninguna combinación o transformación útil, devuelve un diccionario vacío {{}}.
+
+Ejemplo:
+Si las columnas fueran ["precio_unitario", "cantidad"], una posible respuesta podría ser:
+{"total": "(`precio_unitario` * `cantidad`)"}
+
+Ahora, usando la información de mi dataset, genera las nuevas variables.
+
+Columnas: {kwargs["columnas"]}
+Descripción: {kwargs["descripcion"]}
+"""
+            return prompt
 
         diccionario_plantilla_prompt = {
             "seleccionar_variables": seleccionar_variables,
-            "seleccionar_hiper_parametros": seleccionar_hiper_parametros
+            "seleccionar_hiper_parametros": seleccionar_hiper_parametros,
+            "crear_nueva_variable": crear_nueva_variable
         }
 
         return diccionario_plantilla_prompt[plantilla]()

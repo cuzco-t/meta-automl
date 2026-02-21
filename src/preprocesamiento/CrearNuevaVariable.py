@@ -1,8 +1,11 @@
+import ast
 import numpy as np
 import pandas as pd
+from toon_format import encode
 
 from ..RegistroTecnica import RegistroTecnica
 from sklearn.decomposition import PCA
+from ..LLM import LLM
 
 class CrearNuevaVariable(RegistroTecnica):
     def __init__(self, permitir_none=True, semilla=None, config_test=None):
@@ -15,7 +18,8 @@ class CrearNuevaVariable(RegistroTecnica):
         self.permitir_none = permitir_none
         self.semilla = semilla
         self.config_test = config_test
-        
+        self.tarea = ""
+        self.descripcion = ""
         self.ALGORITMOS = [
             None, 
             "llm"
@@ -49,12 +53,8 @@ class CrearNuevaVariable(RegistroTecnica):
             case None:
                 return X, y
             
-            case "suma" | "resta" | "multiplicacion" | "ratio":
-                X_nueva = self._crear_variable_con_operaciones_aritmeticas(X.copy())
-                return X_nueva, y
-            
-            case "pca":
-                X_nueva = self._crear_variable_con_pca(X.copy())
+            case "llm":
+                X_nueva = self._crear_variable_con_llm(X.copy())
                 return X_nueva, y
             
             case _:
@@ -64,66 +64,49 @@ class CrearNuevaVariable(RegistroTecnica):
         """
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
-        cols_numericas = X.select_dtypes(include=np.number).columns
-        if len(cols_numericas) < 2:
+        if self.log_algoritmo is None:
+            self.log_params = {}
             self.registrar_parametros(self.log_params)
             return
+        
+        # Caso LLM: selecciona variables basándose en meta-features
+        if self.log_algoritmo != "llm":
+            raise ValueError(f"Algoritmo no reconocido: {self.log_algoritmo}")
+        
+        llm = LLM()
+        prompt = llm.plantillas_prompts(
+            "crear_nueva_variable",
+            tarea = self.tarea,
+            columnas = X.columns.tolist(),
+            descripcion = self.descripcion,
+        )
+        respuesta_llm = llm.generar_respuesta(prompt)
+        
+        try:
+            variables_recomendadas = ast.literal_eval(respuesta_llm)
+            if not isinstance(variables_recomendadas, dict):
+                raise ValueError("La respuesta del LLM no es un diccionario")
+        
+        except Exception as e:
+            raise ValueError(f"Error al interpretar la respuesta del LLM: {e}")
 
-        rng = np.random.default_rng()
-
-        if self.log_algoritmo in ["suma", "resta", "multiplicacion", "ratio"]:
-            col1, col2 = rng.choice(cols_numericas, size=2, replace=False)
-            self.log_params = {"col1": col1, "col2": col2}
-
-        elif self.log_algoritmo == "pca":
-            n_components = rng.integers(2, len(cols_numericas))
-            self.log_params = {"n_components": int(n_components)}
-
+        
+        for var, formula in variables_recomendadas.items():
+            self.log_params[var] = formula
+        
         self.registrar_parametros(self.log_params)
 
-    def _crear_variable_con_operaciones_aritmeticas(self, X_df: pd.DataFrame) -> pd.DataFrame:
+    def _crear_variable_con_llm(self, X: pd.DataFrame) -> pd.DataFrame:
         """
-        Crea una nueva variable a partir de operaciones aritméticas entre dos columnas numéricas seleccionadas al azar.
+        Crea una nueva variable en el DataFrame X utilizando la fórmula proporcionada por el LLM
+        """
+        if not self.log_params:
+            return X
         
-        :return: DataFrame con la nueva variable creada
-        :rtype: DataFrame
-        """
-        if len(self.log_params) != 2:
-            return X_df
+        for var, formula in self.log_params.items():
+            try:
+                X[var] = X.eval(formula)
+            except Exception as e:
+                raise ValueError(f"Error al crear la variable '{var}' con la fórmula '{formula}': {e}")
 
-        col1 = self.log_params["col1"]
-        col2 = self.log_params["col2"]
-
-        if self.log_algoritmo == "suma":
-            X_df[f'suma_{col1}_{col2}'] = X_df[col1] + X_df[col2]
-
-        elif self.log_algoritmo == "resta":
-            X_df[f'resta_{col1}_{col2}'] = X_df[col1] - X_df[col2]
-
-        elif self.log_algoritmo == "multiplicacion":
-            X_df[f'multiplicacion_{col1}_{col2}'] = X_df[col1] * X_df[col2]
-
-        elif self.log_algoritmo == "ratio":
-            X_df[f'ratio_{col1}_{col2}'] = X_df[col1] / (X_df[col2] + 1e-10)
-
-        return X_df
-    
-    def _crear_variable_con_pca(self, X_df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Crea nuevas variables a partir de PCA aplicado a las columnas numéricas.
-        
-        :return: DataFrame con las nuevas variables creadas por PCA
-        :rtype: DataFrame
-        """
-        numeric_cols = X_df.select_dtypes(include=np.number).columns
-        n_components = self.log_params["n_components"]
-
-        pca = PCA(n_components=n_components, random_state=self.semilla)
-        pca_result = pca.fit_transform(X_df[numeric_cols])
-
-        # Convertimos el resultado de PCA a DataFrame
-        pca_cols = [f'PC{i+1}' for i in range(n_components)]
-        df_pca = pd.DataFrame(pca_result, columns=pca_cols, index=X_df.index)
-
-        # Solo devolvemos las columnas PCA
-        return df_pca
+        return X
