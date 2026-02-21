@@ -1,6 +1,9 @@
 import ast
+import signal
 import numpy as np
 import pandas as pd
+
+from src.Result import Result
 
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
@@ -29,45 +32,34 @@ from sklearn.neural_network import MLPRegressor
 
 
 class SelectorModeloRegresion(RegistroTecnica):
-    def __init__(self, random_state=None, config_test=None):
+    def __init__(self, config_test=None):
         super().__init__(log_fase="selector_modelo")
-        self.random_state = random_state
         self.config_test = config_test
-        
+        self.ALGORITMOS = [
+            "lineal", 
+            "ridge", 
+            "lasso",
+            "elasticnet",
+            "svr",
+            "knn",
+            "arbol_decision",
+            "random_forest",
+            "gradient_boosting",
+            "ada_boost",
+            "mlp_regressor",
+        ]
 
-    def reiniciar(self):
-        self.log_algoritmo = None
-        self.log_params = {}
 
-    def fit(self, X: pd.DataFrame, y: pd.Series):
+    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series) -> None:
         """
         Selecciona aleatoriamente el modelo de regresión a usar, y configura sus
         hiperparámetros.
         """
-        if self.log_algoritmo is not None:
-            return self
-        
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
 
         else:
-            generador_aleatorio = np.random.default_rng()
-            MODELOS = [
-                "lineal", 
-                "ridge", 
-                "lasso",
-                "elasticnet",
-                "svr",
-                "knn",
-                "arbol_decision",
-                "random_forest",
-                "gradient_boosting",
-                "ada_boost",
-                "mlp_regressor",
-            ]
-            self.log_algoritmo = generador_aleatorio.choice(MODELOS)
-
             self.registrar_algoritmo(self.log_algoritmo)
             # self._calcular_parametros(X, y)
             #! Comentar en produccion
@@ -76,14 +68,33 @@ class SelectorModeloRegresion(RegistroTecnica):
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self
+    
+    @staticmethod
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Timeout: el entrenamiento excedio el limite de tiempo")
+
         
-    def get_modelo_ml(self):
+    def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
         modelo = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
-
         modelo.set_params(**hiper_parametros)
 
-        return modelo
+        signal.signal(signal.SIGALRM, self.timeout_handler)
+        signal.alarm(5)
+        
+        result_entrenamiento = None
+        try:
+            modelo.fit(X, y)
+        except TimeoutError as e:
+            result_entrenamiento = Result.fail(str(e))
+        except Exception as e:
+            result_entrenamiento = Result.fail(f"Error durante entrenamiento:\n{str(e)}")
+        else:
+            result_entrenamiento = Result.ok(modelo)
+        finally:
+            signal.alarm(0)
+
+        return result_entrenamiento
     
     def _get_instancia_modelo(self):
         if self.log_algoritmo == "lineal":

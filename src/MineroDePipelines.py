@@ -5,6 +5,7 @@ import numpy as np
 
 from src.config.Configuracion import Configuracion
 from .PipelineLogger import PipelineLogger
+from .Result import Result
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold, KFold
 from sklearn.metrics import (
@@ -194,7 +195,12 @@ class MineroDePipelines:
 
         return X_preprocesado, y_preprocesado
     
-    def pipeline_supervisado(self, X_df: pd.DataFrame, y_df: pd.Series, tarea: str):
+    def pipeline_supervisado(
+        self, 
+        X_df: pd.DataFrame, 
+        y_df: pd.Series, 
+        tarea: str
+    ) -> tuple[dict[str, str | None], dict[str, dict], list[float]]:
 
         def get_k_fold_coss_validation(n_folds: int = 3) -> StratifiedKFold | KFold:
             """
@@ -336,7 +342,7 @@ class MineroDePipelines:
             X_df: pd.DataFrame, 
             y_df: pd.Series,
             pipeline_aleatorio: dict[str, str | None],
-        ) -> tuple[pd.DataFrame, pd.Series]:
+        ) -> Result[dict[int, dict[str, pd.DataFrame | pd.Series]], str]:
             """
             Procesa los datos de entrada utilizando el pipeline de preprocesamiento configurado.
             
@@ -351,28 +357,50 @@ class MineroDePipelines:
             kf = get_k_fold_coss_validation()
             folds_procesados = {}
 
+            if tarea == "clasificacion" and pd.api.types.is_numeric_dtype(y_df):
+                # y_df = y_df.astype("object")
+                unique_vals = np.unique(y_df)
+                val_to_int = {v: i for i, v in enumerate(unique_vals)}
+                y_discrete = np.array([val_to_int[v] for v in y_df])
+                y_df = pd.Series(y_discrete, index=y_df.index)
+
             for fold, (train_idx, val_idx) in enumerate(kf.split(X_df, y_df), 1):
                 X_train, X_val = X_df.iloc[train_idx], X_df.iloc[val_idx]
                 y_train, y_val = y_df.iloc[train_idx], y_df.iloc[val_idx]
 
-                X_train_procesado = X_train.copy()
-                y_train_procesado = y_train.copy()
-                X_val_procesado = X_val.copy()
-                y_val_procesado = y_val.copy()
+                X_train_procesado, y_train_procesado = X_train.copy(), y_train.copy()
+                X_val_procesado, y_val_procesado = X_val.copy(), y_val.copy()
 
                 fases_instancias_fold_n = self._crear_fases_instancias()
                 self._configurar_instancias(fases_instancias_fold_n, pipeline_aleatorio, tarea)
 
                 for fase, instancia in fases_instancias_fold_n.items():
-                    X_train_copy = X_train_procesado.copy()
-                    y_train_copy = y_train_procesado.copy()
-                    X_val_copy = X_val_procesado.copy()
-                    y_val_copy = y_val_procesado.copy()
+                    X_train_copy, y_train_copy = X_train_procesado.copy(), y_train_procesado.copy()
+                    X_val_copy, y_val_copy = X_val_procesado.copy(), y_val_procesado.copy()
 
-                    instancia.fit(X_train_copy, y_train_copy)
-                    X_train_procesado, y_train_procesado = instancia.transform(X_train_copy, y_train_copy)
-                    X_val_procesado, y_val_procesado = instancia.transform(X_val_copy, y_val_copy)
+                    # instancia.fit(X_train_copy, y_train_copy)
+                    # X_train_procesado, y_train_procesado = instancia.transform(X_train_copy, y_train_copy)
+                    # X_val_procesado, y_val_procesado = instancia.transform(X_val_copy, y_val_copy)
 
+                    try:
+                        instancia.fit(X_train_copy, y_train_copy)
+                        X_train_procesado, y_train_procesado = instancia.transform(X_train_copy, y_train_copy)
+                        X_val_procesado, y_val_procesado = instancia.transform(X_val_copy, y_val_copy)
+
+                    except ValueError as e:
+                        if fase == "seleccionar_variables" and "contains NaN" in str(e):
+                            self._logger.error(
+                                f"Pipeline mal configurado",
+                                extra={
+                                    "fase": fase,
+                                    "funcion": "Minero - procesar_datos_pipeline_por_cada_fold",
+                                    "clase_error": e.__class__.__name__,
+                                    # "mensaje_error": str(e)
+                                }
+                            )
+
+                            return Result.fail('Pipeline mal configurado')
+                
                 folds_procesados[fold] = {
                     "X_train": X_train_procesado,
                     "y_train": y_train_procesado,
@@ -380,9 +408,10 @@ class MineroDePipelines:
                     "y_val": y_val_procesado
                 }
 
-            return folds_procesados
+            return Result.ok(folds_procesados)
         
-        
+        # ============================================================================================
+
         self._id_pipeline += 1
 
         fases_instancias_un_solo_uso = self._crear_fases_instancias()
@@ -399,8 +428,13 @@ class MineroDePipelines:
         metricas = get_diccionario_metricas_inicializadas()
 
         tiempo_inicio_pipeline_folds = time.perf_counter()
-        folds_procesados = procesar_datos_pipeline_por_cada_fold(X_df, y_df, pipeline_aleatorio)
+        result_folds_procesados = procesar_datos_pipeline_por_cada_fold(X_df, y_df, pipeline_aleatorio)
         tiempo_final_pipeline_folds = time.perf_counter()
+
+        if result_folds_procesados.is_failure:
+            return pipeline_aleatorio, None, None
+
+        folds_procesados = result_folds_procesados.get_value()
 
         tiempo_total_pipeline_folds = tiempo_final_pipeline_folds - tiempo_inicio_pipeline_folds
         self._logger.info(
@@ -413,11 +447,13 @@ class MineroDePipelines:
         selector_modelo = get_selector_modelo()
         algoritmos_disponibles = selector_modelo.ALGORITMOS
 
+        tiempo_total_ejecuciones_modelos = []
         #! Cambiar en produccion para que se ejecute N veces y no solo 1
-        for numero_ejecucion_modelo in range(1):
+        for numero_ejecucion_modelo in range(10):
             algoritmo_seleccionado = self._selector_aleatorio.choice(algoritmos_disponibles).item()
             selector_modelo.log_algoritmo = algoritmo_seleccionado
 
+            tiempos_modelos_por_fold = []
             for fold, datos in folds_procesados.items():
                 tiempo_inicio_entrenamiento = time.perf_counter()
                 selector_modelo.calcular_hiper_parametros(datos["X_train"], datos["y_train"])
@@ -425,6 +461,7 @@ class MineroDePipelines:
 
                 tiempo_final_entrenamiento = time.perf_counter()
                 tiempo_total_entrenamiento = tiempo_final_entrenamiento - tiempo_inicio_entrenamiento
+                tiempos_modelos_por_fold.append(tiempo_total_entrenamiento)
 
                 if result_modelo.is_failure:
                     self._logger.error(
@@ -439,11 +476,43 @@ class MineroDePipelines:
                     break
                 
                 modelo_ml = result_modelo.get_value()
-                predicciones = modelo_ml.predict(datos["X_val"])
+                try:
+                    predicciones = modelo_ml.predict(datos["X_val"])
+                except ValueError as e:
+                    if "contains NaN" in str(e):
+                        self._logger.error(
+                            "Valores NaN en predicciones del modelo",
+                            extra={
+                                "fase": "Prediccion del modelo",
+                                "modelo": selector_modelo.log_algoritmo,
+                                "fold": fold,
+                                "funcion": "Minero - pipeline_supervisado",
+                            }
+                        )
+                        actualizar_metricas_fold(None, None, numero_ejecucion_modelo, metricas)
+                        break
+
+                    elif "The feature names should match those that were passed during fit" in str(e):
+                        self._logger.error(
+                            "Inconsistencia entre columnas de entrenamiento y validacion",
+                            extra={
+                                "fase": "Prediccion del modelo",
+                                "modelo": selector_modelo.log_algoritmo,
+                                "fold": fold,
+                                "funcion": "Minero - pipeline_supervisado",
+                            }
+                        )
+                        actualizar_metricas_fold(None, None, numero_ejecucion_modelo, metricas)
+                        break
+
                 actualizar_metricas_fold(datos["y_val"], predicciones, numero_ejecucion_modelo, metricas)
 
-        
-        return pipeline_aleatorio, metricas, tiempo_total_pipeline_folds + tiempo_total_entrenamiento
+            tiempo_total_ejecuciones_modelos.append(sum(tiempos_modelos_por_fold))
+
+        tiempos_totales_pipeline_modelos = np.array(tiempo_total_ejecuciones_modelos) + tiempo_total_pipeline_folds
+        tiempos_totales_pipeline_modelos = tiempos_totales_pipeline_modelos.tolist()
+
+        return pipeline_aleatorio, metricas, tiempos_totales_pipeline_modelos
 
     def _imprimir_resultado_pipeline(self, X_df, y_df):
         cols_with_nan = X_df.columns[X_df.isna().any()].tolist()
@@ -514,8 +583,10 @@ class MineroDePipelines:
 
                 if not permitir_none and algoritmo_seleccionado is None:
                     continue  # Reintentar si None no está permitido
+                
+                algoritmo_seleccionado = str(algoritmo_seleccionado) if algoritmo_seleccionado is not None else None
 
-                if not permitir_llm and algoritmo_seleccionado.lower() == "llm":
+                if not permitir_llm and algoritmo_seleccionado == "llm":
                     continue  # Reintentar si LLM no está permitido
 
                 pipeline_aleatorio[fase] = algoritmo_seleccionado

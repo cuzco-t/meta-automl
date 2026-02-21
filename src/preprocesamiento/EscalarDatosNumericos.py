@@ -73,6 +73,9 @@ class EscalarDatosNumericos(RegistroTecnica):
         """
         Calcula los parámetros necesarios para la técnica seleccionada y los guarda en self.log_params
         """
+        if self.log_algoritmo is None:
+            return
+
         cols_numericas = X_df.select_dtypes(include=np.number).columns
         self.log_params["columnas"] = cols_numericas.tolist()
 

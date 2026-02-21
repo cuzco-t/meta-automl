@@ -14,7 +14,6 @@ class TratarFaltantesStrings(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
             "moda", 
             "aleatorio", 
             "eliminar", 
@@ -175,6 +174,7 @@ class TratarFaltantesStrings(RegistroTecnica):
                 continue
 
             valor_desconocido = self.log_params.get(col, "DESCONOCIDO")
+            X_df[col] = X_df[col].cat.add_categories([valor_desconocido])
             X_df[col] = X_df[col].fillna(valor_desconocido)
 
         return X_df

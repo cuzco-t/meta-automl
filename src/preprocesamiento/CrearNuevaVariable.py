@@ -18,11 +18,7 @@ class CrearNuevaVariable(RegistroTecnica):
         
         self.ALGORITMOS = [
             None, 
-            "suma", 
-            "resta", 
-            "multiplicacion", 
-            "ratio", 
-            "pca"
+            "llm"
         ]
 
     def _permitir_none(self, tecnicas):

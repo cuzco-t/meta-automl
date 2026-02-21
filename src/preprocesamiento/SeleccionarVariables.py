@@ -24,11 +24,12 @@ class SeleccionarVariables(RegistroTecnica):
         self.config_test = config_test
         self.ALGORITMOS = [
             None, 
-            "aleatorio", 
             "variance_threshold", 
             "mutual_info",
             "select_from_model", 
-            "pca", 
+            "pca_99",
+            "pca_95",
+            "pca_90", 
             "llm"
         ]
 
@@ -64,7 +65,7 @@ class SeleccionarVariables(RegistroTecnica):
                 X_reducido = self._seleccionar_columnas_con_parametros(X.copy())
                 return X_reducido, y
             
-            case "pca":
+            case "pca_99" | "pca_95" | "pca_90":
                 X_pca = self._seleccionar_columnas_con_pca(X.copy())
                 return X_pca, y
             
@@ -166,14 +167,14 @@ class SeleccionarVariables(RegistroTecnica):
         """
         Aplica PCA con el número de componentes indicado en self.log_params["n_components"]
         """
+        porcentaje_varianza = float(self.log_algoritmo.split("_")[1]) / 100
         numeric_cols = X_df.select_dtypes(include=np.number).columns
-        n_components = self.log_params["n_components"]
 
-        pca = PCA(n_components=n_components, random_state=self.semilla)
+        pca = PCA(n_components=porcentaje_varianza, random_state=self.semilla)
         pca_result = pca.fit_transform(X_df[numeric_cols])
 
         # Convertimos el resultado de PCA a DataFrame
-        pca_cols = [f'PC{i+1}' for i in range(n_components)]
+        pca_cols = [f'PC{i+1}' for i in range(pca_result.shape[1])]
         df_pca = pd.DataFrame(pca_result, columns=pca_cols, index=X_df.index)
 
         # Solo devolvemos las columnas PCA

@@ -146,6 +146,111 @@ def guardar_dataset(
     
     return None
 
+def vectorizar_pipeline(pipeline: dict) -> list[float]:
+    fases_acciones_indice = {
+        "tratar_duplicados": {
+            "eliminar": 184,
+            None: 185
+        },
+        "tratar_faltantes_numericos": {
+            "aleatorio": 186,
+            "eliminar": 187,
+            "media": 188,
+            "media_geometrica": 189,
+            "mediana": 190,
+            "moda": 191,
+            None: 192
+        },
+        "tratar_faltantes_strings": {
+            "aleatorio": 193,
+            "eliminar": 194,
+            "etiqueta_desconocido": 195,
+            "moda": 196,
+        },
+        "codificar_variables_binarias": {
+            "label_encoding": 197,
+            None: 198
+        },
+        "codificar_variables_categoricas_rango_bajo": {
+            "label_encoding": 199,
+            "one_hot_encoding": 200,
+        },
+        "codificar_variables_categoricas_rango_medio": {
+            "eliminar_variable": 201,
+            "frequency_encoding": 202,
+        },
+        "codificar_variables_categoricas_rango_alto": {
+            "eliminar_columna": 203
+        },
+        "tratar_outliers_numericos": {
+            "aleatorio": 204,
+            "eliminar": 205,
+            "media": 206,
+            "media_geometrica": 207,
+            "mediana": 208,
+            "moda": 209,
+            None: 210
+        },
+        "escalar_datos_numericos": {
+            "max_abs_scaler": 211,
+            "min_max": 212,
+            None: 213,
+            "robust_scaler": 214,
+            "standard_scaler": 215,
+        },
+        "normalizar_datos_numericos": {
+            "box_cox": 216,
+            "cuadrado": 217,
+            "inverso": 218,
+            "ln": 219,
+            None: 220,
+            "sqrt": 221,
+            "z_score": 222,
+        },
+        "crear_nueva_variable": {
+            "llm": 223,
+            None: 224
+        },
+        "seleccionar_variables": {
+            "select_from_model": 225,
+            "llm": 226,
+            "mutual_info": 227,
+            None: 228,
+            "pca_90": 229,
+            "pca_95": 230,
+            "pca_99": 231,
+            "umap_20": 232,
+            "umap_50": 233,
+            "umap_80": 234,
+            "variance_threshold": 235,
+        }
+    }
+
+    for fase, acciones in fases_acciones_indice.items():
+        for accion, indice in acciones.items():
+            # Ajustar índices para que comiencen desde 0
+            fases_acciones_indice[fase][accion] = indice - 184
+
+    cantidad_total_acciones = sum(len(acciones) for acciones in fases_acciones_indice.values())
+    acciones_vectorizadas = [0.0] * cantidad_total_acciones
+    for fase, accion in pipeline.items():
+        indice = fases_acciones_indice[fase][accion]
+        acciones_vectorizadas[indice] = 1.0
+
+    return acciones_vectorizadas
+
+def promediar_metricas(metricas: dict[str, dict[str, list]]) -> dict[str, float]:
+    if metricas is None:
+        return {}
+
+    promedios = {
+        ejecucion: (sum(valores) / len(valores) if len(valores) == 3 else 0.0)
+        for numero_ejecucion in metricas.values()
+        for ejecucion, valores in numero_ejecucion.items()
+    }
+
+    return promedios
+
 
 def main():
     RUTA_CARPETA_IDENTIFICADORES = "./data/datasets_identificadores/"
@@ -196,9 +301,20 @@ def main():
             # print("Meta-features extraídas:", meta_features)
             print("=" * 100)
 
+            if task_id == 10:
+                print("Task ID:", task_id)
+
             pipeline, metricas, tiempo_total = minero.pipeline_supervisado(X, y, tarea_pipeline)
 
+            pipeline_vectorizado = vectorizar_pipeline(pipeline)
+            metricas_promediadas = promediar_metricas(metricas)
+
+            #TODO: Formatear segun sea exito o error, y guardar en base de datos
             print("")
+            if metricas is None:
+                print("Pipeline mal configurado")
+            
+            print(f"Dataset: {dataset_name}")
             print("Pipeline supervisado finalizado.")
             # print(f"Tiempo de ejecución: {tiempo_total:.2f} segundos")
             # print("Promedios de métricas:")
@@ -207,10 +323,10 @@ def main():
             #     print(f"\t{metrica:<20}: {promedio}")
 
             contador += 1
-            if contador >= 10:  # Limitar a los primeros 5 datasets para la demo
-                return
+            # if contador >= 10:  # Limitar a los primeros 5 datasets para la demo
+            #     return
             
-            input("Presiona Enter para continuar con el siguiente dataset...")
+            # input("Presiona Enter para continuar con el siguiente dataset...")
 
 if __name__ == "__main__":
     main()

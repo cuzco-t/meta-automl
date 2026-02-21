@@ -16,8 +16,8 @@ class NormalizarDatosNumericos(RegistroTecnica):
         self.config_test = config_test
         self.ALGORITMOS = [
             None, 
-            "z-score", 
-            "box-cox", 
+            "z_score", 
+            "box_cox", 
             "sqrt", 
             "ln", 
             "inverso",
@@ -52,7 +52,7 @@ class NormalizarDatosNumericos(RegistroTecnica):
             case None:
                 return X, y
             
-            case "z-score" | "box-cox" | "sqrt" | "ln" | "inverso":
+            case "z_score" | "box_cox" | "sqrt" | "ln" | "inverso":
                 X_normalizado = self._normalizar_con_parametros(X.copy())
                 return X_normalizado, y
             
@@ -66,7 +66,7 @@ class NormalizarDatosNumericos(RegistroTecnica):
     def _calcular_parametros(self, X_df: pd.DataFrame) -> None:
         """
         Calcula los parámetros necesarios para las técnicas matemáticas:
-            None, z-score, box-cox, cuadrado, sqrt, ln, inverso
+            None, z_score, box_cox, cuadrado, sqrt, ln, inverso
         y los guarda en self.log_params para poder aplicarlos luego.
         """
         cols_numericas = X_df.select_dtypes(include=np.number).columns
@@ -77,13 +77,13 @@ class NormalizarDatosNumericos(RegistroTecnica):
         elif self.log_algoritmo == "cuadrado":
             self.log_params = {}
 
-        elif self.log_algoritmo == "z-score":
+        elif self.log_algoritmo == "z_score":
             self.log_params = {
                 "mean": {col: float(X_df[col].mean()) for col in cols_numericas},
                 "std": {col: float(X_df[col].std(ddof=0)) for col in cols_numericas}
             }
 
-        elif self.log_algoritmo == "box-cox":
+        elif self.log_algoritmo == "box_cox":
             self.log_params["lambda"] = {}
             self.log_params["desplazamiento"] = {}
 
@@ -91,7 +91,7 @@ class NormalizarDatosNumericos(RegistroTecnica):
                 col_data = X_df[col].copy()
                 desplazamiento = 0
 
-                # Box-Cox requiere datos positivos
+                # box_cox requiere datos positivos
                 if (col_data <= 0).any():
                     desplazamiento = abs(col_data.min()) + 1e-3
                     col_data = col_data + desplazamiento
@@ -116,8 +116,8 @@ class NormalizarDatosNumericos(RegistroTecnica):
     def _normalizar_con_parametros(self, X_df: pd.DataFrame) -> pd.DataFrame:
         """
         Normaliza usando la técnica seleccionada y los parámetros calculados en fit()
-         - z-score: (X - mean) / std
-         - box-cox: stats.boxcox(X + desplazamiento, lambda)
+         - z_score: (X - mean) / std
+         - box_cox: stats.boxcox(X + desplazamiento, lambda)
          - sqrt: sqrt(X + desplazamiento)
          - ln: log1p(X + desplazamiento)
          - inverso: 1 / (1 + X + desplazamiento)
@@ -125,10 +125,10 @@ class NormalizarDatosNumericos(RegistroTecnica):
         columnas_numericas = X_df.select_dtypes(include=np.number).columns
 
         for col in columnas_numericas:
-            if self.log_algoritmo == "z-score":
+            if self.log_algoritmo == "z_score":
                 X_df[col] = (X_df[col] - self.log_params["mean"][col]) / self.log_params["std"][col]
 
-            elif self.log_algoritmo == "box-cox":
+            elif self.log_algoritmo == "box_cox":
                 desplazamiento = self.log_params["desplazamiento"][col]
                 lam = self.log_params["lambda"][col]
                 X_df[col] = stats.boxcox(X_df[col] + desplazamiento, lam)

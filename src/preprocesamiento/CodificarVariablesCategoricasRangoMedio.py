@@ -16,7 +16,6 @@ class CodificarVariablesCategoricasRangoMedio(RegistroTecnica):
         self.random_state = random_state
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
             "frequency_encoding", 
             "eliminar_variable"
         ]

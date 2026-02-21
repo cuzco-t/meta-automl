@@ -16,7 +16,6 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            None, 
             "eliminar_columna"
         ]
 
