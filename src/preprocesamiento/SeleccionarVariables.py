@@ -81,6 +81,11 @@ class SeleccionarVariables(RegistroTecnica):
         """
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
+        if self.log_algoritmo is None:
+            self.log_params = {}
+            self.registrar_parametros(self.log_params)
+            return
+
         rng = np.random.default_rng(42)
 
         if self.log_algoritmo == "aleatorio":
@@ -130,10 +135,11 @@ class SeleccionarVariables(RegistroTecnica):
         elif self.log_algoritmo in ["umap_20", "umap_50", "umap_80"]:
             porcentaje_componentes = int(self.log_algoritmo.split("_")[1]) / 100
             columnas_numericas = X.select_dtypes(include=np.number).columns
+            cantidad_columnas_numericas = len(columnas_numericas)
 
             n_components = max(
                 2, 
-                min(int(columnas_numericas * porcentaje_componentes), columnas_numericas - 1)
+                min(int(cantidad_columnas_numericas * porcentaje_componentes), cantidad_columnas_numericas - 1)
             )
             self.log_params["n_components"] = int(n_components)
 

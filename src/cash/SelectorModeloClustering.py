@@ -1,10 +1,11 @@
 import ast
-import numpy as np
+import signal
 import pandas as pd
 
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
+from ..Result import Result
 
 # K-Means
 from sklearn.cluster import KMeans
@@ -38,13 +39,8 @@ class SelectorModeloClustering(RegistroTecnica):
             "spectral_clustering",
             "birch"
         ]
-        
 
-    def reiniciar(self):
-        self.log_algoritmo = None
-        self.log_params = {}
-
-    def fit(self, X: pd.DataFrame):
+    def calcular_hiper_parametros(self, X: pd.DataFrame):
         """
         Selecciona aleatoriamente el modelo de clustering a usar, y configura sus
         hiperparámetros.
@@ -62,33 +58,49 @@ class SelectorModeloClustering(RegistroTecnica):
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self
+    
+    @staticmethod
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Timeout: el entrenamiento excedio el limite de tiempo")
         
-    def get_modelo_ml(self):
+    def entrenar_modelo(self, X: pd.DataFrame) -> Result[object, str]:
+        """
+        Entrena una nueva instancia del modelo seleccionado con los hiperparámetros
+        configurados. Si el entrenamiento excede el tiempo límite, se lanza una excepción.
+        """
         modelo = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
-
         modelo.set_params(**hiper_parametros)
 
-        return modelo
+        signal.signal(signal.SIGALRM, self.timeout_handler)
+        signal.alarm(5)
+        
+        result_entrenamiento = None
+        try:
+            etiquetas = modelo.fit_predict(X)
+        except TimeoutError as e:
+            result_entrenamiento = Result.fail(str(e))
+        except Exception as e:
+            result_entrenamiento = Result.fail(f"Error durante entrenamiento:\n{str(e)}")
+        else:
+            result_entrenamiento = Result.ok(etiquetas)
+        finally:
+            signal.alarm(0)
+
+        return result_entrenamiento
     
     def _get_instancia_modelo(self):
-        if self.log_algoritmo == "kmeans":
-            return KMeans()
-        elif self.log_algoritmo == "dbscan":
-            return DBSCAN()
-        elif self.log_algoritmo == "agglomerative_clustering":
-            return AgglomerativeClustering()
-        elif self.log_algoritmo == "mean_shift":
-            return MeanShift()
-        elif self.log_algoritmo == "spectral_clustering":
-            return SpectralClustering()
-        elif self.log_algoritmo == "birch":
-            return Birch()
-        else:
-            raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
+        match self.log_algoritmo:
+            case "kmeans": return KMeans()
+            case "dbscan": return DBSCAN()
+            case "agglomerative_clustering": return AgglomerativeClustering()
+            case "mean_shift": return MeanShift()
+            case "spectral_clustering": return SpectralClustering()
+            case "birch": return Birch()
+            case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
     def _calcular_parametros(self, X: pd.DataFrame):
-        llm = LLM("deepseek-r1:8b")
+        llm = LLM()
 
         extractor = ExtractorMetaFeatures()
         meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), None)
@@ -98,7 +110,7 @@ class SelectorModeloClustering(RegistroTecnica):
         prompt = llm.plantillas_prompts(
             plantilla="seleccionar_hiper_parametros",
             kwargs={
-                "tarea": "regresión",
+                "tarea": "clustering",
                 "modelo_ml": self.log_algoritmo,
                 "meta_features_globales": meta_features_globales_formateadas,
                 "hiper_parametros_por_defecto": self._get_instancia_modelo().get_params(),

@@ -1,7 +1,9 @@
 import time
 
+from matplotlib import cm
 import pandas as pd
 import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 from src.config.Configuracion import Configuracion
 from .PipelineLogger import PipelineLogger
@@ -20,7 +22,8 @@ from sklearn.metrics import (
     explained_variance_score,
     silhouette_score,
     calinski_harabasz_score,
-    davies_bouldin_score
+    davies_bouldin_score,
+    confusion_matrix
 )
 
 from .SecuenciaPreprocesamiento import SecuenciaPreprocesamiento
@@ -52,148 +55,223 @@ class MineroDePipelines:
         self._id_pipeline = 0
         self._id_ejecucion_modelo = 0
         self._selector_aleatorio = np.random.default_rng(self._SEMILLA)
+        self._num_modelos_a_ejecutar = 10
 
-    def _leer_dataset(self, ruta_absoluta, target) -> tuple[pd.DataFrame, pd.Series]:
-        """
-        Lee el dataset desde la ruta absoluta proporcionada y separa las características (X) del target (y).
+    def pipeline_no_supervisado(self, X_df: pd.DataFrame, y_df:pd.Series = None, descripcion: str | None = None):
+
+        def actualizar_metricas_no_supervisadas(
+            X_procesado, 
+            etiquetas, 
+            metricas: dict[str, list]
+        ) -> None:
+            numero_etiquetas = len(set(etiquetas)) - (1 if -1 in etiquetas else 0)
+            
+            # El Silhouette Score falla si solo hay 1 grupo o si cada punto es su propio grupo
+            if not (1 < numero_etiquetas < X_procesado.shape[0]):
+                silhouette = -1.0
+            
+            else:
+                try:
+                    # Usar 'sample_size' para velocidad en Big Data
+                    # Si X tiene < 10k filas, usa todo. Si tiene más, usa una muestra de 10k.
+                    tamaño_muestra = 10_000 if X_procesado.shape[0] > 10_000 else None
+                    
+                    silhouette = silhouette_score(
+                        X_procesado, 
+                        etiquetas, 
+                        metric='euclidean', 
+                        sample_size=tamaño_muestra,  # ¡Esto salva tu CPU!
+                        random_state=42
+                    )
+
+                except Exception as e:
+                    silhouette = -1.0 # Error en cálculo
+                
         
-        :param self: Referencia de la instancia de la clase.
-        :param ruta_absoluta: Ruta absoluta del archivo CSV que contiene el dataset.
-        :param target: Nombre de la columna que se utilizará como target.
-        :return: Tuple con las características (X) y el target (y) del dataset
-        :rtype: tuple
-        """
-        self.df = pd.read_csv(ruta_absoluta, encoding="utf-8")
-        X_df = self.df.drop(columns=[target])
-        y_df = self.df[target]
+            try: calinski = calinski_harabasz_score(X_procesado, etiquetas)
+            except: calinski = 0.0
 
-        return X_df, y_df
+            try: davies = davies_bouldin_score(X_procesado, etiquetas)
+            except: davies = 999.0 # Valor malo por defecto
+            
+            metricas["silhouette_scores"].append(silhouette)
+            metricas["calinski_harabasz_scores"].append(calinski)
+            metricas["davies_bouldin_scores"].append(davies)
 
-    def construir_pipeline_clustering(self, X_df: pd.DataFrame):
-        X_train = X_df.copy()
+        def actualizar_metricas_supervisadas(y_true: pd.Series, etiquetas: np.ndarray) -> None:
+            # Convertir etiquetas a strings
+            etiquetas_string = np.array([str(etiqueta) for etiqueta in etiquetas])
 
-        print("Preprocesando datos de entrenamiento...")
-        X_train_preprocesado, _ = self._preprocesar_datos(
-            X_train.copy(), 
-            None, 
-            tarea="clustering",
-            imprimir_resultados=False
+            # Crear máscara para ignorar -1 (ruido)
+            mask = etiquetas_string != '-1'
+
+            # Filtrar datos
+            y_true_filtradas = y_true.to_numpy()[mask].astype(str)
+            etiquetas_filtradas = etiquetas_string[mask]
+
+            # Calcular matriz de confusión
+            cm = confusion_matrix(y_true_filtradas, etiquetas_filtradas)
+
+            # Aplicar algoritmo húngaro para encontrar la mejor asignación
+            filas, columnas = linear_sum_assignment(-cm)
+
+            # Crear diccionario de mapeo cluster → etiqueta real
+            mapa = {str(col): str(fila) for fila, col in zip(filas, columnas)}
+
+            # Re-etiquetar predicciones usando el mapa
+            etiquetas_clusters_alineadas = np.array([mapa[etiqueta] for etiqueta in etiquetas_filtradas])
+
+            
+            # Calcular métricas de clasificación
+            acc = accuracy_score(y_true_filtradas, etiquetas_clusters_alineadas)
+            precision = precision_score(y_true_filtradas, etiquetas_clusters_alineadas, average='weighted', zero_division=0)
+            recall = recall_score(y_true_filtradas, etiquetas_clusters_alineadas, average='weighted', zero_division=0)
+            f1 = f1_score(y_true_filtradas, etiquetas_clusters_alineadas, average='weighted', zero_division=0)
+
+            metricas["accuracy_scores"].append(acc if not np.isnan(acc) else 0.0)
+            metricas["precision_scores"].append(precision if not np.isnan(precision) else 0.0)
+            metricas["recall_scores"].append(recall if not np.isnan(recall) else 0.0)
+            metricas["f1_scores"].append(f1 if not np.isnan(f1) else 0.0)
+
+        def actualizar_metricas_peores_casos(metricas: dict[str, list]) -> None:
+            metricas["silhouette_scores"].append(-1.0)
+            metricas["calinski_harabasz_scores"].append(0.0)
+            metricas["davies_bouldin_scores"].append(999.0)
+
+            metricas["accuracy_scores"].append(-1.0)
+            metricas["precision_scores"].append(-1.0)
+            metricas["recall_scores"].append(-1.0)
+            metricas["f1_scores"].append(-1.0)
+
+        self._id_pipeline += 1
+        logger = PipelineLogger().get_logger()
+
+        fases_instancias_un_solo_uso = self.crear_fases_instancias()
+        pipeline_aleatorio = self._generar_pipeline_aleatorio(fases_instancias_un_solo_uso)
+
+        logger.info(
+            "Pipeline generado aleatoriamente",
+            extra={
+                "pipeline": pipeline_aleatorio,
+                "tarea": "clustering"
+            }
         )
 
+        # Si Y son numeros continuos, se categoriza para que cada
+        # uno represente una clase distinta
+        if pd.api.types.is_numeric_dtype(y_df):
+            unique_vals = np.unique(y_df)
+            val_to_int = {v: i for i, v in enumerate(unique_vals)}
+            y_discrete = np.array([val_to_int[v] for v in y_df])
+            y_df = pd.Series(y_discrete, index=y_df.index)
 
-        print("Seleccionando modelo de ML y configurando sus hiperparámetros...")
+        logger.info(
+            "Iniciando preprocesamiento",
+            extra={
+                "pipeline": pipeline_aleatorio,
+                "tarea": "clustering"
+            }
+        )
+
         selector_modelo = SelectorModeloClustering(self._SEMILLA)
-        selector_modelo.fit(X_train_preprocesado)
 
-        print("Entrenando modelo de ML...")
-        modelo_ml = selector_modelo.get_modelo_ml()
-        SecuenciaPreprocesamiento().guardar_secuencia()
+        tiempo_inicio_pipeline = time.perf_counter()
+
+        X_procesado, y_procesado = X_df.copy(), y_df.copy()
+        fases_instancias = self.crear_fases_instancias()
+        self._configurar_instancias(fases_instancias, pipeline_aleatorio, "clustering")
         
-        etiquetas = modelo_ml.fit_predict(X_train_preprocesado)
-
-        numero_etiquetas = len(set(etiquetas)) - (1 if -1 in etiquetas else 0)
-
-        silhouette = None
-        # El Silhouette Score falla si solo hay 1 grupo o si cada punto es su propio grupo
-        if 1 < numero_etiquetas < len(X_train_preprocesado):
+        for fase, instancia in fases_instancias.items():
             try:
-                # Usar 'sample_size' para velocidad en Big Data
-                # Si X tiene < 10k filas, usa todo. Si tiene más, usa una muestra de 10k.
-                tamaño_muestra = 10_000 if X_train_preprocesado.shape[0] > 10_000 else None
-                
-                silhouette = silhouette_score(
-                    X_train_preprocesado, 
-                    etiquetas, 
-                    metric='euclidean', 
-                    sample_size=tamaño_muestra,  # ¡Esto salva tu CPU!
-                    random_state=42
+                if fase == "crear_nueva_variable":
+                    instancia.descripcion = descripcion
+
+                instancia.fit(X_procesado, y_procesado)
+                X_procesado, y_procesado = instancia.transform(X_procesado.copy(), y_procesado.copy())
+
+            except ValueError as e:
+                if fase == "seleccionar_variables" and "contains NaN" in str(e):
+                    self._logger.error(
+                        f"Pipeline mal configurado",
+                        extra={
+                            "fase": fase,
+                            "funcion": "Minero - procesar_datos_pipeline_por_cada_fold",
+                            "clase_error": e.__class__.__name__,
+                            "error": str(e)
+                        }
+                    )
+
+                    return {
+                        "pipeline": pipeline_aleatorio,
+                        "metricas": None,
+                        "lista_modelos_ml": [
+                            str(self._selector_aleatorio.choice(selector_modelo.ALGORITMOS))
+                            for _ in range(10)
+                        ],
+                        "tiempos_pipeline_modelos": None
+                    }
+
+        tiempo_final_pipeline = time.perf_counter()
+        tiempo_total_pipeline = tiempo_final_pipeline - tiempo_inicio_pipeline
+
+        algoritmos_disponibles = selector_modelo.ALGORITMOS
+
+        tiempo_total_ejecuciones_modelos = []
+        lista_modelos_ml = []
+        metricas = {
+            "silhouette_scores": [],
+            "calinski_harabasz_scores": [],
+            "davies_bouldin_scores": [],
+            "accuracy_scores": [],
+            "precision_scores": [],
+            "recall_scores": [],
+            "f1_scores": []
+        }
+        #! Cambiar en produccion para que se ejecute N veces y no solo 1
+        for numero_ejecucion_modelo in range(self._num_modelos_a_ejecutar):
+            algoritmo_seleccionado = str(self._selector_aleatorio.choice(algoritmos_disponibles))
+            selector_modelo.log_algoritmo = algoritmo_seleccionado
+            lista_modelos_ml.append(algoritmo_seleccionado)
+
+            selector_modelo.calcular_hiper_parametros(X_procesado)
+
+            tiempo_inicio_entrenamiento = time.perf_counter()
+            result_modelo = selector_modelo.entrenar_modelo(X_procesado)
+            
+            tiempo_final_entrenamiento = time.perf_counter()
+            tiempo_total_entrenamiento = tiempo_final_entrenamiento - tiempo_inicio_entrenamiento
+
+            tiempo_total_ejecuciones_modelos.append(tiempo_total_entrenamiento)
+
+            if result_modelo.is_failure:
+                self._logger.error(
+                    f"Error en entrenamiento del modelo {selector_modelo.log_algoritmo}",
+                    extra={
+                        "fase": "Minero",
+                        "tarea": "clustering",
+                        "error": result_modelo.get_error()
+                    }
                 )
-
-            except Exception as e:
-                silhouette = -1.0 # Error en cálculo
-        else:
-            # Castigo fuerte si el algoritmo colapsó todo en 1 solo grupo
-            silhouette = -1.0
-    
-        calinski = None
-        try:
-            calinski = calinski_harabasz_score(X_train_preprocesado, etiquetas)
-        except:
-            calinski = 0.0
-
-        davies = None
-        try:
-            davies = davies_bouldin_score(X_train_preprocesado, etiquetas)
-        except:
-            davies = 999.0 # Valor malo por defecto
+                
+                actualizar_metricas_peores_casos(metricas)
+                continue
+            
+            etiquetas = result_modelo.get_value()
+            actualizar_metricas_no_supervisadas(X_procesado, etiquetas, metricas)
+            actualizar_metricas_supervisadas(y_procesado, etiquetas)
         
-        print("="*100)
-        print("Resultados finales".upper())
-        print("="*100)
-        print(f"{'Silhouette':<8}: {silhouette}")
-        print(f"{'Calinski-Harabasz':<8}: {calinski}")
-        print(f"{'Davies-Bouldin':<8}: {davies}")
-        
-        self._reiniciar_fases_pipeline()
-        return None
-    
-    def _preprocesar_datos(self, X_copy: pd.DataFrame, y_copy: pd.Series, tarea: str, imprimir_resultados=False):
-        configuracion = Configuracion()
-        PERMITIR_NONE = configuracion.permitir_none
-        PERMITIR_LLM = configuracion.permitir_llm
-        SEMILLA = configuracion.semilla_aleatoria
-        
-        # Instanciamos cada fase del pipeline con los parámetros correspondientes.
-        tratar_duplicados = TratarDuplicados(PERMITIR_NONE, SEMILLA)
-        tratar_faltantes_numericos = TratarFaltantesNumericos(PERMITIR_NONE, SEMILLA)
-        tratar_faltantes_strings = TratarFaltantesStrings(PERMITIR_NONE, SEMILLA)
-        codificar_variables_binarias = CodificarVariablesBinarias(PERMITIR_NONE, SEMILLA)
-        codificar_variables_categoricas_rango_bajo = CodificarVariablesCategoricasRangoBajo(PERMITIR_NONE, SEMILLA)
-        codificar_variables_categoricas_rango_medio = CodificarVariablesCategoricasRangoMedio(PERMITIR_NONE, SEMILLA)
-        codificar_variables_categoricas_rango_alto = CodificarVariablesCategoricasRangoAlto(PERMITIR_NONE, SEMILLA)
-        tratar_outliers_numericos = TratarOutliersNumericos(PERMITIR_NONE, SEMILLA)
-        escalar_datos_numericos = EscalarDatosNumericos(PERMITIR_NONE, SEMILLA)
-        normalizar_datos_numericos = NormalizarDatosNumericos(PERMITIR_NONE, SEMILLA)
-        crear_nueva_variable = CrearNuevaVariable(PERMITIR_NONE, SEMILLA)
-        seleccionar_variables = SeleccionarVariables(PERMITIR_NONE, SEMILLA, tarea)
 
-        # El tratamiento que manipula Y debe hacerse fuera del pipeline
-        tratar_duplicados.fit(X_copy, y_copy)
-        X_copy, y_copy = tratar_duplicados.transform(X_copy, y_copy)
+        tiempos_totales_pipeline_modelos = np.array(tiempo_total_ejecuciones_modelos) + tiempo_total_pipeline
+        tiempos_totales_pipeline_modelos = tiempos_totales_pipeline_modelos.tolist()
 
-        codificar_variables_binarias.fit(X_copy, y_copy)
-        X_copy = codificar_variables_binarias.transform(X_copy)
+        datos_pipeline = {
+            "pipeline": pipeline_aleatorio,
+            "metricas": metricas,
+            "lista_modelos_ml": lista_modelos_ml,
+            "tiempos_pipeline_modelos": tiempos_totales_pipeline_modelos
+        }
 
-        tratar_faltantes_numericos.fit(X_copy, y_copy)
-        X_copy, y_copy = tratar_faltantes_numericos.transform(X_copy, y_copy)
-
-        tratar_faltantes_strings.fit(X_copy, y_copy)
-        X_copy, y_copy = tratar_faltantes_strings.transform(X_copy, y_copy)
-
-        pipeline = Pipeline([
-            ("codificar_variables_categoricas_rango_bajo", codificar_variables_categoricas_rango_bajo),
-            ("codificar_variables_categoricas_rango_medio", codificar_variables_categoricas_rango_medio),
-            ("codificar_variables_categoricas_rango_alto", codificar_variables_categoricas_rango_alto),
-        ])
-        X_copy = pipeline.fit_transform(X_copy)
-
-        tratar_outliers_numericos.fit(X_copy, y_copy)
-        X_copy, y_preprocesado = tratar_outliers_numericos.transform(X_copy, y_copy)
-
-        pipeline = Pipeline([
-            ("escalar_datos_numericos", escalar_datos_numericos),
-            ("normalizar_datos_numericos", normalizar_datos_numericos),
-            ("crear_nueva_variable", crear_nueva_variable),
-        ])
-        X_copy = pipeline.fit_transform(X_copy, y_preprocesado)
-        
-        seleccionar_variables.fit(X_copy, y_preprocesado)
-        X_preprocesado = seleccionar_variables.transform(X_copy, y_preprocesado)
-
-        if imprimir_resultados:
-            self._imprimir_resultado_pipeline(X_preprocesado, y_preprocesado)
-
-        return X_preprocesado, y_preprocesado
+        return datos_pipeline
     
     def pipeline_supervisado(
         self, 
@@ -590,9 +668,6 @@ class MineroDePipelines:
             while True:
                 algoritmo_seleccionado = self._selector_aleatorio.choice(algoritmos_disponibles)
 
-                if fase == "crear_nueva_variable":
-                    print("")
-
                 if not permitir_none and algoritmo_seleccionado is None:
                     continue  # Reintentar si None no está permitido
                 
@@ -624,6 +699,7 @@ class MineroDePipelines:
             instancia.log_algoritmo = algoritmo
 
         fases_instancias["seleccionar_variables"].tarea = tarea
+        fases_instancias["crear_nueva_variable"].tarea = tarea
 
     def crear_selectores_modelos(self):
         return {

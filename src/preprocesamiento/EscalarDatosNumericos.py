@@ -18,7 +18,7 @@ class EscalarDatosNumericos(RegistroTecnica):
             "max_abs_scaler", 
             "min_max", 
             None, 
-            "robust_scaler"
+            "robust_scaler",
             "standard_scaler", 
         ]
 

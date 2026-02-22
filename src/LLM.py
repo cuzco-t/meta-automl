@@ -88,7 +88,8 @@ para inferir relaciones).
 
 Tu tarea es generar hasta 5 nuevas variables siguiendo estas reglas:
 
-- Devuelve únicamente un diccionario de Python donde:
+- Devuelve **únicamente** un diccionario de Python sin ningún bloque de código (python), explicación,
+texto adicional, ni comentarios. Las reglas del diccionario son:
     - La clave es el nombre de la nueva variable.
     - El valor es un string con la operación aritmética que define la nueva variable usando
     los nombres exactos de las columnas proporcionadas encerradas entre backticks. 
@@ -102,7 +103,7 @@ los nombres de las columnas, buscando crear características útiles para {kwarg
 
 Ejemplo:
 Si las columnas fueran ["precio_unitario", "cantidad"], una posible respuesta podría ser:
-{"total": "(`precio_unitario` * `cantidad`)"}
+{{"total": "(`precio_unitario` * `cantidad`)"}}
 
 Ahora, usando la información de mi dataset, genera las nuevas variables.
 

@@ -1,8 +1,6 @@
 import ast
 import signal
-import time
 
-import numpy as np
 import pandas as pd
 
 from ..LLM import LLM
@@ -139,7 +137,7 @@ class SelectorModeloClasificacion(RegistroTecnica):
             case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
     def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
-        llm = LLM("deepseek-r1:8b")
+        llm = LLM()
 
         extractor = ExtractorMetaFeatures()
         meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), y.copy())

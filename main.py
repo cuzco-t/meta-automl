@@ -294,7 +294,7 @@ def main():
 
             contador_pipeline_dataset = 0
             #! Cambiar en producción para que se ejecute N veces
-            for i in range(3):
+            for i in range(1):
                 logger.info(
                     "Iniciando construccion de pipeline",
                     extra={
@@ -305,7 +305,10 @@ def main():
                     }
                 )
 
-                datos_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline, descripcion)
+                if tarea_pipeline == "clustering":
+                    datos_pipeline = minero.pipeline_no_supervisado(X, y, descripcion)
+                else:
+                    datos_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline, descripcion)
 
                 pipeline = datos_pipeline["pipeline"]
                 metricas = datos_pipeline["metricas"]
