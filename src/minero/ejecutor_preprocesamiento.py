@@ -22,7 +22,7 @@ class EjecutorPreprocesamiento:
     def __init__(self, logger):
         self.logger = logger
 
-    def crear_fases_instnacias(self) -> dict[str, object]:
+    def crear_fases_instancias(self) -> dict[str, object]:
         """Retorna nuevas instancias de cada fase."""
         return {
             "tratar_duplicados": TratarDuplicados(),
@@ -63,7 +63,7 @@ class EjecutorPreprocesamiento:
             X_val = fold_data["X_val"].copy()
             y_val = fold_data["y_val"].copy() if fold_data["y_val"] is not None else None
             
-            instancias = self.crear_fases_instnacias()
+            instancias = self.crear_fases_instancias()
             self.configurar_instancias(instancias, pipeline, tarea)
             
             try:

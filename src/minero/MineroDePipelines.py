@@ -35,7 +35,7 @@ class MineroDePipelines:
 
     def pipeline_supervisado(self, X_df, y_df, tarea, descripcion=None):
         pipeline = self.generador.generar_pipeline_aleatorio(
-            self.ejecutor.crear_fases_instnacias()
+            self.ejecutor.crear_fases_instancias()
         )
         lista_modelos = self.generador.generar_lista_modelos(self.n_modelos, self.tarea_modelos[tarea])
         self.logger.info("Pipeline generado", extra={"pipeline": pipeline, "modelos": lista_modelos})
