@@ -16,7 +16,7 @@ class TratarFaltantesStrings(RegistroTecnica):
         self.ALGORITMOS = [
             "aleatorio", 
             "eliminar", 
-            "etiqueta_desconocido"
+            "etiqueta_desconocido",
             "moda", 
         ]
 
@@ -142,7 +142,7 @@ class TratarFaltantesStrings(RegistroTecnica):
         :rtype: tuple[DataFrame, Series]
         """
         # Seleccionar solo columnas de tipo string
-        cols_string = X_df.select_dtypes(include="object").columns
+        cols_string = X_df.select_dtypes(include=["object", "string", "category"]).columns
 
         if len(cols_string) == 0:
             # No hay columnas de tipo string, no eliminamos nada

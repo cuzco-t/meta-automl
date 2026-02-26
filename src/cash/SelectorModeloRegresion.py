@@ -1,5 +1,6 @@
 import ast
 import signal
+from importlib import import_module
 import pandas as pd
 
 from src.Result import Result
@@ -7,28 +8,6 @@ from src.Result import Result
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
-
-# Modelos lineales
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import Ridge
-from sklearn.linear_model import Lasso
-from sklearn.linear_model import ElasticNet
-
-# Support Vector Regression
-from sklearn.svm import SVR
-
-# KNN
-from sklearn.neighbors import KNeighborsRegressor
-
-# Árboles y ensembles
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.ensemble import AdaBoostRegressor
-
-# Red neuronal
-from sklearn.neural_network import MLPRegressor
-
 
 class SelectorModeloRegresion(RegistroTecnica):
     def __init__(self, config_test=None):
@@ -94,32 +73,52 @@ class SelectorModeloRegresion(RegistroTecnica):
             signal.alarm(0)
 
         return result_entrenamiento
+
+    def _get_modelo_alias(self):
+        """
+        Mantiene compatibilidad de nombres históricos del pipeline,
+        mapeándolos a modelos disponibles en cuML.
+        """
+        try:
+            linear_model = import_module("cuml.linear_model")
+            svm = import_module("cuml.svm")
+            neighbors = import_module("cuml.neighbors")
+            tree = import_module("cuml.tree")
+            ensemble = import_module("cuml.ensemble")
+        except ImportError as error:
+            raise ImportError(
+                "No se pudo importar cuML. Instala RAPIDS/cuML para usar los selectores GPU."
+            ) from error
+
+        LinearRegression = linear_model.LinearRegression
+        Ridge = linear_model.Ridge
+        Lasso = linear_model.Lasso
+        ElasticNet = linear_model.ElasticNet
+        SVR = svm.SVR
+        KNeighborsRegressor = neighbors.KNeighborsRegressor
+        DecisionTreeRegressor = tree.DecisionTreeRegressor
+        RandomForestRegressor = ensemble.RandomForestRegressor
+
+        return {
+            "lineal": lambda: LinearRegression(),
+            "ridge": lambda: Ridge(),
+            "lasso": lambda: Lasso(),
+            "elasticnet": lambda: ElasticNet(),
+            "svr": lambda: SVR(),
+            "knn": lambda: KNeighborsRegressor(),
+            "arbol_decision": lambda: DecisionTreeRegressor(),
+            "random_forest": lambda: RandomForestRegressor(),
+            "gradient_boosting": lambda: RandomForestRegressor(),
+            "ada_boost": lambda: RandomForestRegressor(),
+            "mlp_regressor": lambda: LinearRegression(),
+        }
     
     def _get_instancia_modelo(self):
-        if self.log_algoritmo == "lineal":
-            return LinearRegression()
-        elif self.log_algoritmo == "ridge":
-            return Ridge()
-        elif self.log_algoritmo == "lasso":
-            return Lasso()
-        elif self.log_algoritmo == "elasticnet":
-            return ElasticNet()
-        elif self.log_algoritmo == "svr":
-            return SVR()
-        elif self.log_algoritmo == "knn":
-            return KNeighborsRegressor()
-        elif self.log_algoritmo == "arbol_decision":
-            return DecisionTreeRegressor()
-        elif self.log_algoritmo == "random_forest":
-            return RandomForestRegressor()
-        elif self.log_algoritmo == "gradient_boosting":
-            return GradientBoostingRegressor()
-        elif self.log_algoritmo == "ada_boost":
-            return AdaBoostRegressor()
-        elif self.log_algoritmo == "mlp_regressor":
-            return MLPRegressor()
-        else:
+        alias_modelos = self._get_modelo_alias()
+        if self.log_algoritmo not in alias_modelos:
             raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
+
+        return alias_modelos[self.log_algoritmo]()
         
     def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
         llm = LLM()

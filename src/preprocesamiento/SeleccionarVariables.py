@@ -66,13 +66,21 @@ class SeleccionarVariables(RegistroTecnica):
             case None:
                 return X, y
             
-            case "aleatorio" | "variance_threshold" | "mutual_info" | "select_from_model" | "llm":
+            case "aleatorio" | "select_from_model" | "llm":
+                X_reducido = self._seleccionar_columnas_con_parametros(X.copy())
+                return X_reducido, y
+            
+            case "mutual_info_25" | "mutual_info_50" | "mutual_info_75":
                 X_reducido = self._seleccionar_columnas_con_parametros(X.copy())
                 return X_reducido, y
             
             case "pca_99" | "pca_95" | "pca_90":
                 X_pca = self._seleccionar_columnas_con_pca(X.copy())
                 return X_pca, y
+            
+            case "umap_20" | "umap_50" | "umap_80":
+                X_umap = self.seleccionar_columnas_con_umap(X.copy())
+                return X_umap, y
             
             case _:
                 raise ValueError(f"Técnica de selección de variables no reconocida: {self.log_algoritmo}")                
@@ -203,3 +211,4 @@ class SeleccionarVariables(RegistroTecnica):
         df_umap = pd.DataFrame(embedding, columns=umap_cols, index=X_df.index)
 
         return df_umap
+    

@@ -13,48 +13,31 @@ from contextlib import contextmanager
 from src.config.Configuracion import Configuracion
 
 class ExtractorMetaFeatures:
-    _GUPOS_META_FEATURES = [
+    _GRUPOS_META_FEATURES = [
         "landmarking",
         "general",
         "statistical",
         "model-based",
         "info-theory",
         "relative",
-        # "clustering",
-        # "complexity",
-        # "itemset",
-        # "concept"
+        "clustering",
+        "complexity",
+        "itemset",
+        "concept"
     ]
+    # Alias para compatibilidad con referencias antiguas.
+    _GUPOS_META_FEATURES = _GRUPOS_META_FEATURES
     _CONSTANTE_ERROR = -1111.0
     _CONSTANTE_INFINITO = 2222.0
+    _RUTA_DATASET_TEMPORAL = "temp_dataset.csv"
 
     def __init__(self):
         self.df = None
         self.warnings_pymfe = Configuracion().silenciar_pymfe_warnings
 
     def extraer(self, ruta_absoluta, target):
-        meta_features = {}
-
         X, y = self._leer_dataset(ruta_absoluta, target)
-
-        for grupo in self._GUPOS_META_FEATURES:
-            mfe = MFE(groups=[grupo])
-
-            try:
-                with self.silenciar_warnings_pymfe():
-                    mfe.fit(X, y)
-                    ft = mfe.extract()
-                    meta_features[grupo] = dict(zip(ft[0], ft[1]))
-
-                    if len(meta_features[grupo]) == 0:
-                        print(f"Seteado grupo: {grupo}")
-                        meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
-                    else:
-                        print(f"Completado grupo: {grupo}")
-
-            except Exception as e:
-                print(f"ERROR grupo: {grupo}")
-                meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+        meta_features = self._extraer_meta_features_por_grupos(X, y)
         
         meta_features = self._mapear_meta_features(meta_features)
         meta_features = self._agregar_meta_features_personalizadas(ruta_absoluta, X, meta_features)
@@ -63,48 +46,62 @@ class ExtractorMetaFeatures:
         return meta_features, meta_features_vectorizadas
     
     def extraer_desde_dataframe(self, X_df: pd.DataFrame, y_df: pd.Series, vectorizar=False):
-        meta_features = {}
-
         X = X_df.copy().to_numpy()
         y = y_df.copy().to_numpy() if y_df is not None else None
-
-        for grupo in self._GUPOS_META_FEATURES:
-            mfe = MFE(groups=[grupo])
-
-            try:
-                with self.silenciar_warnings_pymfe():
-                    mfe.fit(X, y)
-                    ft = mfe.extract()
-                    meta_features[grupo] = dict(zip(ft[0], ft[1]))
-
-                    if len(meta_features[grupo]) == 0:
-                        print(f"Seteado grupo: {grupo}")
-                        meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
-                    else:
-                        print(f"Completado grupo: {grupo}")
-
-            except Exception as e:
-                print(f"ERROR grupo: {grupo}")
-                meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+        meta_features = self._extraer_meta_features_por_grupos(X, y)
         
         meta_features = self._mapear_meta_features(meta_features)
 
-        # Se guardar en disco temporalmente para luego agregar el peso en KB como meta-feature personalizada
-        ruta_temporal = "temp_dataset.csv"
-        if y_df is not None:
-            dataset_temporal = pd.concat([X_df, y_df], axis=1)
-        else:
-            dataset_temporal = X_df.copy()
-        dataset_temporal.to_csv(ruta_temporal, index=False)
-
-        meta_features = self._agregar_meta_features_personalizadas(ruta_temporal, X, meta_features)
-        os.remove(ruta_temporal)
+        ruta_temporal = self._guardar_dataset_temporal(X_df, y_df)
+        try:
+            meta_features = self._agregar_meta_features_personalizadas(ruta_temporal, X, meta_features)
+        finally:
+            if os.path.exists(ruta_temporal):
+                os.remove(ruta_temporal)
 
         meta_features_vectorizadas = None
         if vectorizar:
             meta_features_vectorizadas = self._vectorizar_meta_features(meta_features)
 
         return meta_features, meta_features_vectorizadas
+
+    def _extraer_meta_features_por_grupos(self, X: np.ndarray, y: np.ndarray | None) -> dict:
+        meta_features = {}
+
+        for grupo in self._GRUPOS_META_FEATURES:
+            mfe = MFE(groups=[grupo])
+
+            try:
+                with self.silenciar_warnings_pymfe():
+                    mfe.fit(X, y)
+                    nombres, valores = mfe.extract()
+                    meta_features_grupo = dict(zip(nombres, valores))
+
+                if len(meta_features_grupo) == 0:
+                    print(f"Seteado grupo: {grupo}")
+                    meta_features_grupo = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+                else:
+                    print(f"Completado grupo: {grupo}")
+
+            except Exception:
+                print(f"ERROR grupo: {grupo}")
+                meta_features_grupo = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+
+            meta_features[grupo] = meta_features_grupo
+
+        return meta_features
+
+    def _guardar_dataset_temporal(self, X_df: pd.DataFrame, y_df: pd.Series | None) -> str:
+        # Se guarda en disco temporalmente para luego agregar el peso en KB como meta-feature personalizada.
+        ruta_temporal = self._RUTA_DATASET_TEMPORAL
+
+        if y_df is not None:
+            dataset_temporal = pd.concat([X_df, y_df], axis=1)
+        else:
+            dataset_temporal = X_df.copy()
+
+        dataset_temporal.to_csv(ruta_temporal, index=False)
+        return ruta_temporal
 
     def _leer_dataset(self, ruta_absoluta, target):
         """

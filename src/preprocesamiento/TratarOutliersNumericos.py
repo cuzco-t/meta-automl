@@ -16,7 +16,7 @@ class TratarOutliersNumericos(RegistroTecnica):
         self.config_test = config_test
         self.ALGORITMOS = [
             "aleatorio", 
-            "eliminar"
+            "eliminar",
             "media", 
             "media_geometrica", 
             "mediana", 

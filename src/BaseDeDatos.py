@@ -74,3 +74,48 @@ class BaseDeDatos:
         if self.conn and not self.conn.closed:
             self.conn.close()
             print("Conexión a la base de datos cerrada.")
+
+    def guardar_resultados_pipeline(self, pipeline_info: dict):
+        query = """
+        INSERT INTO staging_resultados (
+            nombre_dataset,
+            filas,
+            columnas,
+            peso_kb,
+            pipeline_json,
+            vector_pipeline,
+            nombre_modelo,
+            tipo_tarea,
+            nombre_metrica,
+            mtf_json,
+            mtf_json_binario,
+            resultado,
+            tiempo_ejecucion
+        )
+        VALUES (
+            %s,%s,%s,%s,
+            %s::jsonb,
+            %s,
+            %s,%s,%s,
+            %s::jsonb,
+            %s::jsonb,
+            %s,%s
+        )
+        """
+        params = (
+            pipeline_info["nombre_dataset"],
+            pipeline_info["filas"],
+            pipeline_info["columnas"],
+            pipeline_info["peso_kb"],
+            pipeline_info["pipeline_json"],
+            pipeline_info["vector_pipeline"],
+            pipeline_info["nombre_modelo"],
+            pipeline_info["tipo_tarea"],
+            pipeline_info["nombre_metrica"],
+            pipeline_info["mtf_json"],
+            pipeline_info["mtf_json_binario"],
+            pipeline_info["resultado"],
+            pipeline_info["tiempo_ejecucion"]
+        )
+        self.insertar(query, params)
+

@@ -60,6 +60,10 @@ class CodificarVariablesBinarias(RegistroTecnica):
         """
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
+        if self.log_algoritmo is None:
+            self.log_params = {}
+            return
+
         for col in X.columns:
             if not ((is_object_dtype(X[col]) or is_categorical_dtype(X[col])) and X[col].nunique() == 2):
                 continue

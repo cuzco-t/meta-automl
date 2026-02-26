@@ -10,8 +10,10 @@ from scipy import sparse
 from pathlib import Path
 from typing import Iterator
 
-from src import Result, ExtractorMetaFeatures, MineroDePipelines, BaseDeDatos
+from src import Result, ExtractorMetaFeatures, BaseDeDatos
+from src.minero.MineroDePipelines import MineroDePipelines
 from src.PipelineLogger import PipelineLogger
+from src.minero.ejecutor_preprocesamiento import EjecutorPreprocesamiento
 
 
 def get_archivos(carpeta: str) -> list[Path]:
@@ -168,8 +170,8 @@ def crear_mapa_indices() -> tuple[dict, int]:
         contador += 1
 
 
-    minero = MineroDePipelines()
-    fases_instancias = minero.crear_fases_instancias()
+    ejecutor = EjecutorPreprocesamiento()
+    fases_instancias = ejecutor.crear_fases_instnacias()
 
     for fase, instancia in fases_instancias.items():
         algoritmos = instancia.ALGORITMOS
@@ -178,12 +180,11 @@ def crear_mapa_indices() -> tuple[dict, int]:
             mapa_indices[fase][algoritmo] = contador
             contador += 1
 
+    minero = MineroDePipelines()
+
     selectores_modelos = minero.crear_selectores_modelos()
-    instancias_selectores = list(selectores_modelos.values())
-    for i, tarea in enumerate(tareas):
-        instancia_selector = instancias_selectores[i]
-        mapa_indices[f"modelos_{tarea}"] = {}
-        for algoritmo in instancia_selector.ALGORITMOS:
+    for tarea in tareas:
+        for algoritmo in selectores_modelos[tarea].ALGORITMOS:
             mapa_indices[f"modelos_{tarea}"][algoritmo] = contador
             contador += 1
 
@@ -274,11 +275,11 @@ def main():
                     "dataset_name": dataset_name
                 }
             )
-            # meta_features, meta_features_vectorizadas = extractor.extraer_desde_dataframe(
-            #     X, 
-            #     y, 
-            #     vectorizar=False
-            # )
+            meta_features, meta_features_vectorizadas = extractor.extraer_desde_dataframe(
+                X, 
+                y, 
+                vectorizar=True
+            )
 
             logger.info(
                 "Meta-features extraidas exitosamente",
@@ -292,58 +293,57 @@ def main():
             if task_id == 10:
                 print("Task ID:", task_id)
 
-            contador_pipeline_dataset = 0
-            #! Cambiar en producción para que se ejecute N veces
-            for i in range(10):
-                logger.info(
-                    "Iniciando construccion de pipeline",
+
+            if tarea_pipeline == "clustering":
+                result_pipeline = minero.pipeline_no_supervisado(X, y, descripcion)
+            else:
+                result_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline, descripcion)
+
+            if result_pipeline.is_failure:
+                logger.error(
+                    "Pipeline supervisado fallido", 
                     extra={
-                        "task_id": task_id,
-                        "tarea": tarea_pipeline,
+                        "task_id": task_id, 
+                        "tarea": tarea_pipeline, 
                         "dataset_name": dataset_name,
-                        "num_pipeline": i + 1
+                        "error": result_pipeline.get_error()
                     }
                 )
+                continue
 
-                if tarea_pipeline == "clustering":
-                    datos_pipeline = minero.pipeline_no_supervisado(X, y, descripcion)
-                else:
-                    datos_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline, descripcion)
+            datos_pipeline = result_pipeline.get_value()
+            pipeline = datos_pipeline["pipeline"]
+            metricas = datos_pipeline["metricas"]
+            lista_modelos_ml = datos_pipeline["modelos"]
 
-                pipeline = datos_pipeline["pipeline"]
-                metricas = datos_pipeline["metricas"]
-                lista_modelos_ml = datos_pipeline["lista_modelos_ml"]
-                tiempos_totales = datos_pipeline["tiempos_pipeline_modelos"]
+            logger.info(
+                "Contruccion de pipeline finalizada",
+                extra={
+                    "task_id": task_id,
+                    "tarea": tarea_pipeline,
+                    "dataset_name": dataset_name,
+                    "exitoso": True if metricas is not None else False,
+                    "pipeline": pipeline,
+                    "metricas": metricas,
+                    "lista_modelos_ml": lista_modelos_ml,
+                }
+            )
 
-                logger.info(
-                    "Contruccion de pipeline finalizada",
-                    extra={
-                        "task_id": task_id,
-                        "tarea": tarea_pipeline,
-                        "dataset_name": dataset_name,
-                        "num_pipeline": i + 1,
-                        "exitoso": True if metricas is not None else False,
-                        "pipeline": pipeline,
-                        "metricas": metricas,
-                        "lista_modelos_ml": lista_modelos_ml,
-                        "tiempos_totales": tiempos_totales
-                    }
+            for modelo in lista_modelos_ml:
+                pipeline_vectorizado = vectorizar_pipeline(
+                    mapa_indices, 
+                    dimensiones, 
+                    tarea_pipeline, 
+                    pipeline, 
+                    modelo
                 )
-
-                for modelo in lista_modelos_ml:
-                    pipeline_vectorizado = vectorizar_pipeline(
-                        mapa_indices, 
-                        dimensiones, 
-                        tarea_pipeline, 
-                        pipeline, 
-                        modelo
-                    )
-
-                #TODO: Formatear segun sea exito o error, y guardar en base de datos
                 print("")
-                if metricas is None:
-                    print("Pipeline mal configurado")
-            
+
+            #TODO: Formatear segun sea exito o error, y guardar en base de datos
+            print("")
+            if metricas is None:
+                print("Pipeline mal configurado")
+        
             print(f"Dataset: {dataset_name}")
             print(f"Task ID: {task_id}")
             print("Pipeline supervisado finalizado.")
