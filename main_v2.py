@@ -1,4 +1,5 @@
 import os
+import json
 import openml
 import numpy as np
 import pandas as pd
@@ -128,30 +129,6 @@ def get_datos_openml(
     
     return Result.ok((dataset_name, descripcion, X, y))
 
-def guardar_dataset(
-        X: pd.DataFrame, 
-        y: pd.Series, 
-        tarea: str, 
-        nombre_dataset: str, 
-        ruta_base: str
-    ) -> None:
-    """
-    Guarda el dataset en formato CSV en la ruta especificada, organizando por tarea.
-    """
-    df = pd.concat([X, y], axis=1)
-    
-    # Crear carpeta de la tarea dentro de la base si no existe
-    ruta_tarea = os.path.join(ruta_base, tarea)
-    os.makedirs(ruta_tarea, exist_ok=True)
-    
-    # Ruta completa del archivo
-    ruta_archivo = os.path.join(ruta_tarea, f"{nombre_dataset}.csv")
-    
-    # Guardar CSV
-    df.to_csv(ruta_archivo, index=False)
-    
-    return None
-
 def crear_mapa_indices() -> tuple[dict, int]:
     """
     Crear un mapa de índices para cada fase del pipeline, cada algoritmo dentro de cada fase,
@@ -165,12 +142,8 @@ def crear_mapa_indices() -> tuple[dict, int]:
     mapa_indices = {}
 
     tareas = ["clasificacion", "regresion", "clustering"]
-    for tarea in tareas:
-        mapa_indices[tarea] = contador
-        contador += 1
 
-
-    ejecutor = EjecutorPreprocesamiento()
+    ejecutor = EjecutorPreprocesamiento(PipelineLogger().get_logger())
     fases_instancias = ejecutor.crear_fases_instnacias()
 
     for fase, instancia in fases_instancias.items():
@@ -182,13 +155,13 @@ def crear_mapa_indices() -> tuple[dict, int]:
 
     minero = MineroDePipelines()
 
-    selectores_modelos = minero.crear_selectores_modelos()
+    selectores_modelos = minero.tarea_modelos
     for tarea in tareas:
-        for algoritmo in selectores_modelos[tarea].ALGORITMOS:
-            mapa_indices[f"modelos_{tarea}"][algoritmo] = contador
+        for algoritmo in selectores_modelos[tarea]:
+            mapa_indices.setdefault(f"modelos_{tarea}", {})[algoritmo] = contador
             contador += 1
 
-    return mapa_indices, contador
+    return mapa_indices, contador - 1
 
 def vectorizar_pipeline(mapa_indices, dimensiones, tarea, pipeline, modelo) -> list:
     """
@@ -196,26 +169,18 @@ def vectorizar_pipeline(mapa_indices, dimensiones, tarea, pipeline, modelo) -> l
     
     Cada elemento de la lista representa el estado del vector después de cada activación.
     """
-    vector = [0] * dimensiones
-    historia = [vector.copy()]  # primer elemento: todo cero
-
-    # Activamos el índice de la tarea
-    vector_nuevo = historia[-1].copy()
-    indice_tarea = mapa_indices[tarea]
-    vector_nuevo[indice_tarea] = 1
-    historia.append(vector_nuevo)
+    vector = [0.0] * dimensiones
+    historia = []
 
     # Activamos índices de cada fase/algoritmo paso a paso
     for fase, algoritmo in pipeline.items():
-        vector_nuevo = historia[-1].copy()
-        vector_nuevo[mapa_indices[fase][algoritmo]] = 1
-        historia.append(vector_nuevo)
+        vector[mapa_indices[fase][algoritmo]] = 1.0
+        historia.append(vector.copy())
 
     # Activamos el índice del modelo
-    vector_nuevo = historia[-1].copy()
     indice_modelo = mapa_indices[f"modelos_{tarea}"][modelo]
-    vector_nuevo[indice_modelo] = 1
-    historia.append(vector_nuevo)
+    vector[indice_modelo] = 1.0
+    historia.append(vector.copy())
 
     return historia
 
@@ -256,7 +221,6 @@ def main():
                 continue
 
             dataset_name, descripcion, X, y = result_datos_openml.get_value()
-            guardar_dataset(X, y, tarea_pipeline, dataset_name, RUTA_CARPETA_DATSETS_DESCARGADOS)
 
             logger.info(
                 "Dataset descargado exitosamente",
@@ -290,69 +254,93 @@ def main():
                 }
             )
 
-            if task_id == 10:
-                print("Task ID:", task_id)
+            mapping = {
+                "clasificacion": [1.0, 0.0, 0.0],
+                "regresion":     [0.0, 1.0, 0.0],
+                "clustering":    [0.0, 0.0, 1.0],
+            }
+
+            meta_features_vectorizadas.extend(mapping.get(tarea_pipeline, [0.0, 0.0, 0.0]))
 
 
-            if tarea_pipeline == "clustering":
-                result_pipeline = minero.pipeline_no_supervisado(X, y, descripcion)
-            else:
-                result_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline, descripcion)
+            for num_pipeline in range (3):
 
-            if result_pipeline.is_failure:
-                logger.error(
-                    "Pipeline supervisado fallido", 
+                if tarea_pipeline == "clustering":
+                    result_pipeline = minero.pipeline_no_supervisado(X, y, descripcion)
+                else:
+                    result_pipeline = minero.pipeline_supervisado(X, y, tarea_pipeline, descripcion)
+
+                if result_pipeline.is_failure:
+                    logger.error(
+                        "Pipeline supervisado fallido", 
+                        extra={
+                            "task_id": task_id, 
+                            "tarea": tarea_pipeline, 
+                            "dataset_name": dataset_name,
+                            "error": result_pipeline.get_error()
+                        }
+                    )
+                    continue
+
+                datos_pipeline = result_pipeline.get_value()
+                pipeline = datos_pipeline["pipeline"]
+                metricas = datos_pipeline["metricas"]
+                lista_modelos_ml = datos_pipeline["modelos"]
+                tiempos = datos_pipeline["tiempos"]
+
+                logger.info(
+                    "Contruccion de pipeline finalizada",
                     extra={
-                        "task_id": task_id, 
-                        "tarea": tarea_pipeline, 
+                        "task_id": task_id,
+                        "tarea": tarea_pipeline,
                         "dataset_name": dataset_name,
-                        "error": result_pipeline.get_error()
+                        "exitoso": True if metricas is not None else False,
+                        "pipeline": pipeline,
+                        "metricas": metricas,
+                        "lista_modelos_ml": lista_modelos_ml,
                     }
                 )
-                continue
 
-            datos_pipeline = result_pipeline.get_value()
-            pipeline = datos_pipeline["pipeline"]
-            metricas = datos_pipeline["metricas"]
-            lista_modelos_ml = datos_pipeline["modelos"]
+                for num_modelo, modelo in enumerate(lista_modelos_ml):
+                    pipeline_vectorizado = vectorizar_pipeline(
+                        mapa_indices, 
+                        dimensiones, 
+                        tarea_pipeline, 
+                        pipeline, 
+                        modelo
+                    )
+                    
+                    for paso_t, pipeline_step in enumerate(pipeline_vectorizado):
+                        vector_actual = meta_features_vectorizadas + pipeline_vectorizado[paso_t] 
+                        vector_siguiente = meta_features_vectorizadas + pipeline_vectorizado[paso_t + 1] if paso_t + 1 < len(pipeline_vectorizado) else None
+                        
+                        fase_actual = list(pipeline.keys())[paso_t] if paso_t < len(pipeline) else "FINAL"
+                        accion_actual = pipeline[fase_actual] if paso_t < len(pipeline) else ""
+                        fase_accion = fase_actual + "_" + str(accion_actual)
+                        pipeline_info = {
+                            "nombre_dataset": dataset_name,
+                            "num_pipeline": num_pipeline,
+                            "num_modelo": num_modelo,
+                            "mtf_json": json.dumps(meta_features),
+                            "pipeline_json": json.dumps(pipeline),
+                            "paso_t": paso_t,
+                            "estado_actual": vector_actual,
+                            "accion": fase_accion,
+                            "estado_siguiente": vector_siguiente,
+                            "nombre_modelo": modelo,
+                            "tipo_tarea": tarea_pipeline,
+                            "metricas": None if paso_t + 1 < len(pipeline_vectorizado) else json.dumps(metricas[num_modelo]),
+                            "completado": 1 if paso_t + 1 == len(pipeline_vectorizado) else 0,
+                            "tiempo_ejecucion": tiempos[num_modelo] if paso_t + 1 == len(pipeline_vectorizado) else None
+                        }
 
-            logger.info(
-                "Contruccion de pipeline finalizada",
-                extra={
-                    "task_id": task_id,
-                    "tarea": tarea_pipeline,
-                    "dataset_name": dataset_name,
-                    "exitoso": True if metricas is not None else False,
-                    "pipeline": pipeline,
-                    "metricas": metricas,
-                    "lista_modelos_ml": lista_modelos_ml,
-                }
-            )
+                        db.guardar_resultados_pipeline(pipeline_info)
 
-            for modelo in lista_modelos_ml:
-                pipeline_vectorizado = vectorizar_pipeline(
-                    mapa_indices, 
-                    dimensiones, 
-                    tarea_pipeline, 
-                    pipeline, 
-                    modelo
-                )
-                print("")
 
-            #TODO: Formatear segun sea exito o error, y guardar en base de datos
-            print("")
-            if metricas is None:
-                print("Pipeline mal configurado")
         
             print(f"Dataset: {dataset_name}")
             print(f"Task ID: {task_id}")
             print("Pipeline supervisado finalizado.")
-
-            contador += 1
-            # if contador >= 10:  # Limitar a los primeros 5 datasets para la demo
-            #     return
-            
-            # input("Presiona Enter para continuar con el siguiente dataset...")
 
 if __name__ == "__main__":
     main()

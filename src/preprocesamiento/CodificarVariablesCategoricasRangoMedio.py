@@ -89,7 +89,6 @@ class CodificarVariablesCategoricasRangoMedio(RegistroTecnica):
             if col in X_copy.columns:
                 frecuencia_minima = freqs.min()
                 X_copy[col] = X_copy[col].map(freqs).fillna(frecuencia_minima).astype(float)
-                print(f"Columna '{col}': {X_copy[col].isna().sum()}")
 
         return X_copy
     

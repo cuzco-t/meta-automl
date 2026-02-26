@@ -20,7 +20,6 @@ class RegistroTecnica:
 
     def imprimir_fase(self, fase):
         secuencia = SecuenciaPreprocesamiento()
-        print(secuencia.secuencia[fase])
 
     def imprimir_secuencia(self):
         secuencia = SecuenciaPreprocesamiento()

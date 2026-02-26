@@ -79,43 +79,54 @@ class BaseDeDatos:
         query = """
         INSERT INTO staging_resultados (
             nombre_dataset,
-            filas,
-            columnas,
-            peso_kb,
+            num_pipeline,
+            num_modelo,
+            mtf_json,
             pipeline_json,
-            vector_pipeline,
+            paso_t,
+            estado_actual,
+            accion,
+            estado_siguiente,
             nombre_modelo,
             tipo_tarea,
-            nombre_metrica,
-            mtf_json,
-            mtf_json_binario,
-            resultado,
+            metricas,
+            completado,
             tiempo_ejecucion
         )
         VALUES (
-            %s,%s,%s,%s,
-            %s::jsonb,
             %s,
-            %s,%s,%s,
-            %s::jsonb,
-            %s::jsonb,
-            %s,%s
+            %s,
+            %s,
+            %s::json,
+            %s::json,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s::json,
+            %s,
+            %s
         )
         """
+
         params = (
             pipeline_info["nombre_dataset"],
-            pipeline_info["filas"],
-            pipeline_info["columnas"],
-            pipeline_info["peso_kb"],
+            pipeline_info["num_pipeline"],
+            pipeline_info["num_modelo"],
+            pipeline_info["mtf_json"],
             pipeline_info["pipeline_json"],
-            pipeline_info["vector_pipeline"],
+            pipeline_info["paso_t"],
+            pipeline_info["estado_actual"],      # vector(269)
+            pipeline_info["accion"],
+            pipeline_info["estado_siguiente"],   # vector(269)
             pipeline_info["nombre_modelo"],
             pipeline_info["tipo_tarea"],
-            pipeline_info["nombre_metrica"],
-            pipeline_info["mtf_json"],
-            pipeline_info["mtf_json_binario"],
-            pipeline_info["resultado"],
+            pipeline_info["metricas"],
+            pipeline_info["completado"],
             pipeline_info["tiempo_ejecucion"]
         )
+
         self.insertar(query, params)
 

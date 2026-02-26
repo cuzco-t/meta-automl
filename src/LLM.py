@@ -30,8 +30,6 @@ class LLM:
                     "num_ctx": self.num_ctx  # Ajusta el contexto del modelo si es necesario
                 }
             )
-            print("Respuesta del modelo:")
-            print(respuesta.message.content)
             
             return respuesta.message.content
 

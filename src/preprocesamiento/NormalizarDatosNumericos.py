@@ -16,7 +16,7 @@ class NormalizarDatosNumericos(RegistroTecnica):
         self.config_test = config_test
         self.ALGORITMOS = [
             "box_cox", 
-            "cuadrado"
+            "cuadrado",
             "inverso",
             "ln", 
             None, 

@@ -87,12 +87,6 @@ class EvaluadorModelos:
             for fold_id, fold_data in folds_data.items():
                 X_val = fold_data["X_val"]
                 y_val = fold_data["y_val"]
-                
-                X_train = fold_data["X_train"]
-
-                # # Homogeneizar tipos y orden
-                # X_val = X_val.astype(X_train.dtypes.to_dict())  # asegurar mismo dtype
-                # X_val = X_val[X_train.columns]                 # asegurar mismo orden
 
                 # Obtener el modelo correspondiente al fold (índice fold_id - 1)
                 modelo = resultado_list[fold_id - 1].get_value()
