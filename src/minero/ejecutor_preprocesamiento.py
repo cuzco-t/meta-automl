@@ -135,4 +135,8 @@ class EjecutorPreprocesamiento:
             
         except (ValueError, ZeroDivisionError, TypeError) as e:
             self.logger.error(f"Error en pipeline clustering: {e}")
-            return Result.fail(f"Error en pipeline clustering: {e}"), None
+            return Result.fail({
+                "error": str(e),
+                "pipeline": pipeline,
+                "fase": fase
+            }), None

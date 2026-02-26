@@ -62,6 +62,9 @@ class VectorizadorPipeline:
             vector[idx] = 1.0
             historia.append(vector.copy())
 
+        if modelo == "modelo_no_ejecutado":
+            return historia
+
         # Activar modelo final
         idx_modelo = self.mapa_indices[f"modelos_{tarea}"][modelo]
         vector[idx_modelo] = 1.0

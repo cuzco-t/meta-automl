@@ -81,7 +81,12 @@ class MineroDePipelines:
         result_datos, tiempo_preprocesamiento = self.ejecutor.ejecutar_pipeline_clustering(X_df, y_df, pipeline, descripcion)
         if result_datos.is_failure:
             self.logger.error("Error en ejecución del pipeline", extra={"error": result_datos.get_error()})
-            return Result.fail(f"Error en ejecución del pipeline: {result_datos.get_error()}")
+            datos_fallidos = result_datos.get_error()
+            return Result.fail({
+                "error": datos_fallidos['error'],
+                "pipeline": pipeline,
+                "fase": datos_fallidos["fase"]
+            })
         
         datos = result_datos.get_value()
         X_proc = datos["X_proc"]

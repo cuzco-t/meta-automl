@@ -110,9 +110,15 @@ class OrquestadorExperimentos:
             result = self.minero.pipeline_supervisado(X, y, tarea, descripcion)
 
         if result.is_failure:
-            self.logger.error(
-                f"Pipeline falló para {dataset_name}: {result.get_error()}",
-                extra={"task": tarea, "pipeline_num": num_pipeline}
+            datos_fallidos = result.get_error()
+            self.recorder.guardar_ejecucion_con_fallo(
+                dataset_name=dataset_name,
+                tarea=tarea,
+                num_pipeline=num_pipeline,
+                meta_features=meta_features,
+                meta_features_vector=meta_features_vector,
+                pipeline=datos_fallidos["pipeline"],
+                fase=datos_fallidos["fase"]
             )
             return
 
