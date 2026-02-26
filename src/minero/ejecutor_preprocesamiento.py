@@ -105,3 +105,34 @@ class EjecutorPreprocesamiento:
         
         return Result.ok(folds_procesados), tiempo_total_preprocesamiento
         
+    def ejecutar_pipeline_clustering(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series | None = None,
+        pipeline: dict | None = None,
+        descripcion: str | None = None
+    ) -> Result[dict[str, pd.DataFrame | pd.Series], str]:
+        """Aplica el pipeline completo sobre los datos para clustering."""
+        tiempo_inicio_preprocesamiento = time.time()
+        
+        X_proc = X.copy()
+        y_proc = y.copy() if y is not None else None
+        
+        instancias = self.crear_fases_instancias()
+        self.configurar_instancias(instancias, pipeline or {}, "clustering")
+        
+        try:
+            for fase, instancia in instancias.items():
+                if fase == "crear_nueva_variable" and descripcion:
+                    instancia.descripcion = descripcion
+                instancia.fit(X_proc, y_proc)
+                X_proc, y_proc = instancia.transform(X_proc, y_proc)
+            
+            tiempo_fin_preprocesamiento = time.time()
+            tiempo_total = tiempo_fin_preprocesamiento - tiempo_inicio_preprocesamiento
+            
+            return Result.ok({"X_proc": X_proc, "y_proc": y_proc}), tiempo_total
+            
+        except (ValueError, ZeroDivisionError, TypeError) as e:
+            self.logger.error(f"Error en pipeline clustering: {e}")
+            return Result.fail(f"Error en pipeline clustering: {e}"), None

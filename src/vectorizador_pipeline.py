@@ -39,7 +39,7 @@ class VectorizadorPipeline:
                 mapa[clave][alg] = contador
                 contador += 1
 
-        return mapa, contador - 1  # -1 porque el contador se incrementa una vez más al final del loop
+        return mapa, contador
 
     def vectorizar_pipeline(self, tarea: str, pipeline: Dict[str, str], modelo: str) -> List[List[float]]:
         """

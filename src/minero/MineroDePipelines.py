@@ -72,4 +72,32 @@ class MineroDePipelines:
 
     def pipeline_no_supervisado(self, X_df, y_df=None, descripcion=None):
         # similar, pero llama a evaluador.evaluar_no_supervisado
-        pass
+        pipeline = self.generador.generar_pipeline_aleatorio(
+            self.ejecutor.crear_fases_instancias()
+        )
+        lista_modelos = self.generador.generar_lista_modelos(self.n_modelos, self.tarea_modelos["clustering"])
+        self.logger.info("Pipeline generado", extra={"pipeline": pipeline, "modelos": lista_modelos})
+
+        result_datos, tiempo_preprocesamiento = self.ejecutor.ejecutar_pipeline_clustering(X_df, y_df, pipeline, descripcion)
+        if result_datos.is_failure:
+            self.logger.error("Error en ejecución del pipeline", extra={"error": result_datos.get_error()})
+            return Result.fail(f"Error en ejecución del pipeline: {result_datos.get_error()}")
+        
+        datos = result_datos.get_value()
+        X_proc = datos["X_proc"]
+        y_proc = datos["y_proc"]
+
+
+        entrenador = Entrenador()
+        results_etiquetas, tiempos_modelos = entrenador.entrenar_clustering(X_proc, lista_modelos)
+        self.logger.info("Todos los modelos han sido entrenados en todos los folds")
+
+        metricas_evaluacion = self.evaluador.evaluar_modelos_clustering(results_etiquetas, X_proc, y_proc)
+        tiempos_totales = [tiempo_preprocesamiento + t for t in tiempos_modelos]
+
+        return Result.ok({
+            "pipeline": pipeline,
+            "modelos": lista_modelos,
+            "metricas": metricas_evaluacion,
+            "tiempos": tiempos_totales
+        })

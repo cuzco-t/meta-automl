@@ -8,6 +8,24 @@ from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
 from ..Result import Result
 
+# K-Means
+from sklearn.cluster import KMeans
+
+# DBSCAN
+from sklearn.cluster import DBSCAN
+
+# Agglomerative Clustering (jerárquico)
+from sklearn.cluster import AgglomerativeClustering
+
+# Mean Shift
+from sklearn.cluster import MeanShift
+
+# Spectral Clustering
+from sklearn.cluster import SpectralClustering
+
+# Birch
+from sklearn.cluster import Birch
+
 class SelectorModeloClustering(RegistroTecnica):
     def __init__(self, random_state=None, config_test=None):
         super().__init__(log_fase="selector_modelo_clustering")
@@ -55,7 +73,7 @@ class SelectorModeloClustering(RegistroTecnica):
         modelo.set_params(**hiper_parametros)
 
         signal.signal(signal.SIGALRM, self.timeout_handler)
-        signal.alarm(5)
+        signal.alarm(5*60)
         
         result_entrenamiento = None
         try:
@@ -70,38 +88,16 @@ class SelectorModeloClustering(RegistroTecnica):
             signal.alarm(0)
 
         return result_entrenamiento
-
-    def _get_modelo_alias(self):
-        """
-        Mantiene compatibilidad de nombres históricos del pipeline,
-        mapeándolos a modelos disponibles en cuML.
-        """
-        try:
-            cluster = import_module("cuml.cluster")
-        except ImportError as error:
-            raise ImportError(
-                "No se pudo importar cuML. Instala RAPIDS/cuML para usar los selectores GPU."
-            ) from error
-
-        KMeans = cluster.KMeans
-        DBSCAN = cluster.DBSCAN
-        AgglomerativeClustering = cluster.AgglomerativeClustering
-
-        return {
-            "kmeans": lambda: KMeans(),
-            "dbscan": lambda: DBSCAN(),
-            "agglomerative_clustering": lambda: AgglomerativeClustering(),
-            "mean_shift": lambda: KMeans(),
-            "spectral_clustering": lambda: KMeans(),
-            "birch": lambda: KMeans(),
-        }
     
     def _get_instancia_modelo(self):
-        alias_modelos = self._get_modelo_alias()
-        if self.log_algoritmo not in alias_modelos:
-            raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
-
-        return alias_modelos[self.log_algoritmo]()
+        match self.log_algoritmo:
+            case "kmeans": return KMeans()
+            case "dbscan": return DBSCAN()
+            case "agglomerative_clustering": return AgglomerativeClustering()
+            case "mean_shift": return MeanShift()
+            case "spectral_clustering": return SpectralClustering()
+            case "birch": return Birch()
+            case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
     def _calcular_parametros(self, X: pd.DataFrame):
         llm = LLM()

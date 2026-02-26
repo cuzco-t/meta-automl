@@ -4,6 +4,7 @@ import pandas as pd
 from typing import Any, Dict, List
 
 from ..Result import Result
+from scipy.optimize import linear_sum_assignment
 
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
@@ -123,4 +124,82 @@ class EvaluadorModelos:
             
             resultados_evaluacion.append(metricas_promedio)
         
+        return resultados_evaluacion
+
+    def evaluar_modelos_clustering(
+        self,
+        lista_results_etiquetas: List[Result],
+        X: pd.DataFrame,
+        y: pd.Series
+    ) -> List[Dict[str, float]]:
+        """
+        Evalúa modelos de clustering calculando métricas de clustering y clasificación.
+        
+        Args:
+            lista_results_etiquetas: Lista de objetos Result con etiquetas de clustering
+            X: DataFrame con las características
+            y: Series con las etiquetas verdaderas
+            
+        Returns:
+            Lista de diccionarios con métricas de clustering y clasificación
+        """
+        resultados_evaluacion = []
+        
+        for etiquetas_list in lista_results_etiquetas:
+            # Verificar si el resultado es fallo
+            if etiquetas_list.is_failure:
+                resultados_evaluacion.append(self._obtener_metricas_fallo("clustering"))
+                resultados_evaluacion.append(self._obtener_metricas_fallo("clasificacion"))
+                continue
+            
+            try:
+                # Obtener las etiquetas predichas (usar el primer resultado disponible)
+                y_pred = etiquetas_list.get_value()
+                
+                # Calcular métricas de clustering
+                metricas_clustering = self._calcular_metricas_clustering(X, y_pred)
+                
+                # Convertir todo a string (opcional pero recomendable)
+                y_true = y.astype(str).to_numpy()
+                y_pred = np.array(y_pred).astype(str)
+
+                clases_unicas = np.unique(y_true)
+                clusters_unicos = np.unique(y_pred)
+
+                # Crear mapeos seguros
+                map_clases = {clase: idx for idx, clase in enumerate(clases_unicas)}
+                map_clusters = {cluster: idx for idx, cluster in enumerate(clusters_unicos)}
+
+                # Crear matriz de confusión
+                matriz_confusion = np.zeros((len(clusters_unicos), len(clases_unicas)))
+
+                for i in range(len(y_true)):
+                    fila = map_clusters[y_pred[i]]
+                    columna = map_clases[y_true[i]]
+                    matriz_confusion[fila, columna] += 1
+                
+                # Aplicar algoritmo húngaro (maximizar coincidencias)
+                row_ind, col_ind = linear_sum_assignment(-matriz_confusion)
+                
+                # Mapear índices internos
+                cluster_to_clase = {
+                    clusters_unicos[row]: clases_unicas[col]
+                    for row, col in zip(row_ind, col_ind)
+                }
+
+                y_pred_mapeado = np.array([
+                    cluster_to_clase.get(label, label)
+                    for label in y_pred
+                ])
+                
+                # Calcular métricas de clasificación
+                metricas_clasificacion = self._calcular_metricas_clasificacion(y, y_pred_mapeado)
+                
+                # Combinar métricas
+                metricas_totales = {**metricas_clustering, **metricas_clasificacion}
+                resultados_evaluacion.append(metricas_totales)
+                
+            except Exception as e:
+                resultados_evaluacion.append(self._obtener_metricas_fallo("clustering"))
+                resultados_evaluacion.append(self._obtener_metricas_fallo("clasificacion"))
         return resultados_evaluacion

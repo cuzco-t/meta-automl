@@ -90,6 +90,46 @@ class Entrenador:
         
         return modelos_entrenados_results, tiempos_promedio
     
+    def entrenar_clustering(
+        self,
+        X: pd.DataFrame,
+        nombres_modelos: List[str]
+    ) -> tuple[List[Result], List[float]]:
+        """
+        Entrena múltiples modelos de clustering sobre datos.
+        
+        Args:
+            X: DataFrame con los datos de entrada
+            nombres_modelos: Lista con nombres de los modelos a entrenar
+        
+        Returns:
+            Tupla con:
+                - Lista de objetos Result con las etiquetas predichas por cada modelo
+                - Lista con tiempos de entrenamiento por modelo
+        """
+        
+        modelos_entrenados_results = []
+        tiempos_entrenamiento = []
+        
+        for nombre_modelo in nombres_modelos:
+            # Obtener selector para clustering
+            selector = self._obtener_selector('clustering')
+            selector.log_algoritmo = nombre_modelo
+            
+            # Calcular hiperparámetros
+            selector.calcular_hiper_parametros(X)
+            
+            # Medir tiempo de entrenamiento
+            tiempo_inicio = time.time()
+            result_etiquetas = selector.entrenar_modelo(X)
+            tiempo_fin = time.time()
+            
+            tiempo_entrenamiento = tiempo_fin - tiempo_inicio
+            modelos_entrenados_results.append(result_etiquetas)
+            tiempos_entrenamiento.append(tiempo_entrenamiento)
+        
+        return modelos_entrenados_results, tiempos_entrenamiento
+    
     def _obtener_selector(self, tarea: str):
         """
         Obtiene el selector de modelo según la tarea.

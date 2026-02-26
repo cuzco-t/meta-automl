@@ -236,27 +236,27 @@ class MineroDePipelines:
             selector_modelo.calcular_hiper_parametros(X_procesado)
 
             tiempo_inicio_entrenamiento = time.perf_counter()
-            result_modelo = selector_modelo.entrenar_modelo(X_procesado)
+            result_etiquetas = selector_modelo.entrenar_modelo(X_procesado)
             
             tiempo_final_entrenamiento = time.perf_counter()
             tiempo_total_entrenamiento = tiempo_final_entrenamiento - tiempo_inicio_entrenamiento
 
             tiempo_total_ejecuciones_modelos.append(tiempo_total_entrenamiento)
 
-            if result_modelo.is_failure:
+            if result_etiquetas.is_failure:
                 self._logger.error(
                     f"Error en entrenamiento del modelo {selector_modelo.log_algoritmo}",
                     extra={
                         "fase": "Minero",
                         "tarea": "clustering",
-                        "error": result_modelo.get_error()
+                        "error": result_etiquetas.get_error()
                     }
                 )
                 
                 actualizar_metricas_peores_casos(metricas)
                 continue
             
-            etiquetas = result_modelo.get_value()
+            etiquetas = result_etiquetas.get_value()
             actualizar_metricas_no_supervisadas(X_procesado, etiquetas, metricas)
             actualizar_metricas_supervisadas(y_procesado, etiquetas)
         

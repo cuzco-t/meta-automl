@@ -79,7 +79,7 @@ class OrquestadorExperimentos:
         meta_features_vector.extend(self.tarea_onehot.get(tarea, [0.0, 0.0, 0.0]))
 
         # 3. Ejecutar N pipelines aleatorios
-        for num_pipeline in range(self.num_pipelines):
+        for num_pipeline in range(1, self.num_pipelines + 1):
             self._ejecutar_pipeline(
                 num_pipeline,
                 dataset_name,

@@ -50,7 +50,7 @@ class RegistradorPipeline:
                 registro = {
                     "nombre_dataset": dataset_name,
                     "num_pipeline": num_pipeline,
-                    "num_modelo": idx_modelo,
+                    "num_modelo": idx_modelo + 1,
                     "mtf_json": json.dumps(meta_features),
                     "pipeline_json": json.dumps(pipeline),
                     "paso_t": paso_t,
