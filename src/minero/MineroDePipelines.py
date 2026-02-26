@@ -49,7 +49,12 @@ class MineroDePipelines:
         result_folds, tiempo_preprocesamiento = self.ejecutor.ejecutar_pipeline(folds, pipeline, tarea, descripcion)
         if result_folds.is_failure:
             self.logger.error("Error en ejecución del pipeline", extra={"error": result_folds.get_error()})
-            return Result.fail(f"Error en ejecución del pipeline: {result_folds.get_error()}")
+            datos_fallidos = result_folds.get_error()
+            return Result.fail({
+                "error": datos_fallidos['error'],
+                "pipeline": pipeline,
+                "fase": datos_fallidos["fase"]
+            })
 
         folds_preprocesados = result_folds.get_value()
         self.logger.info("Pipeline ejecutado en todos los folds exitosamente")

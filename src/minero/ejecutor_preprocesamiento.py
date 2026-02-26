@@ -83,22 +83,38 @@ class EjecutorPreprocesamiento:
             except ValueError as e:
                 if "contains NaN" in str(e):
                     self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail(f"Pipeline mal configurado en fold {fold_num}: {e}"), None
+                    return Result.fail({
+                        "error": str(e),
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None        
                 else:
                     raise
 
             except ZeroDivisionError as e:
                 self.logger.error("Division por cero", extra={"fold": fold_num, "error": str(e), "fase": fase})
-                return Result.fail(f"Pipeline mal configurado en fold {fold_num}: {e}"), None
+                return Result.fail({
+                    "error": str(e),
+                    "pipeline": pipeline,
+                    "fase": fase
+                }), None
 
             except TypeError as e:
                 if fase == "crear_nueva_variable" and ("k >=" in str(e) and "eigh" in str(e)):
                     self.logger.error(f"Error de tipo en fold {fold_num}, fase {fase}: {e}")
-                    return Result.fail(f"Error de tipo en fold {fold_num}, fase {fase}: {e}"), None
+                    return Result.fail({
+                        "error": f"Error de tipo en fold {fold_num}, fase {fase}: {e}",
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
                 
                 elif fase == "seleccionar_variables" and "k >=" in str(e) and "eigh" in str(e):
                     self.logger.error(f"Error de tipo en fold {fold_num}, fase {fase}: {e}")
-                    return Result.fail(f"Error de tipo en fold {fold_num}, fase {fase}: {e}"), None
+                    return Result.fail({
+                        "error": f"Error de tipo en fold {fold_num}, fase {fase}: {e}",
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
         
         tiempo_fin_preprocesamiento = time.time()
         tiempo_total_preprocesamiento = tiempo_fin_preprocesamiento - tiempo_inicio_preprocesamiento
