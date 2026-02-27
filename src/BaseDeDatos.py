@@ -1,6 +1,8 @@
 import os
 import psycopg
 
+from psycopg2.extras import execute_values
+
 from src.config.Configuracion import Configuracion
 
 
@@ -130,3 +132,57 @@ class BaseDeDatos:
 
         self.insertar(query, params)
 
+    def guardar_resultados_pipeline_bulk(self, lista_pipeline_info: list):
+        if not lista_pipeline_info:
+            return
+
+        query = """
+            INSERT INTO staging_resultados (
+                nombre_dataset,
+                num_pipeline,
+                num_modelo,
+                mtf_json,
+                pipeline_json,
+                paso_t,
+                estado_actual,
+                accion,
+                estado_siguiente,
+                nombre_modelo,
+                tipo_tarea,
+                metricas,
+                completado,
+                tiempo_ejecucion
+            ) VALUES (
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s,
+                %s, %s, %s,
+                %s, %s
+            )
+        """
+
+        # Convertir cada registro a una tupla de valores en el orden exacto del INSERT
+        values = [
+            (
+                p["nombre_dataset"],
+                p["num_pipeline"],
+                p["num_modelo"],
+                p["mtf_json"],           # string JSON
+                p["pipeline_json"],       # string JSON
+                p["paso_t"],
+                p["estado_actual"],       # lista de floats (se convertirá automáticamente a vector)
+                p["accion"],
+                p["estado_siguiente"],    # lista de floats o None
+                p["nombre_modelo"],
+                p["tipo_tarea"],
+                p["metricas"],            # string JSON o None
+                p["completado"],
+                p["tiempo_ejecucion"]
+            )
+            for p in lista_pipeline_info
+        ]
+
+        conn = self.conn
+        with conn.cursor() as cur:
+            cur.executemany(query, values)
+        conn.commit()
+        print(f"Bulk insert realizado con éxito para {len(lista_pipeline_info)} registros.")

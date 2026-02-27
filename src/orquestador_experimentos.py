@@ -92,6 +92,8 @@ class OrquestadorExperimentos:
                 meta_features,
                 meta_features_vector,
             )
+        
+        self.recorder.flush()
 
     def _ejecutar_pipeline(
         self,

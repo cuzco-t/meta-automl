@@ -11,6 +11,7 @@ class RegistradorPipeline:
     def __init__(self, db: BaseDeDatos, vectorizador: VectorizadorPipeline):
         self.db = db
         self.vectorizador = vectorizador
+        self._buffer = []  # Acumula todos los registros pendientes
 
     def guardar_ejecucion(
         self,
@@ -64,7 +65,7 @@ class RegistradorPipeline:
                     "tiempo_ejecucion": tiempos[idx_modelo] if es_final else None,
                 }
 
-                self.db.guardar_resultados_pipeline(registro)
+                self._buffer.append(registro)
     
     def guardar_ejecucion_con_fallo(
         self,
@@ -124,4 +125,11 @@ class RegistradorPipeline:
                 "tiempo_ejecucion": -1 if es_final else None,
             }
             
-            self.db.guardar_resultados_pipeline(registro)
+            self._buffer.append(registro)
+    
+    def flush(self):
+        """Envía todos los registros acumulados a la base de datos mediante bulk insert."""
+        if not self._buffer:
+            return
+        self.db.guardar_resultados_pipeline_bulk(self._buffer)
+        self._buffer.clear()  # Vaciar el buffer tras la inserción exitosa
