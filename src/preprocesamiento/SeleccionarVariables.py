@@ -24,7 +24,7 @@ class SeleccionarVariables(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            "llm"
+            "llm",
             "mutual_info_25",
             "mutual_info_50",
             "mutual_info_75",
@@ -113,6 +113,7 @@ class SeleccionarVariables(RegistroTecnica):
             mi_df = pd.DataFrame({'Feature': X.columns, 'MI': mi_scores})
             
             if mi_df['MI'].max() == 0:
+                threshold = 0
                 columnas_seleccionadas = []
             else:
                 # Solo pasan aquellas con un score mayor o igual a la mitad del máximo

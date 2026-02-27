@@ -65,7 +65,12 @@ class CodificarVariablesCategoricasRangoMedio(RegistroTecnica):
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
         for col in X.columns:
-            if not (is_object_dtype(X[col]) or is_categorical_dtype(X[col])):
+            es_texto = (
+                pd.api.types.is_object_dtype(X[col])
+                or pd.api.types.is_string_dtype(X[col])
+                or pd.api.types.is_categorical_dtype(X[col])
+            )
+            if not es_texto:
                 continue
 
             ratio_unicos = X[col].nunique() / len(X)

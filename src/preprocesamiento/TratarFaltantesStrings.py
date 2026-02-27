@@ -75,8 +75,9 @@ class TratarFaltantesStrings(RegistroTecnica):
         """
         for col in X_df.columns:
             es_texto = (
-                X_df[col].dtype == "object"
+                pd.api.types.is_object_dtype(X_df[col])
                 or pd.api.types.is_string_dtype(X_df[col])
+                or pd.api.types.is_categorical_dtype(X_df[col])
             )
 
             if not (es_texto and X_df[col].isna().any()):
@@ -84,7 +85,7 @@ class TratarFaltantesStrings(RegistroTecnica):
 
             if self.log_algoritmo == "moda":
                 moda = X_df[col].mode()
-                self.log_params[col] = moda.iloc[0] if not moda.empty else None
+                self.log_params[col] = moda.iloc[0] if not moda.empty else ""
             
             elif self.log_algoritmo == "aleatorio":
                 valores_validos = X_df[col].dropna().unique()
@@ -103,7 +104,12 @@ class TratarFaltantesStrings(RegistroTecnica):
         :rtype: DataFrame
         """
         for col, valor in self.log_params.items():
+            # Si el valor no está en las categorías, lo agregamos
+            if valor not in X_df[col].cat.categories:
+                X_df[col] = X_df[col].cat.add_categories([valor])
+
             X_df[col] = X_df[col].fillna(valor)
+
         return X_df
     
     def _imputar_aleatorio(self, X_df: pd.DataFrame) -> pd.DataFrame:
@@ -118,8 +124,9 @@ class TratarFaltantesStrings(RegistroTecnica):
 
         for col in X_df.columns:
             es_texto = (
-                X_df[col].dtype == "object"
+                pd.api.types.is_object_dtype(X_df[col])
                 or pd.api.types.is_string_dtype(X_df[col])
+                or pd.api.types.is_categorical_dtype(X_df[col])
             )
 
             if not (es_texto and X_df[col].isna().any()):
@@ -166,8 +173,9 @@ class TratarFaltantesStrings(RegistroTecnica):
         """
         for col in X_df.columns:
             es_texto = (
-                X_df[col].dtype == "object"
+                pd.api.types.is_object_dtype(X_df[col])
                 or pd.api.types.is_string_dtype(X_df[col])
+                or pd.api.types.is_categorical_dtype(X_df[col])
             )
 
             if not (es_texto and X_df[col].isna().any()):

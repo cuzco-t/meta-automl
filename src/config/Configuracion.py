@@ -47,5 +47,7 @@ class Configuracion:
         # Configuraciones generales
         self.etiqueta_error = os.getenv('ETIQUETA_ERROR', 'ERROR')
         self.permitir_none = os.getenv('PERMITIR_NONE').lower() == 'true'
+        self.num_pipelines_por_dataset = int(os.getenv('NUM_PIPELINES_POR_DATASET', 10))
+        self.num_modelos_por_pipeline = int(os.getenv('NUM_MODELOS_POR_PIPELINE', 10))
 
         

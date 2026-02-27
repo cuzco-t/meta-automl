@@ -5,6 +5,7 @@ from typing import Dict, List
 from dataclasses import dataclass
 
 from ..Result import Result
+from ..PipelineLogger import PipelineLogger
 
 from ..cash.SelectorModeloClasificacion import SelectorModeloClasificacion
 from ..cash.SelectorModeloRegresion import SelectorModeloRegresion
@@ -36,8 +37,9 @@ class Entrenador:
         
         modelos_entrenados_results = []
         tiempos_promedio = []
+        logger = PipelineLogger().get_logger()
         
-        for nombre_modelo in nombres_modelos:
+        for num_modelo, nombre_modelo in enumerate(nombres_modelos, 1):
             # Obtener selector según la tarea
             selector = self._obtener_selector(tarea)
             selector.log_algoritmo = nombre_modelo
@@ -65,6 +67,9 @@ class Entrenador:
             # Iterar sobre cada fold y entrenar
             modelos_folds = []
             tiempos_folds = []
+
+            logger.info(f"({num_modelo}/{len(nombres_modelos)}) Entrenando modelo '{nombre_modelo}'")
+
             for num_fold, fold_data in folds_data.items():
                 # Crear un nuevo selector para cada fold
                 selector_fold = self._obtener_selector(tarea)
@@ -74,15 +79,21 @@ class Entrenador:
                 X_train = fold_data['X_train']
                 y_train = fold_data['y_train']
                 
+
+                logger.info(f"Fold ({num_fold}/{len(folds_data)}) iniciado.")
                 # Medir tiempo de entrenamiento
                 tiempo_inicio = time.time()
                 result_modelo_entrenado = selector_fold.entrenar_modelo(X_train, y_train)
                 tiempo_fin = time.time()
                 
                 tiempo_entrenamiento = tiempo_fin - tiempo_inicio
+                logger.info(f"Fold ({num_fold}/{len(folds_data)}) terminado, tiempo: {tiempo_entrenamiento:.2f} segundos")
+                
                 modelos_folds.append(result_modelo_entrenado)
                 tiempos_folds.append(tiempo_entrenamiento)
             
+            logger.info(f"({num_modelo}/{len(nombres_modelos)}) Modelo entrenado '{nombre_modelo}'")
+
             modelos_entrenados_results.append(modelos_folds)
             # Calcular promedio de tiempos para este modelo
             tiempo_promedio = sum(tiempos_folds) / len(tiempos_folds)

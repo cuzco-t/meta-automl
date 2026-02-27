@@ -148,15 +148,16 @@ class TratarOutliersNumericos(RegistroTecnica):
                 (X_df[col] > (Q3 + 1.5 * IQR))
             )
 
-            if not filas_outliers.any():
+            n_outliers = filas_outliers.sum()
+            if n_outliers == 0:
                 continue
 
             valores_validos = self.log_params.get(col)
             if valores_validos is None:
                 continue
 
-            cantidad_faltantes = X_df[col].isna().sum()
-            X_df.loc[filas_outliers, col] = rng.choice(valores_validos, cantidad_faltantes)
+            nuevos_valores = rng.choice(valores_validos, size=n_outliers, replace=True)
+            X_df.loc[filas_outliers, col] = nuevos_valores
 
         return X_df
     

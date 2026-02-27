@@ -19,7 +19,8 @@
         "ms-python.vscode-pylance",
         "github.copilot-chat",
         "pkief.material-icon-theme",
-        "eamodio.gitlens"
+        "eamodio.gitlens",
+        "ms-toolsai.jupyter"
       ],
       "settings": {
         "python.pythonPath": "/usr/local/bin/python"

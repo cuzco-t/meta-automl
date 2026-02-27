@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Iterator
 
-from src.Result import Result
+from src.config.Configuracion import Configuracion
 from src.openml_descargador import OpenMLDescargador
 from src.ExtractorMetaFeatures import ExtractorMetaFeatures
 from src.minero.MineroDePipelines import MineroDePipelines
@@ -30,13 +30,15 @@ class OrquestadorExperimentos:
         logger: logging.Logger,
         num_pipelines_por_dataset: int = 3
     ):
+        config = Configuracion()
+
         self.loader = loader
         self.extractor = extractor
         self.minero = minero
         self.vectorizador = vectorizador
         self.recorder = recorder
         self.logger = logger
-        self.num_pipelines = num_pipelines_por_dataset
+        self.num_pipelines = config.num_pipelines_por_dataset
 
         # Mapeo de tarea a vector one-hot
         self.tarea_onehot = {
@@ -107,6 +109,8 @@ class OrquestadorExperimentos:
         if tarea == "clustering":
             result = self.minero.pipeline_no_supervisado(X, y, descripcion)
         else:
+            if dataset_name == "breast-cancer":
+                print("DEBUG: Ejecutando pipeline supervisado con tarea =", tarea)
             result = self.minero.pipeline_supervisado(X, y, tarea, descripcion)
 
         if result.is_failure:
@@ -118,7 +122,8 @@ class OrquestadorExperimentos:
                 meta_features=meta_features,
                 meta_features_vector=meta_features_vector,
                 pipeline=datos_fallidos["pipeline"],
-                fase=datos_fallidos["fase"]
+                fase=datos_fallidos["fase"],
+                error=datos_fallidos["error"]
             )
             return
 
@@ -139,3 +144,4 @@ class OrquestadorExperimentos:
             metricas_por_modelo=metricas,
             tiempos=tiempos,
         )
+        

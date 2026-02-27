@@ -74,7 +74,8 @@ class RegistradorPipeline:
         meta_features: Dict[str, Any],
         meta_features_vector: List[float],
         pipeline: Dict[str, str],
-        fase: str
+        fase: str,
+        error: str
     ) -> None:
         """
         Guarda un registro de ejecución que falló en una fase específica.
@@ -102,7 +103,7 @@ class RegistradorPipeline:
             if paso_t < len(pipeline_truncado):
                 fase_actual = list(pipeline_truncado.keys())[paso_t]
                 accion_actual = pipeline_truncado[fase_actual]
-                fase_accion = f"{fase_actual}_{accion_actual}"
+                fase_accion = f"{fase_actual}-{accion_actual}"
             else:
                 fase_accion = "FINAL"
             
@@ -118,7 +119,7 @@ class RegistradorPipeline:
                 "estado_siguiente": vector_siguiente,
                 "nombre_modelo": "modelo_no_ejecutado",
                 "tipo_tarea": tarea,
-                "metricas": json.dumps({"error": "CRASH"}) if es_final else None,
+                "metricas": json.dumps({"estado": "CRASH", "error": error}) if es_final else None,
                 "completado": 1 if es_final else 0,
                 "tiempo_ejecucion": -1 if es_final else None,
             }

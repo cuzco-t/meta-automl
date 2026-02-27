@@ -309,8 +309,7 @@ class ExtractorMetaFeatures:
                 "n3.sd": valor,
                 "n4.mean": valor,
                 "n4.sd": valor,
-                "t1.mean": valor,
-                "t1.sd": valor,
+                "t1": valor,
                 "t2": valor,
                 "t3": valor,
                 "t4": valor

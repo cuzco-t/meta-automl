@@ -26,7 +26,7 @@ class MineroDePipelines:
         self.ejecutor = EjecutorPreprocesamiento(self.logger)
         self.evaluador = EvaluadorModelos()
         self.n_folds = 3
-        self.n_modelos = 10  # podrían venir de config
+        self.n_modelos = config.num_modelos_por_pipeline
         self.tarea_modelos = {
             "clasificacion": SelectorModeloClasificacion().ALGORITMOS,
             "regresion": SelectorModeloRegresion().ALGORITMOS,
@@ -59,7 +59,7 @@ class MineroDePipelines:
         folds_preprocesados = result_folds.get_value()
         self.logger.info("Pipeline ejecutado en todos los folds exitosamente")
 
-
+        self.logger.info(f"Entrenando modelos para tarea '{tarea}'")
         entrenador = Entrenador()
         results_modelos, tiempos_modelos = entrenador.entrenar(folds_preprocesados, lista_modelos, tarea)
         self.logger.info("Todos los modelos han sido entrenados en todos los folds")

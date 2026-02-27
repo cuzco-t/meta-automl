@@ -87,7 +87,56 @@ class EjecutorPreprocesamiento:
                         "error": str(e),
                         "pipeline": pipeline,
                         "fase": fase
-                    }), None        
+                    }), None 
+
+                elif "Found array with 0 sample(s)" in str(e):
+                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
+                    return Result.fail({
+                        "error": str(e),
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
+                
+                elif "Input X contains infinity or a value too" in str(e):
+                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
+                    return Result.fail({
+                        "error": str(e),
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
+
+                elif "zero-size array to reduction operation" in str(e):
+                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
+                    return Result.fail({
+                        "error": str(e),
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
+
+                elif "Data must not be constant" in str(e):
+                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
+                    return Result.fail({
+                        "error": str(e),
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
+                
+                elif "at least one array or dtype is required" in str(e):
+                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
+                    return Result.fail({
+                        "error": str(e),
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
+                
+                elif "Input contains infinity or a value too large" in str(e):
+                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
+                    return Result.fail({
+                        "error": str(e),
+                        "pipeline": pipeline,
+                        "fase": fase
+                    }), None
+
                 else:
                     raise
 
@@ -115,6 +164,9 @@ class EjecutorPreprocesamiento:
                         "pipeline": pipeline,
                         "fase": fase
                     }), None
+                
+                else:
+                    raise
         
         tiempo_fin_preprocesamiento = time.time()
         tiempo_total_preprocesamiento = tiempo_fin_preprocesamiento - tiempo_inicio_preprocesamiento
