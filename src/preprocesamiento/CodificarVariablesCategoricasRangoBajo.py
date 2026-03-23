@@ -18,6 +18,7 @@ class CodificarVariablesCategoricasRangoBajo(RegistroTecnica):
         
         self.ALGORITMOS = [
             "label_encoding",
+            None,
             "one_hot_encoding"
         ]
 
@@ -65,6 +66,9 @@ class CodificarVariablesCategoricasRangoBajo(RegistroTecnica):
         """
         Calcula y guarda en self.log_params los parámetros necesarios para la técnica seleccionada
         """
+        if self.log_algoritmo is None:
+            return
+
         for col in X.columns:
             es_texto = (
                 pd.api.types.is_object_dtype(X[col])
