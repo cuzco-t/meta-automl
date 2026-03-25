@@ -153,23 +153,23 @@ class SeleccionarVariables(RegistroTecnica):
             self.log_params["n_components"] = int(n_components)
 
         elif self.log_algoritmo == "llm":
-            # extractor = ExtractorMetaFeatures()
-            # meta_features_por_columna = extractor.extraer_meta_features_por_columna(X, y)
-            # meta_features_por_columna_toon = extractor.meta_features_por_columna_a_toon(meta_features_por_columna)
+            extractor = ExtractorMetaFeatures()
+            meta_features_por_columna = extractor.extraer_meta_features_por_columna(X, y)
+            meta_features_por_columna_toon = extractor.meta_features_por_columna_a_toon(meta_features_por_columna)
 
-            # llm = LLM("deepseek-r1:8b")
-            # prompt = llm.plantillas_prompts(
-            #     plantilla="seleccionar_variables",
-            #     kwargs={
-            #         "tarea": self.tarea,
-            #         "meta_features_por_columna": meta_features_por_columna_toon
-            #     }
-            # )
-            # input("El prompt es:\n" + prompt + "\nPresiona Enter para continuar...")
-            # columnas_texto = llm.generar_respuesta(prompt)
-            # columnas_lista = ast.literal_eval(columnas_texto)
+            llm = LLM("deepseek-r1:8b")
+            prompt = llm.plantillas_prompts(
+                plantilla="seleccionar_variables",
+                kwargs={
+                    "tarea": self.tarea,
+                    "meta_features_por_columna": meta_features_por_columna_toon
+                }
+            )
+            input("El prompt es:\n" + prompt + "\nPresiona Enter para continuar...")
+            columnas_texto = llm.generar_respuesta(prompt)
+            columnas_lista = ast.literal_eval(columnas_texto)
 
-            # self.log_params["columnas"] = columnas_lista
+            self.log_params["columnas"] = columnas_lista
             self.log_params["columnas"] = X.columns.tolist()
 
         self.registrar_parametros(self.log_params)

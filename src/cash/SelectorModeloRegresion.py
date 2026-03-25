@@ -60,10 +60,10 @@ class SelectorModeloRegresion(RegistroTecnica):
 
         else:
             self.registrar_algoritmo(self.log_algoritmo)
-            # self._calcular_parametros(X, y)
+            self._calcular_parametros(X, y)
             #! Comentar en produccion
-            self.log_params["params"] = self._get_instancia_modelo().get_params()
-            self.registrar_parametros(self.log_params)
+            # self.log_params["params"] = self._get_instancia_modelo().get_params()
+            # self.registrar_parametros(self.log_params)
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self

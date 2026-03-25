@@ -80,93 +80,13 @@ class EjecutorPreprocesamiento:
                     "X_val": X_val.copy(),
                     "y_val": y_val.copy() if y_val is not None else None
                 }
-            except ValueError as e:
-                if "contains NaN" in str(e):
-                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail({
-                        "error": str(e),
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None 
-
-                elif "Found array with 0 sample(s)" in str(e):
-                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail({
-                        "error": str(e),
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-                
-                elif "Input X contains infinity or a value too" in str(e):
-                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail({
-                        "error": str(e),
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-
-                elif "zero-size array to reduction operation" in str(e):
-                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail({
-                        "error": str(e),
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-
-                elif "Data must not be constant" in str(e):
-                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail({
-                        "error": str(e),
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-                
-                elif "at least one array or dtype is required" in str(e):
-                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail({
-                        "error": str(e),
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-                
-                elif "Input contains infinity or a value too large" in str(e):
-                    self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
-                    return Result.fail({
-                        "error": str(e),
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-
-                else:
-                    raise
-
-            except ZeroDivisionError as e:
-                self.logger.error("Division por cero", extra={"fold": fold_num, "error": str(e), "fase": fase})
+            except Exception as e:
+                self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
                 return Result.fail({
                     "error": str(e),
                     "pipeline": pipeline,
                     "fase": fase
-                }), None
-
-            except TypeError as e:
-                if fase == "crear_nueva_variable" and ("k >=" in str(e) and "eigh" in str(e)):
-                    self.logger.error(f"Error de tipo en fold {fold_num}, fase {fase}: {e}")
-                    return Result.fail({
-                        "error": f"Error de tipo en fold {fold_num}, fase {fase}: {e}",
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-                
-                elif fase == "seleccionar_variables" and "k >=" in str(e) and "eigh" in str(e):
-                    self.logger.error(f"Error de tipo en fold {fold_num}, fase {fase}: {e}")
-                    return Result.fail({
-                        "error": f"Error de tipo en fold {fold_num}, fase {fase}: {e}",
-                        "pipeline": pipeline,
-                        "fase": fase
-                    }), None
-                
-                else:
-                    raise
+                }), None 
         
         tiempo_fin_preprocesamiento = time.time()
         tiempo_total_preprocesamiento = tiempo_fin_preprocesamiento - tiempo_inicio_preprocesamiento
