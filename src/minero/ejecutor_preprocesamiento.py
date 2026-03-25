@@ -121,7 +121,7 @@ class EjecutorPreprocesamiento:
             
             return Result.ok({"X_proc": X_proc, "y_proc": y_proc}), tiempo_total
             
-        except (ValueError, ZeroDivisionError, TypeError) as e:
+        except Exception as e:
             self.logger.error(f"Error en pipeline clustering: {e}")
             return Result.fail({
                 "error": str(e),
