@@ -61,8 +61,16 @@ class Entrenador:
                 y = None
             
             # Calcular hiperparámetros (una sola vez por modelo)
-            selector.calcular_hiper_parametros(X, y)
-            hiperparametros = selector.log_params
+            try:
+                selector.calcular_hiper_parametros(X, y)
+            except Exception as e:
+                logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
+                modelos_entrenados_results.append(
+                    Result.fail(f"Error al calcular hiperparámetros: {e}"),
+                    Result.fail(f"Error al calcular hiperparámetros: {e}"),
+                    Result.fail(f"Error al calcular hiperparámetros: {e}")
+                )
+                continue
             
             # Iterar sobre cada fold y entrenar
             modelos_folds = []
@@ -74,7 +82,6 @@ class Entrenador:
                 # Crear un nuevo selector para cada fold
                 selector_fold = self._obtener_selector(tarea)
                 selector_fold.log_algoritmo = nombre_modelo
-                selector_fold.log_params = hiperparametros
                 
                 X_train = fold_data['X_train']
                 y_train = fold_data['y_train']
@@ -118,7 +125,7 @@ class Entrenador:
                 - Lista de objetos Result con las etiquetas predichas por cada modelo
                 - Lista con tiempos de entrenamiento por modelo
         """
-        
+        logger = PipelineLogger().get_logger()
         modelos_entrenados_results = []
         tiempos_entrenamiento = []
         
@@ -128,8 +135,15 @@ class Entrenador:
             selector.log_algoritmo = nombre_modelo
             
             # Calcular hiperparámetros
-            selector.calcular_hiper_parametros(X)
-            
+            try:
+                selector.calcular_hiper_parametros(X)
+            except Exception as e:
+                logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
+                modelos_entrenados_results.append(
+                    Result.fail(f"Error al calcular hiperparámetros: {e}")
+                )
+                continue
+
             # Medir tiempo de entrenamiento
             tiempo_inicio = time.time()
             result_etiquetas = selector.entrenar_modelo(X)

@@ -9,6 +9,9 @@ services:
     env_file:
       - .env
 
+    cpus: 4.0
+    mem_limit: 8g
+
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all

@@ -28,6 +28,8 @@ class RegistradorPipeline:
         Para cada modelo asociado al pipeline, genera los vectores paso a paso
         y guarda un registro por cada paso en la base de datos.
         """
+        print(f"{len(tiempos)}=")
+        print(f"{len(modelos)}=")
         for idx_modelo, modelo in enumerate(modelos):
             metricas_modelo = metricas_por_modelo[idx_modelo]
             historia = self.vectorizador.vectorizar_pipeline(tarea, pipeline, modelo)
