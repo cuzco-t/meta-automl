@@ -2,27 +2,13 @@ version: '3.8'
 
 services:
   meta-automl:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: meta-automl-app
-    volumes:
-      # Montar datos locales
-      - ./data:/app/data
-      # Montar resultados y logs
-      - ./errors:/app/errors
-      - ./docs:/app/docs
-    depends_on:
-      - llm-service
+    image: jcuzcoucuenca/generacion-pipelines:latest
+    container_name: meta-automl-container
+    command: python main.py
 
-  llm-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.llm
-    container_name: llm-service
-    ports:
-      - "11434:11434"
-    volumes:
-      - C:\Users\Asus\.ollama:/root/.ollama
-    mem_limit: 8g
-    cpus: 4
+    env_file:
+      - .env
+
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all

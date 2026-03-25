@@ -61,3 +61,6 @@ docs/
 
 # Node modules (si existe)
 node_modules/
+
+# Varialbes de entorno
+.env

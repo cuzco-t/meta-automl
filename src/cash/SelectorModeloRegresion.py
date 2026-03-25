@@ -1,9 +1,8 @@
 import ast
-import signal
-from importlib import import_module
 import pandas as pd
 
 from src.Result import Result
+from multiprocessing import Process, Queue
 
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
@@ -68,9 +67,12 @@ class SelectorModeloRegresion(RegistroTecnica):
         self.registrar_algoritmo(self.log_algoritmo)
         return self
     
-    @staticmethod
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Timeout: el entrenamiento excedio el limite de tiempo")
+    def fit_model(self, modelo, X, y, queue):
+        try:
+            modelo.fit(X, y)
+            queue.put(("ok", modelo))
+        except Exception as e:
+            queue.put(("fail", str(e)))
 
         
     def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
@@ -78,20 +80,20 @@ class SelectorModeloRegresion(RegistroTecnica):
         hiper_parametros = self.log_params["params"]
         modelo.set_params(**hiper_parametros)
 
-        signal.signal(signal.SIGALRM, self.timeout_handler)
-        signal.alarm(5)
+        queue = Queue()
+        p = Process(target=self.fit_model, args=(modelo, X, y, queue))
+        p.start()
+        p.join(timeout=5)
+
+        if p.is_alive():
+            p.terminate()
+            return Result.fail("Timeout: el entrenamiento excedio el limite de tiempo")
         
-        result_entrenamiento = None
-        try:
-            modelo.fit(X, y)
-        except TimeoutError as e:
-            result_entrenamiento = Result.fail(str(e))
-        except Exception as e:
-            result_entrenamiento = Result.fail(f"Error durante entrenamiento:\n{str(e)}")
+        status, result = queue.get()
+        if status == "ok":
+            return Result.ok(result)
         else:
-            result_entrenamiento = Result.ok(modelo)
-        finally:
-            signal.alarm(0)
+            return Result.fail(result)
 
         return result_entrenamiento
     

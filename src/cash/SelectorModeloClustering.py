@@ -1,7 +1,7 @@
 import ast
-import signal
-from importlib import import_module
 import pandas as pd
+
+from multiprocessing import Process, Queue
 
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
@@ -59,9 +59,12 @@ class SelectorModeloClustering(RegistroTecnica):
         self.registrar_algoritmo(self.log_algoritmo)
         return self
     
-    @staticmethod
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Timeout: el entrenamiento excedio el limite de tiempo")
+    def fit_model(self, modelo, X, queue):
+        try:
+            modelo.fit(X)
+            queue.put(("ok", modelo))
+        except Exception as e:
+            queue.put(("fail", str(e)))
         
     def entrenar_modelo(self, X: pd.DataFrame) -> Result[object, str]:
         """
@@ -72,22 +75,20 @@ class SelectorModeloClustering(RegistroTecnica):
         hiper_parametros = self.log_params["params"]
         modelo.set_params(**hiper_parametros)
 
-        signal.signal(signal.SIGALRM, self.timeout_handler)
-        signal.alarm(5*60)
-        
-        result_entrenamiento = None
-        try:
-            etiquetas = modelo.fit_predict(X)
-        except TimeoutError as e:
-            result_entrenamiento = Result.fail(str(e))
-        except Exception as e:
-            result_entrenamiento = Result.fail(f"Error durante entrenamiento:\n{str(e)}")
-        else:
-            result_entrenamiento = Result.ok(etiquetas)
-        finally:
-            signal.alarm(0)
+        queue = Queue()
+        p = Process(target=self.fit_model, args=(modelo, X, queue))
+        p.start()
+        p.join(timeout=5)
 
-        return result_entrenamiento
+        if p.is_alive():
+            p.terminate()
+            return Result.fail("Timeout: el entrenamiento excedio el limite de tiempo")
+        
+        status, result = queue.get()
+        if status == "ok":
+            return Result.ok(result)
+        else:
+            return Result.fail(result)
     
     def _get_instancia_modelo(self):
         match self.log_algoritmo:
