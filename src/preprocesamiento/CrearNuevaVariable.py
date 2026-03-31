@@ -107,6 +107,7 @@ class CrearNuevaVariable(RegistroTecnica):
             try:
                 X[var] = X.eval(formula)
             except Exception as e:
-                raise ValueError(f"Error al crear la variable '{var}' con la fórmula '{formula}': {e}")
+                # raise ValueError(f"Error al crear la variable '{var}' con la fórmula '{formula}': {e}")
+                continue
 
         return X

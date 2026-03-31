@@ -73,6 +73,7 @@ class EjecutorPreprocesamiento:
                     instancia.fit(X_train, y_train)
                     X_train, y_train = instancia.transform(X_train, y_train)
                     X_val, y_val = instancia.transform(X_val, y_val)
+                    self.logger.info(f"Fold {fold_num}: Fase '{fase}', algoritmo '{instancia.log_algoritmo}' OK.")
                 
                 folds_procesados[fold_num] = {
                     "X_train": X_train.copy(),

@@ -24,6 +24,12 @@ class BaseDeDatos:
     def conectar(self):
         configuracion = Configuracion()
 
+        print("Intentando conectar a la base de datos...")
+        print(f"Host: {configuracion.db_host}")
+        print(f"Port: {configuracion.db_port}")
+        print(f"Database: {configuracion.db_name}")
+        print(f"User: {configuracion.db_user}")
+        print(f"Password: {configuracion.db_password}")
         if self.conn is None or self.conn.closed:
             self.conn = psycopg.connect(
                 host=configuracion.db_host,

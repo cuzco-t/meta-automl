@@ -31,6 +31,14 @@ class LLM:
                 }
             )
             
+            
+            if "```python" in respuesta.message.content:
+                # Extraer el código del bloque
+                start = respuesta.message.content.find("```python") + len("```python")
+                end = respuesta.message.content.find("```", start)
+                respuesta.message.content = respuesta.message.content[start:end].strip()
+
+            print(f"Respuesta del modelo: {respuesta.message.content}")  # Para depuración
             return respuesta.message.content
 
         except requests.exceptions.Timeout:
@@ -44,69 +52,69 @@ class LLM:
 
         def seleccionar_variables():
             prompt = f"""
-Eres un experto en selección de variables para modelos de ML en tareas de {kwargs["kwargs"]["tarea"]}. 
-Analiza estas meta‑features (formato TOON) por columna que extraje con pymfe:
+You are an expert in variable selection for ML models in tasks of {kwargs["kwargs"]["tarea"]}. 
+Analyze these meta-features (TOON format) per column that I extracted with pymfe:
 {kwargs["kwargs"]["meta_features_por_columna"]}
 
-Devuélveme **solo una lista Python con los nombres de las variables** que recomiendas para entrenar el modelo.
-Ejemplo: ["variable1", "variable2", "variable3"]
-Sin texto adicional ni explicación.
+Return **only a Python list with the names of the variables** that you recommend for training the model.
+Example: ["variable1", "variable2", "variable3"]
+No additional text or explanation.
 """
 
             return prompt
         
         def seleccionar_hiper_parametros():
             prompt = f"""
-Actua como un experto en modelos de ML de la libreria scikit-learn, quiero que analices las siguientes meta-features,
-que consegui utilizando la libreria pymfe. Los las meta-features globales del datset. Con base en ellas, y considerando
-que estoy relizando una tarea de {kwargs["kwargs"]["tarea"]}, con un modelo {kwargs["kwargs"]["modelo_ml"]}, 
-quiero que me ayudes recomendando valores para los hiperparámetros del modelo. A continuacion de paso las 
-meta-features globales, y la configuracion de hiperparámetros por defecto para que me ayudes a reemplazar sus valores.
+Act as an expert in ML models from the scikit-learn library. I want you to analyze the following meta-features,
+which I obtained using the pymfe library. These are the global meta-features of the dataset. Based on them, and considering
+that I am performing a task of {kwargs["kwargs"]["tarea"]} with a {kwargs["kwargs"]["modelo_ml"]} model,
+I want you to help me by recommending values for the model’s hyperparameters. Below I provide the
+global meta-features and the default hyperparameter configuration so you can help me replace their values.
 
-meta-features globales: {kwargs["kwargs"]["meta_features_globales"]}
+global meta-features: {kwargs["kwargs"]["meta_features_globales"]}
 
-condifugracion de hiperparametros por defecto: {kwargs["kwargs"]["hiper_parametros_por_defecto"]}
+default hyperparameter configuration: {kwargs["kwargs"]["hiper_parametros_por_defecto"]}
 
-IMPORTANTE: Toma en cuenta que tu respuesta debe ser unicamente un diccionario python con los nombres
-de los hiperparámetros y sus valores recomendados, sin ningun tipo de texto adicional, ni explicacion,
-ni formato diferente a un diccionario python.
-Aqui tienes un ejemplo de como debe ser tu respuesta: {{'hiperparametro_1': valor_1, 'hiperparametro_2': valor_2}}
+IMPORTANT: Keep in mind that your response must be only a Python dictionary with the names
+of the hyperparameters and their recommended values, without any additional text, explanation,
+or any format other than a Python dictionary.
+Here is an example of how your response should look: {{'hyperparameter_1': value_1, 'hyperparameter_2': value_2}}
 """
             return prompt
         
         def crear_nueva_variable():
             prompt = f"""
-Actúa como un experto en feature engineering para machine learning. Estoy trabajando con un dataset
-de {kwargs["tarea"]} y necesito generar una nueva variable que pueda mejorar el rendimiento de un modelo. 
+Act as an expert in feature engineering for machine learning. I am working with a dataset
+of {kwargs["tarea"]} and I need to generate a new variable that can improve the performance of a model.
 
-Te proporcionaré:
-1. La lista de columnas del dataset.
-2. Una descripción del dataset (puede estar vacía; si es así, usa únicamente los nombres de las columnas
-para inferir relaciones).
+I will provide you with:
+1. The list of dataset columns.
+2. A description of the dataset (it may be empty; if so, use only the column names
+to infer relationships).
 
-Tu tarea es generar hasta 5 nuevas variables siguiendo estas reglas:
+Your task is to generate up to 5 new variables following these rules:
 
-- Devuelve **únicamente** un diccionario de Python sin ningún bloque de código (python), explicación,
-texto adicional, ni comentarios. Las reglas del diccionario son:
-    - La clave es el nombre de la nueva variable.
-    - El valor es un string con la operación aritmética que define la nueva variable usando
-    los nombres exactos de las columnas proporcionadas encerradas entre backticks. 
-    Esta operación debe ser válida como entrada para eval() en pandas.
-- No es obligatorio generar 5 variables; pueden ser entre 1 y 5, dependiendo de lo que
-tenga sentido según la información disponible.
-- Las operaciones deben tener sentido en función de la descripción del dataset y/o 
-los nombres de las columnas, buscando crear características útiles para {kwargs["tarea"]}.
-- Evita generar variables que sean trivialmente iguales a columnas existentes o combinaciones redundantes.
-- Si no encuentras ninguna combinación o transformación útil, devuelve un diccionario vacío {{}}.
+- Return **only** a Python dictionary without any code block (python), explanation,
+additional text, or comments. The dictionary rules are:
+    - The key is the name of the new variable.
+    - The value is a string with the arithmetic operation that defines the new variable using
+    the exact names of the provided columns enclosed in backticks.
+    This operation must be valid as input for eval() in pandas.
+- It is not mandatory to generate 5 variables; they can be between 1 and 5, depending on what
+makes sense based on the available information.
+- The operations must make sense according to the dataset description and/or
+the column names, aiming to create useful features for {kwargs["tarea"]}.
+- Avoid generating variables that are trivially identical to existing columns or redundant combinations.
+- If you do not find any useful combination or transformation, return an empty dictionary {{}}.
 
-Ejemplo:
-Si las columnas fueran ["precio_unitario", "cantidad"], una posible respuesta podría ser:
-{{"total": "(`precio_unitario` * `cantidad`)"}}
+Example:
+If the columns were ["unit_price", "quantity"], a possible response could be:
+{{"total": "(`unit_price` * `quantity`)"}}
 
-Ahora, usando la información de mi dataset, genera las nuevas variables.
+Now, using the information from my dataset, generate the new variables.
 
-Columnas: {kwargs["columnas"]}
-Descripción: {kwargs["descripcion"]}
+Columns: {kwargs["columnas"]}
+Description: {kwargs["descripcion"]}
 """
             return prompt
 

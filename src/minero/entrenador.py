@@ -65,11 +65,11 @@ class Entrenador:
                 selector.calcular_hiper_parametros(X, y)
             except Exception as e:
                 logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
-                modelos_entrenados_results.append(
+                modelos_entrenados_results.append([
                     Result.fail(f"Error al calcular hiperparámetros: {e}"),
                     Result.fail(f"Error al calcular hiperparámetros: {e}"),
                     Result.fail(f"Error al calcular hiperparámetros: {e}")
-                )
+                ])
                 continue
             
             # Iterar sobre cada fold y entrenar
@@ -79,18 +79,13 @@ class Entrenador:
             logger.info(f"({num_modelo}/{len(nombres_modelos)}) Entrenando modelo '{nombre_modelo}'")
 
             for num_fold, fold_data in folds_data.items():
-                # Crear un nuevo selector para cada fold
-                selector_fold = self._obtener_selector(tarea)
-                selector_fold.log_algoritmo = nombre_modelo
-                
                 X_train = fold_data['X_train']
                 y_train = fold_data['y_train']
                 
-
                 logger.info(f"Fold ({num_fold}/{len(folds_data)}) iniciado.")
                 # Medir tiempo de entrenamiento
                 tiempo_inicio = time.time()
-                result_modelo_entrenado = selector_fold.entrenar_modelo(X_train, y_train)
+                result_modelo_entrenado = selector.entrenar_modelo(X_train, y_train)
                 tiempo_fin = time.time()
                 
                 tiempo_entrenamiento = tiempo_fin - tiempo_inicio
