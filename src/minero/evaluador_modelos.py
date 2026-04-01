@@ -148,8 +148,10 @@ class EvaluadorModelos:
         for etiquetas_list in lista_results_etiquetas:
             # Verificar si el resultado es fallo
             if etiquetas_list.is_failure:
-                resultados_evaluacion.append(self._obtener_metricas_fallo("clustering"))
-                resultados_evaluacion.append(self._obtener_metricas_fallo("clasificacion"))
+                resultados_evaluacion.append({
+                    **self._obtener_metricas_fallo("clustering"),
+                    **self._obtener_metricas_fallo("clasificacion")
+                })
                 continue
             
             try:
@@ -200,6 +202,9 @@ class EvaluadorModelos:
                 resultados_evaluacion.append(metricas_totales)
                 
             except Exception as e:
-                resultados_evaluacion.append(self._obtener_metricas_fallo("clustering"))
-                resultados_evaluacion.append(self._obtener_metricas_fallo("clasificacion"))
+                resultados_evaluacion.append({
+                    **self._obtener_metricas_fallo("clustering"),
+                    **self._obtener_metricas_fallo("clasificacion")
+                })
+
         return resultados_evaluacion
