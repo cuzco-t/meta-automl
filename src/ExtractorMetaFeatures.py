@@ -1,4 +1,5 @@
 import os
+import time
 import warnings
 
 import math
@@ -68,8 +69,15 @@ class ExtractorMetaFeatures:
     def _extraer_meta_features_por_grupos(self, X: np.ndarray, y: np.ndarray | None) -> dict:
         meta_features = {}
 
+        print("=" * 50)
+        print("EXTRAYENDO META-FEATURES POR GRUPOS")
+        print("=" * 50)
+
         for grupo in self._GRUPOS_META_FEATURES:
             mfe = MFE(groups=[grupo])
+
+            print("Grupo actual:", grupo)
+            timepo_inicio = time.time()
 
             try:
                 with self.silenciar_warnings_pymfe():
@@ -88,6 +96,10 @@ class ExtractorMetaFeatures:
                 meta_features_grupo = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
 
             meta_features[grupo] = meta_features_grupo
+
+            tiempo_fin = time.time()
+            print(f"Tiempo extracción grupo {grupo}: {tiempo_fin - timepo_inicio:.2f} segundos\n")
+            print("")
 
         return meta_features
 

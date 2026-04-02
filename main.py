@@ -9,6 +9,9 @@ from src.vectorizador_pipeline import VectorizadorPipeline
 from src.registrador_pipeline import RegistradorPipeline
 from src.BaseDeDatos import BaseDeDatos
 from src.orquestador_experimentos import OrquestadorExperimentos
+from setproctitle import setproctitle
+
+setproctitle("meta_automl")
 
 def main():
     RUTA_CARPETA_IDENTIFICADORES = "./data/datasets_identificadores/"

@@ -24,12 +24,6 @@ class BaseDeDatos:
     def conectar(self):
         configuracion = Configuracion()
 
-        print("Intentando conectar a la base de datos...")
-        print(f"Host: {configuracion.db_host}")
-        print(f"Port: {configuracion.db_port}")
-        print(f"Database: {configuracion.db_name}")
-        print(f"User: {configuracion.db_user}")
-        print(f"Password: {configuracion.db_password}")
         if self.conn is None or self.conn.closed:
             self.conn = psycopg.connect(
                 host=configuracion.db_host,
@@ -38,7 +32,9 @@ class BaseDeDatos:
                 password=configuracion.db_password,
                 port=configuracion.db_port,
             )
-            print("Conexión a la base de datos establecida.")
+            print("=" * 50)
+            print("CONEXIÓN A LA BASE DE DATOS ESTABLECIDA")
+            print("=" * 50)
     
     def guardar_meta_features_globales(self, meta_features_json: str, meta_features_vectorizadas: list):
         query = """

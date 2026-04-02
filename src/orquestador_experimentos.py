@@ -50,7 +50,10 @@ class OrquestadorExperimentos:
     def ejecutar_archivo(self, ruta_archivo: Path) -> None:
         """Procesa un archivo que contiene una lista de task_ids (uno por línea)."""
         tarea = ruta_archivo.stem.split("_")[0]  # ej: "clasificacion_task_ids.txt" -> "clasificacion"
-        self.logger.info(f"Procesando archivo {ruta_archivo.name}, tarea={tarea}")
+        
+        print("=" * 50)
+        print("PROCESANDO ARCHIVO:", ruta_archivo.name)
+        print("=" * 50)
 
         for task_id in self._leer_task_ids(ruta_archivo):
             self._procesar_task(task_id, tarea)
@@ -67,11 +70,11 @@ class OrquestadorExperimentos:
         # 1. Descargar datos
         result_datos = self.loader.obtener_datos_tarea(task_id)
         if result_datos.is_failure:
-            self.logger.error(f"Error descargando task {task_id}: {result_datos.get_error()}")
+            print(f"ERROR - Descargando task: {task_id}")
             return
 
         dataset_name, descripcion, X, y = result_datos.get_value()
-        self.logger.info(f"Dataset {dataset_name} (task {task_id}) descargado correctamente.")
+        print("OK - Datos descargados para task_id:", task_id)
 
         # 2. Extraer metafeatures
         meta_features, meta_features_vector = self.extractor.extraer_desde_dataframe(
