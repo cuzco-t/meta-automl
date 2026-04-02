@@ -37,7 +37,6 @@ class Entrenador:
         
         modelos_entrenados_results = []
         tiempos_promedio = []
-        logger = PipelineLogger().get_logger()
         
         for num_modelo, nombre_modelo in enumerate(nombres_modelos, 1):
             # Obtener selector según la tarea
@@ -53,48 +52,55 @@ class Entrenador:
                     pd.Series(primer_fold['y_train']),
                     pd.Series(primer_fold['y_val'])
                 ], ignore_index=True)
+           
             elif primer_fold['y_train'] is not None:
                 y = pd.Series(primer_fold['y_train']).reset_index(drop=True)
+            
             elif primer_fold['y_val'] is not None:
                 y = pd.Series(primer_fold['y_val']).reset_index(drop=True)
+            
             else:
                 y = None
             
             # Calcular hiperparámetros (una sola vez por modelo)
             try:
                 selector.calcular_hiper_parametros(X, y)
+            
             except Exception as e:
-                logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
+                print(f"ERROR - al calcular hiperparámetros para el modelo '{nombre_modelo}'")
+                print(f"Exception: {e}")
                 modelos_entrenados_results.append([
                     Result.fail(f"Error al calcular hiperparámetros: {e}"),
                     Result.fail(f"Error al calcular hiperparámetros: {e}"),
                     Result.fail(f"Error al calcular hiperparámetros: {e}")
                 ])
+                tiempos_promedio.append(0.0)
                 continue
             
             # Iterar sobre cada fold y entrenar
             modelos_folds = []
             tiempos_folds = []
 
-            logger.info(f"({num_modelo}/{len(nombres_modelos)}) Entrenando modelo '{nombre_modelo}'")
+            print(f"({num_modelo}/{len(nombres_modelos)}) Entrenando modelo '{nombre_modelo}'")
 
             for num_fold, fold_data in folds_data.items():
                 X_train = fold_data['X_train']
                 y_train = fold_data['y_train']
                 
-                logger.info(f"Fold ({num_fold}/{len(folds_data)}) iniciado.")
+                print(f"({num_fold}/{len(folds_data)}) Iniciando fold")
+
                 # Medir tiempo de entrenamiento
                 tiempo_inicio = time.time()
                 result_modelo_entrenado = selector.entrenar_modelo(X_train, y_train)
                 tiempo_fin = time.time()
                 
                 tiempo_entrenamiento = tiempo_fin - tiempo_inicio
-                logger.info(f"Fold ({num_fold}/{len(folds_data)}) terminado, tiempo: {tiempo_entrenamiento:.2f} segundos")
+                print(f"({num_fold}/{len(folds_data)}) Fold terminado, tiempo: {tiempo_entrenamiento:.2f} segundos")
                 
                 modelos_folds.append(result_modelo_entrenado)
                 tiempos_folds.append(tiempo_entrenamiento)
             
-            logger.info(f"({num_modelo}/{len(nombres_modelos)}) Modelo entrenado '{nombre_modelo}'")
+            print(f"({num_modelo}/{len(nombres_modelos)}) Modelo entrenado '{nombre_modelo}'")
 
             modelos_entrenados_results.append(modelos_folds)
             # Calcular promedio de tiempos para este modelo
@@ -137,6 +143,7 @@ class Entrenador:
                 modelos_entrenados_results.append(
                     Result.fail(f"Error al calcular hiperparámetros: {e}")
                 )
+                tiempos_entrenamiento.append(0.0)
                 continue
 
             # Medir tiempo de entrenamiento

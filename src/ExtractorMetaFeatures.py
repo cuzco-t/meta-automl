@@ -17,14 +17,14 @@ class ExtractorMetaFeatures:
     _GRUPOS_META_FEATURES = [
         "landmarking",
         "general",
-        "statistical",
+        # "statistical",
         "model-based",
         "info-theory",
         "relative",
-        "clustering",
-        "complexity",
-        "itemset",
-        "concept"
+        # "clustering",
+        # "complexity",
+        # "itemset",
+        # "concept"
     ]
     # Alias para compatibilidad con referencias antiguas.
     _GUPOS_META_FEATURES = _GRUPOS_META_FEATURES
@@ -86,8 +86,8 @@ class ExtractorMetaFeatures:
                     meta_features_grupo = dict(zip(nombres, valores))
 
                 if len(meta_features_grupo) == 0:
-                    print(f"Seteado grupo: {grupo}")
                     meta_features_grupo = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+                    print(f"No existen variables, se insertan valores por defecto: {grupo}")
                 else:
                     print(f"Completado grupo: {grupo}")
 
@@ -402,12 +402,12 @@ class ExtractorMetaFeatures:
         :return: Lista con los valores de las meta-features vectorizadas.
         :rtype: list
         """
-        print(meta_features)
-        print("\n\n")
+        # print(meta_features)
+        # print("\n\n")
         meta_features_vectorizadas = [valor for subdict in meta_features.values() for valor in subdict.values()]
 
         
-        print(meta_features_vectorizadas)
+        # print(meta_features_vectorizadas)
         return meta_features_vectorizadas
 
 

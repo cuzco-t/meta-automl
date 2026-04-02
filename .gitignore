@@ -6,3 +6,4 @@ errors/
 .pytest_cache/
 .vscode/
 demo/
+.devcontainer/

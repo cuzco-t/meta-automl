@@ -66,14 +66,18 @@ class EjecutorPreprocesamiento:
             instancias = self.crear_fases_instancias()
             self.configurar_instancias(instancias, pipeline, tarea)
             
+            estado = "OK"
             try:
                 for fase, instancia in instancias.items():
+                    algoritmo = str(instancia.log_algoritmo)
+
                     if fase == "crear_nueva_variable" and descripcion:
                         instancia.descripcion = descripcion
                     instancia.fit(X_train, y_train)
                     X_train, y_train = instancia.transform(X_train, y_train)
                     X_val, y_val = instancia.transform(X_val, y_val)
-                    self.logger.info(f"Fold {fold_num}: Fase '{fase}', algoritmo '{instancia.log_algoritmo}' OK.")
+
+                    print(f"{estado:<5} - Fold: {fold_num:<3} | Fase: {fase:<45} | Algoritmo: {algoritmo:<10}")
                 
                 folds_procesados[fold_num] = {
                     "X_train": X_train.copy(),
@@ -82,13 +86,18 @@ class EjecutorPreprocesamiento:
                     "y_val": y_val.copy() if y_val is not None else None
                 }
             except Exception as e:
-                self.logger.error(f"Pipeline mal configurado en fold {fold_num}: {e}")
+                estado = "ERROR"
+                print(f"{estado:<5} - Fold: {fold_num:<3} | Fase: {fase:<45} | Algoritmo: {algoritmo:<10}")
+                print(f"Exception: {e}")
+
                 return Result.fail({
                     "error": str(e),
                     "pipeline": pipeline,
                     "fase": fase
                 }), None 
         
+        print("-" * 50)
+
         tiempo_fin_preprocesamiento = time.time()
         tiempo_total_preprocesamiento = tiempo_fin_preprocesamiento - tiempo_inicio_preprocesamiento
         
@@ -110,22 +119,32 @@ class EjecutorPreprocesamiento:
         instancias = self.crear_fases_instancias()
         self.configurar_instancias(instancias, pipeline or {}, "clustering")
         
+        estado = "OK"
         try:
             for fase, instancia in instancias.items():
+                algoritmo = str(instancia.log_algoritmo)
+
                 if fase == "crear_nueva_variable" and descripcion:
                     instancia.descripcion = descripcion
                 instancia.fit(X_proc, y_proc)
                 X_proc, y_proc = instancia.transform(X_proc, y_proc)
-            
-            tiempo_fin_preprocesamiento = time.time()
-            tiempo_total = tiempo_fin_preprocesamiento - tiempo_inicio_preprocesamiento
-            
-            return Result.ok({"X_proc": X_proc, "y_proc": y_proc}), tiempo_total
-            
+
+                print(f"{estado:<5} - Fase: {fase:<45} | Algoritmo: {algoritmo:<10}")
+        
         except Exception as e:
-            self.logger.error(f"Error en pipeline clustering: {e}")
+            estado = "ERROR"
+            print(f"{estado:<5} - Fase: {fase:<45} | Algoritmo: {algoritmo:<10}")
+            print(f"Exception: {e}")
+            
             return Result.fail({
                 "error": str(e),
                 "pipeline": pipeline,
                 "fase": fase
             }), None
+            
+        print("-" * 50)
+        tiempo_fin_preprocesamiento = time.time()
+        tiempo_total = tiempo_fin_preprocesamiento - tiempo_inicio_preprocesamiento
+        
+        return Result.ok({"X_proc": X_proc, "y_proc": y_proc}), tiempo_total
+            

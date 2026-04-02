@@ -11,6 +11,9 @@ from src.BaseDeDatos import BaseDeDatos
 from src.orquestador_experimentos import OrquestadorExperimentos
 from setproctitle import setproctitle
 
+import warnings
+warnings.filterwarnings("ignore")
+
 setproctitle("meta_automl")
 
 def main():

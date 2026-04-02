@@ -80,6 +80,8 @@ class OrquestadorExperimentos:
         meta_features, meta_features_vector = self.extractor.extraer_desde_dataframe(
             X, y, vectorizar=True
         )
+        print("OK - Metafeatures extraídas para task_id:", task_id)
+
         # Añadir one-hot de tarea
         meta_features_vector.extend(self.tarea_onehot.get(tarea, [0.0, 0.0, 0.0]))
 
@@ -112,8 +114,6 @@ class OrquestadorExperimentos:
         if tarea == "clustering":
             result = self.minero.pipeline_no_supervisado(X, y, descripcion)
         else:
-            if dataset_name == "breast-cancer":
-                print("DEBUG: Ejecutando pipeline supervisado con tarea =", tarea)
             result = self.minero.pipeline_supervisado(X, y, tarea, descripcion)
 
         if result.is_failure:

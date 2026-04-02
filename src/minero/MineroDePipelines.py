@@ -1,3 +1,4 @@
+import json
 import numpy as np
 
 from ..config.Configuracion import Configuracion
@@ -38,17 +39,24 @@ class MineroDePipelines:
             self.ejecutor.crear_fases_instancias()
         )
         lista_modelos = self.generador.generar_lista_modelos(self.n_modelos, self.tarea_modelos[tarea])
-        self.logger.info("Pipeline generado", extra={"pipeline": pipeline, "modelos": lista_modelos})
-
+        print("-" * 50)
+        print("Pipeline generado")
+        print("-" * 50)
+        print(json.dumps(pipeline, indent=4))
         
+        print("-" * 50)
+        print("Modelos seleccionados")
+        print("-" * 50)
+        [print(f"{i+1}. {modelo}") for i, modelo in enumerate(lista_modelos)]
+        print("-" * 50)
+
         segmentador = Segmentador(n_splits=self.n_folds, random_state=self.semilla)
         folds = segmentador.segmentar(X_df, y_df, tipo_problema=tarea)
-        self.logger.info(f"{self.n_folds} folds generados para tarea {tarea}")
-
+        
+        print("OK - Folds generados para tarea:", tarea)
 
         result_folds, tiempo_preprocesamiento = self.ejecutor.ejecutar_pipeline(folds, pipeline, tarea, descripcion)
         if result_folds.is_failure:
-            self.logger.error("Error en ejecución del pipeline", extra={"error": result_folds.get_error()})
             datos_fallidos = result_folds.get_error()
             return Result.fail({
                 "error": datos_fallidos['error'],
@@ -57,13 +65,14 @@ class MineroDePipelines:
             })
 
         folds_preprocesados = result_folds.get_value()
-        self.logger.info("Pipeline ejecutado en todos los folds exitosamente")
+        print("OK - Pipeline ejecutado en todos los folds exitosamente")
 
-        self.logger.info(f"Entrenando modelos para tarea '{tarea}'")
+        print("-" * 50)
+        print(f"Entrenando modelos para tarea '{tarea}'")
+        print("-" * 50)
         entrenador = Entrenador()
         results_modelos, tiempos_modelos = entrenador.entrenar(folds_preprocesados, lista_modelos, tarea)
-        self.logger.info("Todos los modelos han sido entrenados en todos los folds")
-
+        print("OK - Todos los modelos han sido entrenados en todos los folds")
 
         metricas_evaluacion = self.evaluador.evaluar_modelos(results_modelos, folds_preprocesados, tarea)
         tiempos_totales = [tiempo_preprocesamiento + t for t in tiempos_modelos]
@@ -81,11 +90,20 @@ class MineroDePipelines:
             self.ejecutor.crear_fases_instancias()
         )
         lista_modelos = self.generador.generar_lista_modelos(self.n_modelos, self.tarea_modelos["clustering"])
-        self.logger.info("Pipeline generado", extra={"pipeline": pipeline, "modelos": lista_modelos})
+        print("-" * 50)
+        print("Pipeline generado")
+        print("-" * 50)
+        print(json.dumps(pipeline, indent=4))
+        
+        print("-" * 50)
+        print("Modelos seleccionados")
+        print("-" * 50)
+        [print(f"{i+1}. {modelo}") for i, modelo in enumerate(lista_modelos)]
+        print("-" * 50)
 
         result_datos, tiempo_preprocesamiento = self.ejecutor.ejecutar_pipeline_clustering(X_df, y_df, pipeline, descripcion)
+        
         if result_datos.is_failure:
-            self.logger.error("Error en ejecución del pipeline", extra={"error": result_datos.get_error()})
             datos_fallidos = result_datos.get_error()
             return Result.fail({
                 "error": datos_fallidos['error'],
@@ -97,10 +115,13 @@ class MineroDePipelines:
         X_proc = datos["X_proc"]
         y_proc = datos["y_proc"]
 
-
+        print("-" * 50)
+        print(f"Entrenando modelos para tarea 'clustering'")
+        print("-" * 50)
         entrenador = Entrenador()
         results_etiquetas, tiempos_modelos = entrenador.entrenar_clustering(X_proc, lista_modelos)
-        self.logger.info("Todos los modelos han sido entrenados en todos los folds")
+        
+        print("OK - Todos los modelos han sido entrenados en todos los folds")
 
         metricas_evaluacion = self.evaluador.evaluar_modelos_clustering(results_etiquetas, X_proc, y_proc)
         tiempos_totales = [tiempo_preprocesamiento + t for t in tiempos_modelos]
