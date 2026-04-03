@@ -38,7 +38,7 @@ class MineroDePipelines:
         pipeline = self.generador.generar_pipeline_aleatorio(
             self.ejecutor.crear_fases_instancias()
         )
-        lista_modelos = self.generador.generar_lista_modelos(self.n_modelos, self.tarea_modelos[tarea])
+        lista_modelos = self.tarea_modelos[tarea]
         print("-" * 50)
         print("Pipeline generado")
         print("-" * 50)
@@ -89,7 +89,7 @@ class MineroDePipelines:
         pipeline = self.generador.generar_pipeline_aleatorio(
             self.ejecutor.crear_fases_instancias()
         )
-        lista_modelos = self.generador.generar_lista_modelos(self.n_modelos, self.tarea_modelos["clustering"])
+        lista_modelos = self.tarea_modelos["clustering"]
         print("-" * 50)
         print("Pipeline generado")
         print("-" * 50)
