@@ -65,10 +65,10 @@ class BaseDeDatos:
         """
         Ejecuta un INSERT parametrizado
         """
-        # conn = self.conn
-        # with conn.cursor() as cur:
-        #     cur.execute(query, params)
-        # conn.commit()
+        conn = self.conn
+        with conn.cursor() as cur:
+            cur.execute(query, params)
+        conn.commit()
         print("Inserción realizada con éxito.")
 
 

@@ -9,12 +9,12 @@ from src.vectorizador_pipeline import VectorizadorPipeline
 from src.registrador_pipeline import RegistradorPipeline
 from src.BaseDeDatos import BaseDeDatos
 from src.orquestador_experimentos import OrquestadorExperimentos
-# from setproctitle import setproctitle
+from setproctitle import setproctitle
 
-# import warnings
-# warnings.filterwarnings("ignore")
+import warnings
+warnings.filterwarnings("ignore")
 
-# setproctitle("meta_automl")
+setproctitle("meta_automl")
 
 def main():
     RUTA_DATASETS_CSV = "./data/datasets.csv"

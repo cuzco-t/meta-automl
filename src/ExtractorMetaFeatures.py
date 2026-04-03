@@ -6,7 +6,7 @@ import math
 import numpy as np
 import pandas as pd
 
-from pymfe.mfe import MFE
+from pymfe.pymfe.mfe import MFE
 from toon_format import encode
 from collections.abc import Mapping
 
@@ -17,14 +17,14 @@ class ExtractorMetaFeatures:
     _GRUPOS_META_FEATURES = [
         "landmarking",
         "general",
-        # "statistical",
+        "statistical",
         "model-based",
         "info-theory",
         "relative",
-        # "clustering",
-        # "complexity",
-        # "itemset",
-        # "concept"
+        "clustering",
+        "complexity",
+        "itemset",
+        "concept"
     ]
     # Alias para compatibilidad con referencias antiguas.
     _GUPOS_META_FEATURES = _GRUPOS_META_FEATURES
@@ -43,6 +43,8 @@ class ExtractorMetaFeatures:
         meta_features = self._mapear_meta_features(meta_features)
         meta_features = self._agregar_meta_features_personalizadas(ruta_absoluta, X, meta_features)
         meta_features_vectorizadas = self._vectorizar_meta_features(meta_features)
+
+        print("OK - Extracción de meta-features completada para el dataset:", ruta_absoluta)
 
         return meta_features, meta_features_vectorizadas
     
@@ -113,6 +115,9 @@ class ExtractorMetaFeatures:
             dataset_temporal = X_df.copy()
 
         dataset_temporal.to_csv(ruta_temporal, index=False)
+
+        print("OK - Dataset temporal guardado en:", ruta_temporal)
+
         return ruta_temporal
 
     def _leer_dataset(self, ruta_absoluta, target):
@@ -388,6 +393,8 @@ class ExtractorMetaFeatures:
             else:
                 return _transformar_valor(obj)
 
+        print("OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados")
+
         return _mapear_recursivo(meta_features)
                 
 
@@ -402,12 +409,10 @@ class ExtractorMetaFeatures:
         :return: Lista con los valores de las meta-features vectorizadas.
         :rtype: list
         """
-        # print(meta_features)
-        # print("\n\n")
         meta_features_vectorizadas = [valor for subdict in meta_features.values() for valor in subdict.values()]
 
-        
-        # print(meta_features_vectorizadas)
+        print("OK - Meta-features vectorizadas en una lista con longitud:", len(meta_features_vectorizadas))
+
         return meta_features_vectorizadas
 
 
@@ -486,6 +491,8 @@ class ExtractorMetaFeatures:
             "num_columnas_con_valores_faltantes": calcular_numero_de_columnas_con_valores_faltantes(X),
             "num_registros_duplicados": calcular_numero_de_registros_duplicados(X)
         }
+
+        print("OK - Meta-features personalizadas calculadas y agregadas al diccionario")
 
         return meta_features
     
