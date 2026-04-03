@@ -2,6 +2,7 @@ import time
 import pandas as pd
 
 from typing import Dict, List
+from datetime import datetime
 from dataclasses import dataclass
 
 from ..Result import Result
@@ -11,6 +12,11 @@ from ..cash.SelectorModeloClasificacion import SelectorModeloClasificacion
 from ..cash.SelectorModeloRegresion import SelectorModeloRegresion
 from ..cash.SelectorModeloClustering import SelectorModeloClustering
 
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class Entrenador:
     """Clase para entrenar modelos de machine learning"""
@@ -99,10 +105,17 @@ class Entrenador:
                 tiempo_entrenamiento = tiempo_fin - tiempo_inicio
                 print(f"({num_fold}/{len(folds_data)}) Fold terminado, tiempo: {tiempo_entrenamiento:.2f} segundos")
                 
+                if result_modelo_entrenado.is_failure:
+                    while len(modelos_folds) < 3:
+                        modelos_folds.append(Result.fail(result_modelo_entrenado.get_error()))
+                        tiempos_folds.append(tiempo_entrenamiento)
+                    break
+
                 modelos_folds.append(result_modelo_entrenado)
                 tiempos_folds.append(tiempo_entrenamiento)
             
             print(f"({num_modelo}/{len(nombres_modelos)}) Modelo entrenado '{nombre_modelo}'")
+            print("")
 
             modelos_entrenados_results.append(modelos_folds)
             # Calcular promedio de tiempos para este modelo

@@ -5,6 +5,14 @@ from typing import Dict, List, Any
 from src.BaseDeDatos import BaseDeDatos
 from .vectorizador_pipeline import VectorizadorPipeline
 
+from datetime import datetime
+
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
+
 class RegistradorPipeline:
     """Registra en la base de datos los resultados de cada ejecución."""
 

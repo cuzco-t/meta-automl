@@ -15,7 +15,12 @@ from .generador_pipeline import GeneradorPipeline
 from .ejecutor_preprocesamiento import EjecutorPreprocesamiento
 from .evaluador_modelos import EvaluadorModelos
 
+from datetime import datetime
+print_original = print
 
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class MineroDePipelines:
     def __init__(self):
@@ -39,16 +44,18 @@ class MineroDePipelines:
             "deepseek-r1:8b",
             "llama3.1:8b",
             "qwen2.5-coder:7b",
+            None  # Opcion para usar hiperparámetros por defecto sin LLM
         ]
         return self.rng.choice(opciones)
 
     def _vectorizar_llm_seleccionado(self, llm):
         mapping = {
-            "deepseek-r1:8b": [1.0, 0.0, 0.0],
-            "llama3.1:8b": [0.0, 1.0, 0.0],
-            "qwen2.5-coder:7b": [0.0, 0.0, 1.0],
+            "deepseek-r1:8b": [1.0, 0.0, 0.0, 0.0],
+            "llama3.1:8b": [0.0, 1.0, 0.0, 0.0],
+            "qwen2.5-coder:7b": [0.0, 0.0, 1.0, 0.0],
+            None: [0.0, 0.0, 0.0, 1.0]
         }
-        return mapping.get(llm, [0.0, 0.0, 0.0])
+        return mapping.get(llm, [0.0, 0.0, 0.0, 1.0])
 
     def pipeline_supervisado(self, X_df, y_df, tarea, descripcion=None):
         llm_seleccionado = self._seleccionar_llm()

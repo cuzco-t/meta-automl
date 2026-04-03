@@ -1,6 +1,8 @@
 import ast
 import pandas as pd
-from multiprocessing import Process, Queue
+import multiprocessing as mp
+
+mp.set_start_method("spawn", force=True)
 
 # Módulos propios (sin cambios)
 from ..LLM import LLM
@@ -14,27 +16,29 @@ try:
     import cuml
     from cuml.linear_model import LogisticRegression as cuLogisticRegression
     from cuml.linear_model import Ridge as cuRidge
-    from cuml import SGD as cuSGD
+    from cuml.solvers import SGD as cuSGD
     from cuml.ensemble import RandomForestClassifier as cuRandomForestClassifier
-    from cuml.ensemble import GradientBoostingClassifier as cuGradientBoostingClassifier
-    from cuml import DecisionTreeClassifier as cuDecisionTreeClassifier
     from cuml.svm import SVC as cuSVC
     from cuml.svm import LinearSVC as cuLinearSVC
     from cuml.neighbors import KNeighborsClassifier as cuKNeighborsClassifier
+    from cuml.naive_bayes import GaussianNB as cuGaussianNB
     CUM_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print("cuML no disponible, se usará sklearn sin aceleración GPU")
+    print(f"Error: {e}")
     CUM_AVAILABLE = False
     # Fallback a sklearn si no hay cuML
     from sklearn.linear_model import LogisticRegression, RidgeClassifier, SGDClassifier
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
     from sklearn.svm import SVC, LinearSVC
     from sklearn.neighbors import KNeighborsClassifier
 
 # Modelos que solo existen en sklearn (sin aceleración GPU)
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.naive_bayes import MultinomialNB
+
 from sklearn.linear_model import RidgeClassifier, SGDClassifier as SkSGDClassifier
 from sklearn.ensemble import HistGradientBoostingClassifier, AdaBoostClassifier
-from sklearn.naive_bayes import GaussianNB, MultinomialNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.tree import DecisionTreeClassifier as SkDecisionTreeClassifier
@@ -42,6 +46,15 @@ from sklearn.ensemble import RandomForestClassifier as SkRandomForestClassifier
 from sklearn.ensemble import GradientBoostingClassifier as SkGradientBoostingClassifier
 from sklearn.svm import SVC as SkSVC, LinearSVC as SkLinearSVC
 from sklearn.neighbors import KNeighborsClassifier as SkKNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB as SkGaussianNB
+
+from datetime import datetime
+
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class SelectorModeloClasificacion(RegistroTecnica):
     def __init__(self, config_test=None):
@@ -78,30 +91,34 @@ class SelectorModeloClasificacion(RegistroTecnica):
         self.registrar_algoritmo(self.log_algoritmo)
         return None
 
-    def fit_model(self, modelo, X, y, queue):
+    def fit_model(self, modelo, es_gpu, X, y, queue):
         try:
             # Convertir datos a GPU (cupy o cudf) para cuML, o dejar como numpy para sklearn
-            if CUM_AVAILABLE and hasattr(modelo, '_get_tags') and 'gpu' in modelo._get_tags().get('non_deterministic', ''):
+            if es_gpu:
                 # Es un modelo cuML: convertir a cupy array
                 import cupy as cp
                 X_gpu = cp.asarray(X.values) if isinstance(X, pd.DataFrame) else cp.asarray(X)
-                y_gpu = cp.asarray(y.values) if isinstance(y, pd.Series) else cp.asarray(y)
+                y_gpu = cp.asarray(y.cat.codes.to_numpy())
+
+                print("Entrenando modelo en GPU con cuML...")
                 modelo.fit(X_gpu, y_gpu)
             else:
+                print("Entrenando modelo en CPU con sklearn...")
                 # Modelo sklearn o fallback: usar numpy
                 modelo.fit(X.values if isinstance(X, pd.DataFrame) else X,
                            y.values if isinstance(y, pd.Series) else y)
             queue.put(("ok", modelo))
         except Exception as e:
+            print(f"Error durante el entrenamiento del modelo: {e}")
             queue.put(("fail", str(e)))
 
     def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
-        modelo = self._get_instancia_modelo()
+        modelo, es_gpu = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
         modelo.set_params(**hiper_parametros)
 
-        queue = Queue()
-        p = Process(target=self.fit_model, args=(modelo, X, y, queue))
+        queue = mp.Queue()
+        p = mp.Process(target=self.fit_model, args=(modelo, es_gpu, X, y, queue))
         p.start()
         p.join(timeout=self.max_tiempo_entrenamiento)
 
@@ -121,29 +138,27 @@ class SelectorModeloClasificacion(RegistroTecnica):
             # Modelos con soporte nativo en cuML
             match self.log_algoritmo:
                 case "logistic_regression":
-                    return cuLogisticRegression()
+                    return cuLogisticRegression(), True
                 case "sgd_classifier":
                     # Para clasificación con SGD en cuML se usa loss='log'
-                    return cuSGD(loss='log')
+                    return cuSGD(loss='log'), True
                 case "ridge_classifier":
-                    return cuRidge()
-                case "decision_tree":
-                    return cuDecisionTreeClassifier()
+                    return cuRidge(), True
                 case "random_forest":
-                    return cuRandomForestClassifier()
-                case "gradient_boosting":
-                    return cuGradientBoostingClassifier()
+                    return cuRandomForestClassifier(), True
                 case "svc":
-                    return cuSVC()
+                    return cuSVC(), True
                 case "linear_svc":
-                    return cuLinearSVC()
+                    return cuLinearSVC(), True
                 case "knn":
-                    return cuKNeighborsClassifier()
+                    return cuKNeighborsClassifier(), True
+                case "gaussian_nb":
+                    return cuGaussianNB(), True
                 case _:
                     # Resto de algoritmos: usar sklearn (sin GPU)
-                    return self._get_instancia_modelo_sklearn()
+                    return self._get_instancia_modelo_sklearn(), False
         else:
-            return self._get_instancia_modelo_sklearn()
+            return self._get_instancia_modelo_sklearn(), False
 
     def _get_instancia_modelo_sklearn(self):
         """Instancias de modelos sklearn (fallback o cuando no existe en cuML)."""
@@ -157,7 +172,7 @@ class SelectorModeloClasificacion(RegistroTecnica):
             case "decision_tree":
                 return DecisionTreeClassifier()
             case "random_forest":
-                return RandomForestClassifier()
+                return SkRandomForestClassifier()
             case "gradient_boosting":
                 return GradientBoostingClassifier()
             case "hist_gradient_boosting":
@@ -171,7 +186,7 @@ class SelectorModeloClasificacion(RegistroTecnica):
             case "knn":
                 return KNeighborsClassifier()
             case "gaussian_nb":
-                return GaussianNB()
+                return SkGaussianNB()
             case "multinomial_nb":
                 return MultinomialNB()
             case "mlp_classifier":
@@ -185,11 +200,19 @@ class SelectorModeloClasificacion(RegistroTecnica):
 
     def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
         # Sin cambios respecto al original
+        if self.llm_seleccionado is None:
+            instancia_modelo, es_gpu = self._get_instancia_modelo()
+            self.log_params["params"] = instancia_modelo.get_params()
+            self.registrar_parametros(self.log_params)
+            return 
+
         llm = LLM(self.llm_seleccionado)
         extractor = ExtractorMetaFeatures()
         meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), y.copy())
         meta_features_globales_limpias = extractor.eliminar_constantes_errores(meta_features_globales_totales)
         meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales_limpias)
+
+        instancia_modelo, _ = self._get_instancia_modelo()
 
         prompt = llm.plantillas_prompts(
             plantilla="seleccionar_hiper_parametros",
@@ -197,7 +220,7 @@ class SelectorModeloClasificacion(RegistroTecnica):
                 "tarea": "clasificación",
                 "modelo_ml": self.log_algoritmo,
                 "meta_features_globales": meta_features_globales_formateadas,
-                "hiper_parametros_por_defecto": self._get_instancia_modelo().get_params(),
+                "hiper_parametros_por_defecto": instancia_modelo.get_params(),
             }
         )
 

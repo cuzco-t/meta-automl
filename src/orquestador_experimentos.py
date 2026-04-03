@@ -12,6 +12,13 @@ from src.minero.MineroDePipelines import MineroDePipelines
 from src.vectorizador_pipeline import VectorizadorPipeline
 from src.registrador_pipeline import RegistradorPipeline
 
+from datetime import datetime
+
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class OrquestadorExperimentos:
     """

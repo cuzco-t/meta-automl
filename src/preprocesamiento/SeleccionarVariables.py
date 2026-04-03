@@ -211,7 +211,7 @@ class SeleccionarVariables(RegistroTecnica):
             # Sin cambios: la selección por LLM se mantiene igual
             extractor = ExtractorMetaFeatures()
             meta_features_por_columna = extractor.extraer_meta_features_por_columna(X, y)
-            meta_features_por_columna_toon = extractor.meta_features_por_columna_a_toon(meta_features_por_columna)
+            meta_features_por_columna_toon = extractor.formatear_meta_features_por_columna(meta_features_por_columna)
 
             llm = LLM(self.MODELOS_LLM[self.log_algoritmo])
             prompt = llm.plantillas_prompts(

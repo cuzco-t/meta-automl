@@ -1,8 +1,14 @@
+from datetime import datetime
 import os
 import psycopg
 
 from src.config.Configuracion import Configuracion
 
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class BaseDeDatos:
     _instance = None

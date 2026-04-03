@@ -5,6 +5,13 @@ import requests.exceptions
 from .config.Configuracion import Configuracion
 
 from toon_format import encode
+from datetime import datetime
+
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class LLM:
     def __init__(self, modelo=None):

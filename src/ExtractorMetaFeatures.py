@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import time
 import warnings
@@ -12,6 +13,12 @@ from collections.abc import Mapping
 
 from contextlib import contextmanager
 from src.config.Configuracion import Configuracion
+
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class ExtractorMetaFeatures:
     _GRUPOS_META_FEATURES = [
@@ -508,16 +515,17 @@ class ExtractorMetaFeatures:
     def extraer_meta_features_por_columna(self, X: pd.DataFrame, y: pd.Series, meta_feature_variables=None):
         meta_features_por_columna = {}
         if meta_feature_variables is None:
-            meta_feature_variables = [
-                "mean",      # tendencia central
-                "median",    # tendencia robusta
-                "min",       # extremo inferior
-                "max",       # extremo superior
-                "var",       # dispersión general
-                "sd",        # desviación estándar
-                "iq_range",  # dispersión robusta
-                "can_cor"    # correlación con otras columnas
-            ]
+            # meta_feature_variables = [
+            #     "mean",      # tendencia central
+            #     "median",    # tendencia robusta
+            #     "min",       # extremo inferior
+            #     "max",       # extremo superior
+            #     "var",       # dispersión general
+            #     "sd",        # desviación estándar
+            #     "iq_range",  # dispersión robusta
+            #     "can_cor"    # correlación con otras columnas
+            # ]
+            meta_feature_variables = self._setear_variables_grupo(grupo, 0).keys()
 
         mfe = MFE(features=meta_feature_variables)
         for col in X.columns:

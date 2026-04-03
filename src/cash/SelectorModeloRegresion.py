@@ -18,25 +18,30 @@ try:
     from cuml.linear_model import ElasticNet as cuElasticNet
     from cuml.svm import SVR as cuSVR
     from cuml.neighbors import KNeighborsRegressor as cuKNeighborsRegressor
-    from cuml import DecisionTreeRegressor as cuDecisionTreeRegressor
     from cuml.ensemble import RandomForestRegressor as cuRandomForestRegressor
-    from cuml.ensemble import GradientBoostingRegressor as cuGradientBoostingRegressor
     CUM_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Error al importar cuML: {e}")
     CUM_AVAILABLE = False
     # Fallback a sklearn
     from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
     from sklearn.svm import SVR
     from sklearn.neighbors import KNeighborsRegressor
-    from sklearn.tree import DecisionTreeRegressor
-    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-    from sklearn.ensemble import AdaBoostRegressor
-    from sklearn.neural_network import MLPRegressor
+    from sklearn.ensemble import RandomForestRegressor
 
 # Modelos sin aceleración GPU (solo sklearn)
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.neural_network import MLPRegressor
 
+from datetime import datetime
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class SelectorModeloRegresion(RegistroTecnica):
     def __init__(self, config_test=None):
@@ -80,9 +85,12 @@ class SelectorModeloRegresion(RegistroTecnica):
                 import cupy as cp
                 X_gpu = cp.asarray(X.values) if isinstance(X, pd.DataFrame) else cp.asarray(X)
                 y_gpu = cp.asarray(y.values) if isinstance(y, pd.Series) else cp.asarray(y)
+
+                print("Entrenando modelo en GPU con cuML...")
                 modelo.fit(X_gpu, y_gpu)
             else:
                 # Modelo sklearn: usar numpy
+                print("Entrenando modelo en CPU con sklearn...")
                 modelo.fit(X.values if isinstance(X, pd.DataFrame) else X,
                            y.values if isinstance(y, pd.Series) else y)
             queue.put(("ok", modelo))
@@ -125,12 +133,8 @@ class SelectorModeloRegresion(RegistroTecnica):
                     return cuSVR()
                 case "knn":
                     return cuKNeighborsRegressor()
-                case "arbol_decision":
-                    return cuDecisionTreeRegressor()
                 case "random_forest":
                     return cuRandomForestRegressor()
-                case "gradient_boosting":
-                    return cuGradientBoostingRegressor()
                 case "ada_boost":
                     # AdaBoost no tiene versión GPU en cuML → usar sklearn
                     return AdaBoostRegressor()
@@ -172,6 +176,11 @@ class SelectorModeloRegresion(RegistroTecnica):
 
     def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
         """Consulta al LLM para obtener hiperparámetros del modelo seleccionado."""
+        if self.llm_seleccionado is None:
+            self.log_params["params"] = self._get_instancia_modelo().get_params()
+            self.registrar_parametros(self.log_params)
+            return
+            
         llm = LLM(self.llm_seleccionado)
 
         extractor = ExtractorMetaFeatures()

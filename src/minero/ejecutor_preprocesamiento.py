@@ -18,6 +18,13 @@ from ..preprocesamiento.NormalizarDatosNumericos import NormalizarDatosNumericos
 from ..preprocesamiento.CrearNuevaVariable import CrearNuevaVariable
 from ..preprocesamiento.SeleccionarVariables import SeleccionarVariables
 
+from datetime import datetime
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
+
 class EjecutorPreprocesamiento:
     def __init__(self, logger):
         self.logger = logger

@@ -13,16 +13,26 @@ try:
     import cuml
     from cuml.cluster import KMeans as cuKMeans
     from cuml.cluster import DBSCAN as cuDBSCAN
+    from cuml import AgglomerativeClustering as cuAgglomerativeClustering
+    from cuml.cluster import SpectralClustering as cuSpectralClustering
     CUM_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Error al importar cuML: {e}")
     CUM_AVAILABLE = False
     # Fallback a sklearn
     from sklearn.cluster import KMeans, DBSCAN
 
 # Algoritmos sin aceleración GPU (solo sklearn)
-from sklearn.cluster import AgglomerativeClustering, MeanShift, SpectralClustering, Birch
+from sklearn.cluster import MeanShift, Birch
 from sklearn.cluster import KMeans, DBSCAN  # para fallback explícito
 
+from datetime import datetime
+
+print_original = print
+
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class SelectorModeloClustering(RegistroTecnica):
     def __init__(self, random_state=None, config_test=None):
@@ -61,9 +71,12 @@ class SelectorModeloClustering(RegistroTecnica):
                 # Modelo cuML: convertir X a cupy
                 import cupy as cp
                 X_gpu = cp.asarray(X.values) if isinstance(X, pd.DataFrame) else cp.asarray(X)
+
+                print("Entrenando modelo en GPU con cuML...")
                 modelo.fit(X_gpu)
             else:
                 # Modelo sklearn: usar numpy
+                print("Entrenando modelo en CPU con sklearn...")
                 modelo.fit(X.values if isinstance(X, pd.DataFrame) else X)
             queue.put(("ok", modelo))
         except Exception as e:
@@ -101,6 +114,10 @@ class SelectorModeloClustering(RegistroTecnica):
                     return cuKMeans()
                 case "dbscan":
                     return cuDBSCAN()
+                case "agglomerative_clustering":
+                    return cuAgglomerativeClustering()
+                case "spectral_clustering":
+                    return cuSpectralClustering()
                 case _:
                     # Resto de algoritmos sin soporte GPU → usar sklearn
                     return self._get_instancia_modelo_sklearn()
@@ -127,6 +144,11 @@ class SelectorModeloClustering(RegistroTecnica):
 
     def _calcular_parametros(self, X: pd.DataFrame):
         """Consulta al LLM para obtener hiperparámetros del modelo seleccionado."""
+        if self.llm_seleccionado is None:
+            self.log_params["params"] = self._get_instancia_modelo().get_params()
+            self.registrar_parametros(self.log_params)
+            return
+            
         llm = LLM(self.llm_seleccionado)
 
         extractor = ExtractorMetaFeatures()
