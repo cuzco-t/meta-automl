@@ -10,6 +10,7 @@ from src.registrador_pipeline import RegistradorPipeline
 from src.BaseDeDatos import BaseDeDatos
 from src.orquestador_experimentos import OrquestadorExperimentos
 from setproctitle import setproctitle
+from src.config.Configuracion import Configuracion
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -27,6 +28,7 @@ def main():
     extractor = ExtractorMetaFeatures()
     minero = MineroDePipelines()
     db = BaseDeDatos()
+    config = Configuracion()
 
     # Construir mapa de índices (necesita las fases y los modelos por tarea)
     ejecutor = EjecutorPreprocesamiento(logger)
@@ -44,7 +46,7 @@ def main():
         vectorizador=vectorizador,
         recorder=recorder,
         logger=logger,
-        num_pipelines_por_dataset=3
+        num_pipelines_por_dataset=config.num_pipelines_por_dataset
     )
 
     # Procesar datasets desde CSV (tarea, task_id)

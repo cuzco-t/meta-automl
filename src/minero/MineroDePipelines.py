@@ -65,6 +65,7 @@ class MineroDePipelines:
         print("Modelos seleccionados")
         print("-" * 50)
         [print(f"{i+1}. {modelo}") for i, modelo in enumerate(lista_modelos)]
+        print("LLM seleccionado:", llm_seleccionado)
         print("-" * 50)
 
         segmentador = Segmentador(n_splits=self.n_folds, random_state=self.semilla)
@@ -126,6 +127,7 @@ class MineroDePipelines:
         print("Modelos seleccionados")
         print("-" * 50)
         [print(f"{i+1}. {modelo}") for i, modelo in enumerate(lista_modelos)]
+        print("LLM seleccionado:", llm_seleccionado)
         print("-" * 50)
 
         result_datos, tiempo_preprocesamiento = self.ejecutor.ejecutar_pipeline_clustering(X_df, y_df, pipeline, descripcion)

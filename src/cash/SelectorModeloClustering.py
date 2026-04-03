@@ -1,30 +1,28 @@
 import ast
 import pandas as pd
-
 from multiprocessing import Process, Queue
 
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
 from ..Result import Result
+from ..config.Configuracion import Configuracion
 
-# K-Means
-from sklearn.cluster import KMeans
+# Intentar importar cuML (GPU)
+try:
+    import cuml
+    from cuml.cluster import KMeans as cuKMeans
+    from cuml.cluster import DBSCAN as cuDBSCAN
+    CUM_AVAILABLE = True
+except ImportError:
+    CUM_AVAILABLE = False
+    # Fallback a sklearn
+    from sklearn.cluster import KMeans, DBSCAN
 
-# DBSCAN
-from sklearn.cluster import DBSCAN
+# Algoritmos sin aceleración GPU (solo sklearn)
+from sklearn.cluster import AgglomerativeClustering, MeanShift, SpectralClustering, Birch
+from sklearn.cluster import KMeans, DBSCAN  # para fallback explícito
 
-# Agglomerative Clustering (jerárquico)
-from sklearn.cluster import AgglomerativeClustering
-
-# Mean Shift
-from sklearn.cluster import MeanShift
-
-# Spectral Clustering
-from sklearn.cluster import SpectralClustering
-
-# Birch
-from sklearn.cluster import Birch
 
 class SelectorModeloClustering(RegistroTecnica):
     def __init__(self, random_state=None, config_test=None):
@@ -40,30 +38,37 @@ class SelectorModeloClustering(RegistroTecnica):
             "spectral_clustering",
             "birch"
         ]
+        self.max_tiempo_entrenamiento = Configuracion().max_segundos_entrenamiento
 
     def calcular_hiper_parametros(self, X: pd.DataFrame):
         """
-        Selecciona aleatoriamente el modelo de clustering a usar, y configura sus
-        hiperparámetros.
+        Selecciona el modelo de clustering y configura sus hiperparámetros vía LLM.
         """
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
-
         else:
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self
-    
+
     def fit_model(self, modelo, X, queue):
         try:
-            modelo.fit(X)
+            # Determinar si el modelo es de cuML o sklearn
+            if CUM_AVAILABLE and hasattr(modelo, '_get_tags') and 'gpu' in modelo._get_tags().get('non_deterministic', ''):
+                # Modelo cuML: convertir X a cupy
+                import cupy as cp
+                X_gpu = cp.asarray(X.values) if isinstance(X, pd.DataFrame) else cp.asarray(X)
+                modelo.fit(X_gpu)
+            else:
+                # Modelo sklearn: usar numpy
+                modelo.fit(X.values if isinstance(X, pd.DataFrame) else X)
             queue.put(("ok", modelo))
         except Exception as e:
             queue.put(("fail", str(e)))
-        
+
     def entrenar_modelo(self, X: pd.DataFrame) -> Result[object, str]:
         """
         Entrena una nueva instancia del modelo seleccionado con los hiperparámetros
@@ -76,29 +81,52 @@ class SelectorModeloClustering(RegistroTecnica):
         queue = Queue()
         p = Process(target=self.fit_model, args=(modelo, X, queue))
         p.start()
-        p.join(timeout=5)
+        p.join(timeout=self.max_tiempo_entrenamiento)
 
         if p.is_alive():
             p.terminate()
-            return Result.fail("Timeout: el entrenamiento excedio el limite de tiempo")
-        
+            return Result.fail("Timeout: el entrenamiento excedió el límite de tiempo")
+
         status, result = queue.get()
         if status == "ok":
             return Result.ok(result)
         else:
             return Result.fail(result)
-    
+
     def _get_instancia_modelo(self):
+        """Retorna instancia del modelo (cuML si existe, sklearn si no)."""
+        if CUM_AVAILABLE:
+            match self.log_algoritmo:
+                case "kmeans":
+                    return cuKMeans()
+                case "dbscan":
+                    return cuDBSCAN()
+                case _:
+                    # Resto de algoritmos sin soporte GPU → usar sklearn
+                    return self._get_instancia_modelo_sklearn()
+        else:
+            return self._get_instancia_modelo_sklearn()
+
+    def _get_instancia_modelo_sklearn(self):
+        """Instancias de modelos sklearn (CPU)."""
         match self.log_algoritmo:
-            case "kmeans": return KMeans()
-            case "dbscan": return DBSCAN()
-            case "agglomerative_clustering": return AgglomerativeClustering()
-            case "mean_shift": return MeanShift()
-            case "spectral_clustering": return SpectralClustering()
-            case "birch": return Birch()
-            case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
-        
+            case "kmeans":
+                return KMeans()
+            case "dbscan":
+                return DBSCAN()
+            case "agglomerative_clustering":
+                return AgglomerativeClustering()
+            case "mean_shift":
+                return MeanShift()
+            case "spectral_clustering":
+                return SpectralClustering()
+            case "birch":
+                return Birch()
+            case _:
+                raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
+
     def _calcular_parametros(self, X: pd.DataFrame):
+        """Consulta al LLM para obtener hiperparámetros del modelo seleccionado."""
         llm = LLM(self.llm_seleccionado)
 
         extractor = ExtractorMetaFeatures()
@@ -118,7 +146,6 @@ class SelectorModeloClustering(RegistroTecnica):
 
         hiper_parametros_texto = llm.generar_respuesta(prompt)
         hiper_parametros = ast.literal_eval(hiper_parametros_texto)
-        
+
         self.log_params["params"] = hiper_parametros
         self.registrar_parametros(self.log_params)
-        
