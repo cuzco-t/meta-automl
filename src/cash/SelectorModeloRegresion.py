@@ -33,6 +33,7 @@ class SelectorModeloRegresion(RegistroTecnica):
     def __init__(self, config_test=None):
         super().__init__(log_fase="selector_modelo_regresion")
         self.config_test = config_test
+        self.llm_seleccionado = None
         self.ALGORITMOS = [
             "lineal", 
             "ridge", 
@@ -60,9 +61,6 @@ class SelectorModeloRegresion(RegistroTecnica):
         else:
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X, y)
-            #! Comentar en produccion
-            # self.log_params["params"] = self._get_instancia_modelo().get_params()
-            # self.registrar_parametros(self.log_params)
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self
@@ -124,7 +122,7 @@ class SelectorModeloRegresion(RegistroTecnica):
             raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
     def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
-        llm = LLM()
+        llm = LLM(self.llm_seleccionado)
 
         extractor = ExtractorMetaFeatures()
         meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), y.copy())

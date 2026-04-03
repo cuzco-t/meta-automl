@@ -34,7 +34,24 @@ class MineroDePipelines:
             "clustering": SelectorModeloClustering(self.semilla).ALGORITMOS
         }
 
+    def _seleccionar_llm(self):
+        opciones = [
+            "deepseek-r1:8b",
+            "llama3.1:8b",
+            "qwen2.5-coder:7b",
+        ]
+        return self.rng.choice(opciones)
+
+    def _vectorizar_llm_seleccionado(self, llm):
+        mapping = {
+            "deepseek-r1:8b": [1.0, 0.0, 0.0],
+            "llama3.1:8b": [0.0, 1.0, 0.0],
+            "qwen2.5-coder:7b": [0.0, 0.0, 1.0],
+        }
+        return mapping.get(llm, [0.0, 0.0, 0.0])
+
     def pipeline_supervisado(self, X_df, y_df, tarea, descripcion=None):
+        llm_seleccionado = self._seleccionar_llm()
         pipeline = self.generador.generar_pipeline_aleatorio(
             self.ejecutor.crear_fases_instancias()
         )
@@ -61,7 +78,9 @@ class MineroDePipelines:
             return Result.fail({
                 "error": datos_fallidos['error'],
                 "pipeline": pipeline,
-                "fase": datos_fallidos["fase"]
+                "fase": datos_fallidos["fase"],
+                "llm": llm_seleccionado,
+                "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
             })
 
         folds_preprocesados = result_folds.get_value()
@@ -71,7 +90,12 @@ class MineroDePipelines:
         print(f"Entrenando modelos para tarea '{tarea}'")
         print("-" * 50)
         entrenador = Entrenador()
-        results_modelos, tiempos_modelos = entrenador.entrenar(folds_preprocesados, lista_modelos, tarea)
+        results_modelos, tiempos_modelos = entrenador.entrenar(
+            folds_preprocesados,
+            lista_modelos,
+            tarea,
+            llm_seleccionado
+        )
         print("OK - Todos los modelos han sido entrenados en todos los folds")
 
         metricas_evaluacion = self.evaluador.evaluar_modelos(results_modelos, folds_preprocesados, tarea)
@@ -81,11 +105,14 @@ class MineroDePipelines:
             "pipeline": pipeline,
             "modelos": lista_modelos,
             "metricas": metricas_evaluacion,
-            "tiempos": tiempos_totales
+            "tiempos": tiempos_totales,
+            "llm": llm_seleccionado,
+            "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
         })
 
     def pipeline_no_supervisado(self, X_df, y_df=None, descripcion=None):
         # similar, pero llama a evaluador.evaluar_no_supervisado
+        llm_seleccionado = self._seleccionar_llm()
         pipeline = self.generador.generar_pipeline_aleatorio(
             self.ejecutor.crear_fases_instancias()
         )
@@ -108,7 +135,9 @@ class MineroDePipelines:
             return Result.fail({
                 "error": datos_fallidos['error'],
                 "pipeline": pipeline,
-                "fase": datos_fallidos["fase"]
+                "fase": datos_fallidos["fase"],
+                "llm": llm_seleccionado,
+                "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
             })
         
         datos = result_datos.get_value()
@@ -119,7 +148,11 @@ class MineroDePipelines:
         print(f"Entrenando modelos para tarea 'clustering'")
         print("-" * 50)
         entrenador = Entrenador()
-        results_etiquetas, tiempos_modelos = entrenador.entrenar_clustering(X_proc, lista_modelos)
+        results_etiquetas, tiempos_modelos = entrenador.entrenar_clustering(
+            X_proc,
+            lista_modelos,
+            llm_seleccionado
+        )
         
         print("OK - Todos los modelos han sido entrenados en todos los folds")
 
@@ -130,5 +163,7 @@ class MineroDePipelines:
             "pipeline": pipeline,
             "modelos": lista_modelos,
             "metricas": metricas_evaluacion,
-            "tiempos": tiempos_totales
+            "tiempos": tiempos_totales,
+            "llm": llm_seleccionado,
+            "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
         })

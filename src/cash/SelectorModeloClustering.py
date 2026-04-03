@@ -31,6 +31,7 @@ class SelectorModeloClustering(RegistroTecnica):
         super().__init__(log_fase="selector_modelo_clustering")
         self.random_state = random_state
         self.config_test = config_test
+        self.llm_seleccionado = None
         self.ALGORITMOS = [
             "kmeans",
             "dbscan",
@@ -52,9 +53,6 @@ class SelectorModeloClustering(RegistroTecnica):
         else:
             self.registrar_algoritmo(self.log_algoritmo)
             self._calcular_parametros(X)
-            #! Comentar en produccion
-            # self.log_params["params"] = self._get_instancia_modelo().get_params()
-            # self.registrar_parametros(self.log_params)
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self
@@ -101,7 +99,7 @@ class SelectorModeloClustering(RegistroTecnica):
             case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
     def _calcular_parametros(self, X: pd.DataFrame):
-        llm = LLM()
+        llm = LLM(self.llm_seleccionado)
 
         extractor = ExtractorMetaFeatures()
         meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), None)

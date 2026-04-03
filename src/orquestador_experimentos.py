@@ -150,7 +150,8 @@ class OrquestadorExperimentos:
                 meta_features_vector=meta_features_vector,
                 pipeline=datos_fallidos["pipeline"],
                 fase=datos_fallidos["fase"],
-                error=datos_fallidos["error"]
+                error=datos_fallidos["error"],
+                llm_vector=datos_fallidos["llm_vector"]
             )
             return
 
@@ -159,6 +160,7 @@ class OrquestadorExperimentos:
         metricas = datos["metricas"]      # dict con listas de métricas por modelo
         modelos = datos["modelos"]        # lista de nombres de modelos
         tiempos = datos["tiempos"]        # lista de tiempos por modelo
+        llm_vector = datos["llm_vector"]  # vector one-hot del LLM seleccionado
 
         self.recorder.guardar_ejecucion(
             dataset_name=dataset_name,
@@ -170,5 +172,6 @@ class OrquestadorExperimentos:
             modelos=modelos,
             metricas_por_modelo=metricas,
             tiempos=tiempos,
+            llm_vector=llm_vector
         )
         

@@ -12,6 +12,13 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.decomposition import PCA
 
 class SeleccionarVariables(RegistroTecnica):
+    MODELOS_LLM = {
+        "llm": "deepseek-r1:8b",
+        "llm_deepseek-r1:8b": "deepseek-r1:8b",
+        "llm_llama3.1:8b": "llama3.1:8b",
+        "llm_qwen2.5-coder:7b": "qwen2.5-coder:7b",
+    }
+
     def __init__(self, permitir_none=True, semilla=None, tarea="clasificacion", config_test=None):
         """
         permitir_none: si True, permite que no se seleccione ninguna técnica
@@ -24,7 +31,9 @@ class SeleccionarVariables(RegistroTecnica):
         self.semilla = semilla
         self.config_test = config_test
         self.ALGORITMOS = [
-            "llm",
+            "llm_deepseek-r1:8b",
+            "llm_llama3.1:8b",
+            "llm_qwen2.5-coder:7b",
             "mutual_info_25",
             "mutual_info_50",
             "mutual_info_75",
@@ -66,7 +75,7 @@ class SeleccionarVariables(RegistroTecnica):
             case None:
                 return X, y
             
-            case "aleatorio" | "select_from_model" | "llm":
+            case "aleatorio" | "select_from_model" | "llm" | "llm_deepseek-r1:8b" | "llm_llama3.1:8b" | "llm_qwen2.5-coder:7b":
                 X_reducido = self._seleccionar_columnas_con_parametros(X.copy())
                 return X_reducido, y
             
@@ -152,12 +161,12 @@ class SeleccionarVariables(RegistroTecnica):
             )
             self.log_params["n_components"] = int(n_components)
 
-        elif self.log_algoritmo == "llm":
+        elif self.log_algoritmo in self.MODELOS_LLM:
             extractor = ExtractorMetaFeatures()
             meta_features_por_columna = extractor.extraer_meta_features_por_columna(X, y)
             meta_features_por_columna_toon = extractor.meta_features_por_columna_a_toon(meta_features_por_columna)
 
-            llm = LLM("deepseek-r1:8b")
+            llm = LLM(self.MODELOS_LLM[self.log_algoritmo])
             prompt = llm.plantillas_prompts(
                 plantilla="seleccionar_variables",
                 kwargs={
@@ -165,12 +174,11 @@ class SeleccionarVariables(RegistroTecnica):
                     "meta_features_por_columna": meta_features_por_columna_toon
                 }
             )
-            input("El prompt es:\n" + prompt + "\nPresiona Enter para continuar...")
             columnas_texto = llm.generar_respuesta(prompt)
             columnas_lista = ast.literal_eval(columnas_texto)
 
-            self.log_params["columnas"] = columnas_lista
-            self.log_params["columnas"] = X.columns.tolist()
+            columnas_validas = [columna for columna in columnas_lista if columna in X.columns]
+            self.log_params["columnas"] = columnas_validas
 
         self.registrar_parametros(self.log_params)
             

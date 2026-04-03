@@ -19,7 +19,8 @@ class Entrenador:
         self,
         folds_data: Dict[int, Dict[str, pd.DataFrame | pd.Series]],
         nombres_modelos: List[str],
-        tarea: str
+        tarea: str,
+        llm_seleccionado: str | None = None
     ) -> tuple[List[List[Result]], List[float]]:
         """
         Entrena múltiples modelos sobre folds de datos.
@@ -42,6 +43,7 @@ class Entrenador:
             # Obtener selector según la tarea
             selector = self._obtener_selector(tarea)
             selector.log_algoritmo = nombre_modelo
+            selector.llm_seleccionado = llm_seleccionado
             
             # Juntar datos del primer fold
             primer_fold = folds_data[list(folds_data.keys())[0]]
@@ -112,7 +114,8 @@ class Entrenador:
     def entrenar_clustering(
         self,
         X: pd.DataFrame,
-        nombres_modelos: List[str]
+        nombres_modelos: List[str],
+        llm_seleccionado: str | None = None
     ) -> tuple[List[Result], List[float]]:
         """
         Entrena múltiples modelos de clustering sobre datos.
@@ -134,6 +137,7 @@ class Entrenador:
             # Obtener selector para clustering
             selector = self._obtener_selector('clustering')
             selector.log_algoritmo = nombre_modelo
+            selector.llm_seleccionado = llm_seleccionado
             
             # Calcular hiperparámetros
             try:

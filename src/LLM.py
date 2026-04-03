@@ -7,18 +7,18 @@ from .config.Configuracion import Configuracion
 from toon_format import encode
 
 class LLM:
-    def __init__(self):
+    def __init__(self, modelo=None):
         # timeout en segundos para la llamada al servidor
         config = Configuracion()
 
         self.llm_host = config.llm_host
         self.llm_timeout = config.llm_timeout
+        self.modelo = modelo or config.llm_modelo
 
         self.client = ollama.Client(
             host=config.llm_host,
             timeout=config.llm_timeout
         )
-        self.modelo = config.llm_modelo
         self.num_ctx = config.llm_num_ctx
     
     def generar_respuesta(self, prompt):

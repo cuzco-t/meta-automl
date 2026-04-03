@@ -22,7 +22,8 @@ class RegistradorPipeline:
         pipeline: Dict[str, str],
         modelos: List[str],
         metricas_por_modelo: List[Dict[str, float]],
-        tiempos: List[float]
+        tiempos: List[float],
+        llm_vector: List[float]
     ) -> None:
         """
         Para cada modelo asociado al pipeline, genera los vectores paso a paso
@@ -35,10 +36,10 @@ class RegistradorPipeline:
 
             for paso_t, vector_estado in enumerate(historia):
                 es_final = (paso_t == len(historia) - 1)
-                vector_actual = meta_features_vector + vector_estado
+                vector_actual = meta_features_vector + vector_estado + llm_vector
                 vector_siguiente = None
                 if not es_final:
-                    vector_siguiente = meta_features_vector + historia[paso_t + 1]
+                    vector_siguiente = meta_features_vector + historia[paso_t + 1] + llm_vector
 
                 # Determinar fase y acción actual
                 if paso_t < len(pipeline):
@@ -76,7 +77,8 @@ class RegistradorPipeline:
         meta_features_vector: List[float],
         pipeline: Dict[str, str],
         fase: str,
-        error: str
+        error: str,
+        llm_vector: List[float]
     ) -> None:
         """
         Guarda un registro de ejecución que falló en una fase específica.
@@ -95,11 +97,11 @@ class RegistradorPipeline:
         
         for paso_t, vector_estado in enumerate(historia):
             es_final = (paso_t == len(historia) - 1)
-            vector_actual = meta_features_vector + vector_estado
+            vector_actual = meta_features_vector + vector_estado + llm_vector
             vector_siguiente = None
             if not es_final:
-                vector_siguiente = meta_features_vector + historia[paso_t + 1]
-            
+                vector_siguiente = meta_features_vector + historia[paso_t + 1] + llm_vector
+
             # Determinar fase y acción actual
             if paso_t < len(pipeline_truncado):
                 fase_actual = list(pipeline_truncado.keys())[paso_t]

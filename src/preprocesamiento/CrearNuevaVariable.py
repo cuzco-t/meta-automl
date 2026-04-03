@@ -8,6 +8,13 @@ from sklearn.decomposition import PCA
 from ..LLM import LLM
 
 class CrearNuevaVariable(RegistroTecnica):
+    MODELOS_LLM = {
+        "llm": "deepseek-r1:8b",
+        "llm_deepseek-r1:8b": "deepseek-r1:8b",
+        "llm_llama3.1:8b": "llama3.1:8b",
+        "llm_qwen2.5-coder:7b": "qwen2.5-coder:7b",
+    }
+
     def __init__(self, permitir_none=True, semilla=None, config_test=None):
         """
         permitir_none: si True, permite que no se cree ninguna variable nueva
@@ -21,7 +28,9 @@ class CrearNuevaVariable(RegistroTecnica):
         self.tarea = ""
         self.descripcion = ""
         self.ALGORITMOS = [
-            "llm",
+            "llm_deepseek-r1:8b",
+            "llm_llama3.1:8b",
+            "llm_qwen2.5-coder:7b",
             None
         ]
 
@@ -53,7 +62,7 @@ class CrearNuevaVariable(RegistroTecnica):
             case None:
                 return X, y
             
-            case "llm":
+            case "llm" | "llm_deepseek-r1:8b" | "llm_llama3.1:8b" | "llm_qwen2.5-coder:7b":
                 X_nueva = self._crear_variable_con_llm(X.copy())
                 return X_nueva, y
             
@@ -70,10 +79,10 @@ class CrearNuevaVariable(RegistroTecnica):
             return
         
         # Caso LLM: selecciona variables basándose en meta-features
-        if self.log_algoritmo != "llm":
+        if self.log_algoritmo not in self.MODELOS_LLM:
             raise ValueError(f"Algoritmo no reconocido: {self.log_algoritmo}")
         
-        llm = LLM()
+        llm = LLM(self.MODELOS_LLM[self.log_algoritmo])
         prompt = llm.plantillas_prompts(
             "crear_nueva_variable",
             tarea = self.tarea,
