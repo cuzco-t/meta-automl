@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import unicodedata
 
 from pathlib import Path
 from typing import Iterator
@@ -49,13 +50,22 @@ class OrquestadorExperimentos:
 
     def ejecutar_archivo(self, ruta_archivo: Path) -> None:
         """Procesa un archivo que contiene una lista de task_ids (uno por línea)."""
-        tarea = ruta_archivo.stem.split("_")[0]  # ej: "clasificacion_task_ids.txt" -> "clasificacion"
+        tarea = self._normalizar_tarea(ruta_archivo.stem.split("_")[0])  # ej: "clasificacion_task_ids.txt" -> "clasificacion"
         
         print("=" * 50)
         print("PROCESANDO ARCHIVO:", ruta_archivo.name)
         print("=" * 50)
 
         for task_id in self._leer_task_ids(ruta_archivo):
+            self._procesar_task(task_id, tarea)
+
+    def ejecutar_csv(self, ruta_csv: Path) -> None:
+        """Procesa un CSV con dos columnas: tarea y task_id."""
+        df = pd.read_csv(ruta_csv, header=None, names=["tarea", "task_id"])
+
+        for fila in df.itertuples(index=False):
+            tarea = self._normalizar_tarea(fila.tarea)
+            task_id = int(fila.task_id)
             self._procesar_task(task_id, tarea)
 
     def _leer_task_ids(self, ruta: Path) -> Iterator[int]:
@@ -67,6 +77,11 @@ class OrquestadorExperimentos:
 
     def _procesar_task(self, task_id: int, tarea: str) -> None:
         """Procesa un único task_id: descarga, extrae metafeatures, ejecuta pipelines."""
+
+        print("=" * 50)
+        print(f"INICIANDO PROCESO PARA TASK_ID: {task_id} (Tarea: {tarea})")
+        print("=" * 50)
+
         # 1. Descargar datos
         result_datos = self.loader.obtener_datos_tarea(task_id)
         if result_datos.is_failure:
@@ -97,6 +112,15 @@ class OrquestadorExperimentos:
                 meta_features,
                 meta_features_vector,
             )
+
+    def _normalizar_tarea(self, tarea: str) -> str:
+        """Convierte tarea a formato interno: clasificacion, regresion o clustering."""
+        texto = str(tarea).strip().lower()
+        texto = "".join(
+            c for c in unicodedata.normalize("NFD", texto)
+            if unicodedata.category(c) != "Mn"
+        )
+        return texto
 
     def _ejecutar_pipeline(
         self,

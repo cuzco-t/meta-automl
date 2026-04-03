@@ -9,15 +9,15 @@ from src.vectorizador_pipeline import VectorizadorPipeline
 from src.registrador_pipeline import RegistradorPipeline
 from src.BaseDeDatos import BaseDeDatos
 from src.orquestador_experimentos import OrquestadorExperimentos
-from setproctitle import setproctitle
+# from setproctitle import setproctitle
 
-import warnings
-warnings.filterwarnings("ignore")
+# import warnings
+# warnings.filterwarnings("ignore")
 
-setproctitle("meta_automl")
+# setproctitle("meta_automl")
 
 def main():
-    RUTA_CARPETA_IDENTIFICADORES = "./data/datasets_identificadores/"
+    RUTA_DATASETS_CSV = "./data/datasets.csv"
 
     # Configurar logger
     logger = PipelineLogger().get_logger()
@@ -47,9 +47,8 @@ def main():
         num_pipelines_por_dataset=3
     )
 
-    # Procesar cada archivo .txt en la carpeta
-    for ruta_archivo in Path(RUTA_CARPETA_IDENTIFICADORES).glob("*.txt"):
-        orquestador.ejecutar_archivo(ruta_archivo)
+    # Procesar datasets desde CSV (tarea, task_id)
+    orquestador.ejecutar_csv(Path(RUTA_DATASETS_CSV))
 
 if __name__ == "__main__":
     main()
