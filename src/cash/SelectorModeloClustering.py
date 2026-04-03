@@ -10,7 +10,6 @@ from ..config.Configuracion import Configuracion
 
 # Intentar importar cuML (GPU)
 try:
-    import cuml
     from cuml.cluster import KMeans as cuKMeans
     from cuml.cluster import DBSCAN as cuDBSCAN
     from cuml import AgglomerativeClustering as cuAgglomerativeClustering
@@ -131,12 +130,12 @@ class SelectorModeloClustering(RegistroTecnica):
                 return KMeans()
             case "dbscan":
                 return DBSCAN()
-            case "agglomerative_clustering":
-                return AgglomerativeClustering()
+            # case "agglomerative_clustering":
+            #     return AgglomerativeClustering()
             case "mean_shift":
                 return MeanShift()
-            case "spectral_clustering":
-                return SpectralClustering()
+            # case "spectral_clustering":
+            #     return SpectralClustering()
             case "birch":
                 return Birch()
             case _:
