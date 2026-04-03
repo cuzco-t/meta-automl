@@ -62,7 +62,7 @@ class MineroDePipelines:
         pipeline = self.generador.generar_pipeline_aleatorio(
             self.ejecutor.crear_fases_instancias()
         )
-        lista_modelos = self.tarea_modelos[tarea]
+        lista_modelos = self._get_lista_modelos(tarea)
         print("-" * 50)
         print("Pipeline generado")
         print("-" * 50)
@@ -124,7 +124,7 @@ class MineroDePipelines:
         pipeline = self.generador.generar_pipeline_aleatorio(
             self.ejecutor.crear_fases_instancias()
         )
-        lista_modelos = self.tarea_modelos["clustering"]
+        lista_modelos = self._get_lista_modelos("clustering")
         print("-" * 50)
         print("Pipeline generado")
         print("-" * 50)
@@ -176,3 +176,20 @@ class MineroDePipelines:
             "llm": llm_seleccionado,
             "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
         })
+
+    def _get_lista_modelos(self, tarea):
+        # Obtener la lista completa de modelos según la tarea
+        if tarea == "clasificacion":
+            modelos = SelectorModeloClasificacion().ALGORITMOS
+        elif tarea == "regresion":
+            modelos = SelectorModeloRegresion().ALGORITMOS
+        elif tarea == "clustering":
+            modelos = SelectorModeloClustering(self.semilla).ALGORITMOS
+        else:
+            raise ValueError(f"Tarea desconocida: {tarea}")
+
+        # Calcular tamaño de la sublista (70% sin reemplazo)
+        n = max(1, int(len(modelos) * 0.7))  # al menos 1 modelo
+        sublista = list(self.rng.choice(modelos, size=n, replace=False))
+
+        return sublista
