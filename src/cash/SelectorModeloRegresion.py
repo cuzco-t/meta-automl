@@ -4,6 +4,8 @@ import pandas as pd
 from src.Result import Result
 from multiprocessing import Process, Queue
 
+from ..config.Configuracion import Configuracion
+
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
@@ -46,6 +48,7 @@ class SelectorModeloRegresion(RegistroTecnica):
             "ada_boost",
             "mlp_regressor",
         ]
+        self.max_segundos_entrenamiento = Configuracion().max_segundos_entrenamiento
 
 
     def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features) -> None:
@@ -75,12 +78,14 @@ class SelectorModeloRegresion(RegistroTecnica):
     def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
         modelo = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
-        modelo.set_params(**hiper_parametros)
+        for param, valor in hiper_parametros.items():
+            if param in modelo.get_params():
+                 modelo.set_params(**{param: valor})
 
         queue = Queue()
         p = Process(target=self.fit_model, args=(modelo, X, y, queue))
         p.start()
-        p.join(timeout=5)
+        p.join(timeout=self.max_segundos_entrenamiento)
 
         if p.is_alive():
             p.terminate()

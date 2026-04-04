@@ -83,7 +83,10 @@ class EvaluadorModelos:
         for resultado_list in lista_results_modelos:
             # Verificar si algún resultado en la lista es fallo
             if any(resultado.is_failure for resultado in resultado_list):
-                resultados_evaluacion.append({"estado": "CRASH", "error": "Fallo en entrenamiento de algun fold"})
+                resultados_evaluacion.append({
+                    "estado": "CRASH", 
+                    "error": resultado_list[0].get_error()
+                })
                 continue
             
             metricas_folds = {fold_id: {} for fold_id in folds_data.keys()}
