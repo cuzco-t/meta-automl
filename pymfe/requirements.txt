@@ -1,0 +1,10 @@
+numpy
+scipy
+scikit-learn
+patsy
+pandas
+statsmodels
+texttable
+tqdm
+igraph>=0.10.1
+gower
