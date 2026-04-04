@@ -29,14 +29,15 @@ class LLM:
         )
         self.num_ctx = config.llm_num_ctx
     
-    def generar_respuesta(self, prompt):
+    def generar_respuesta(self, prompt, temperatura=0.0):
         tiempo_inicio = time.time()
         try:
             respuesta = self.client.chat(
                 model=self.modelo,
                 messages=[{"role": "user", "content": prompt}],
                 options={
-                    "num_ctx": self.num_ctx  # Ajusta el contexto del modelo si es necesario
+                    "num_ctx": self.num_ctx,
+                    "temperature": temperatura,
                 }
             )
             

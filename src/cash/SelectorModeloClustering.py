@@ -115,7 +115,7 @@ class SelectorModeloClustering(RegistroTecnica):
             }
         )
 
-        hiper_parametros_texto = llm.generar_respuesta(prompt)
+        hiper_parametros_texto = llm.generar_respuesta(prompt, 0.7)
         hiper_parametros = ast.literal_eval(hiper_parametros_texto)
         
         self.log_params["params"] = hiper_parametros
