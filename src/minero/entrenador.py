@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from ..Result import Result
 from ..PipelineLogger import PipelineLogger
+from ..ExtractorMetaFeatures import ExtractorMetaFeatures
 
 from ..cash.SelectorModeloClasificacion import SelectorModeloClasificacion
 from ..cash.SelectorModeloRegresion import SelectorModeloRegresion
@@ -45,34 +46,38 @@ class Entrenador:
         modelos_entrenados_results = []
         tiempos_promedio = []
         
+        # Juntar datos del primer fold
+        primer_fold = folds_data[list(folds_data.keys())[0]]
+        X = pd.concat([primer_fold['X_train'], primer_fold['X_val']], ignore_index=True)
+        # Concatenar y, si existe
+        if primer_fold['y_train'] is not None and primer_fold['y_val'] is not None:
+            y = pd.concat([
+                pd.Series(primer_fold['y_train']),
+                pd.Series(primer_fold['y_val'])
+            ], ignore_index=True)
+        elif primer_fold['y_train'] is not None:
+            y = pd.Series(primer_fold['y_train']).reset_index(drop=True)
+        elif primer_fold['y_val'] is not None:
+            y = pd.Series(primer_fold['y_val']).reset_index(drop=True)
+        else:
+            y = None
+
+        extractor = ExtractorMetaFeatures()
+        meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), y.copy())
+        meta_features_globales_limpias = extractor.eliminar_constantes_errores(meta_features_globales_totales)
+        meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales_limpias)
+
         for num_modelo, nombre_modelo in enumerate(nombres_modelos, 1):
             # Obtener selector según la tarea
             selector = self._obtener_selector(tarea)
             selector.log_algoritmo = nombre_modelo
             selector.llm_seleccionado = llm_seleccionado
             
-            # Juntar datos del primer fold
-            primer_fold = folds_data[list(folds_data.keys())[0]]
-            X = pd.concat([primer_fold['X_train'], primer_fold['X_val']], ignore_index=True)
-            # Concatenar y, si existe
-            if primer_fold['y_train'] is not None and primer_fold['y_val'] is not None:
-                y = pd.concat([
-                    pd.Series(primer_fold['y_train']),
-                    pd.Series(primer_fold['y_val'])
-                ], ignore_index=True)
-           
-            elif primer_fold['y_train'] is not None:
-                y = pd.Series(primer_fold['y_train']).reset_index(drop=True)
             
-            elif primer_fold['y_val'] is not None:
-                y = pd.Series(primer_fold['y_val']).reset_index(drop=True)
-            
-            else:
-                y = None
             
             # Calcular hiperparámetros (una sola vez por modelo)
             try:
-                selector.calcular_hiper_parametros(X, y)
+                selector.calcular_hiper_parametros(X, y, meta_features_globales_formateadas)
             
             except Exception as e:
                 print(f"ERROR - al calcular hiperparámetros para el modelo '{nombre_modelo}'")
@@ -146,6 +151,11 @@ class Entrenador:
         modelos_entrenados_results = []
         tiempos_entrenamiento = []
         
+        extractor = ExtractorMetaFeatures()
+        meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), None)
+        meta_features_globales_limpias = extractor.eliminar_constantes_errores(meta_features_globales_totales)
+        meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales_limpias)
+
         for nombre_modelo in nombres_modelos:
             # Obtener selector para clustering
             selector = self._obtener_selector('clustering')
@@ -154,7 +164,7 @@ class Entrenador:
             
             # Calcular hiperparámetros
             try:
-                selector.calcular_hiper_parametros(X)
+                selector.calcular_hiper_parametros(X, meta_features_globales_formateadas)
             except Exception as e:
                 logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
                 modelos_entrenados_results.append(

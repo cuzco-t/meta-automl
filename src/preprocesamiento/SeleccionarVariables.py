@@ -221,8 +221,15 @@ class SeleccionarVariables(RegistroTecnica):
                     "meta_features_por_columna": meta_features_por_columna_toon
                 }
             )
-            columnas_texto = llm.generar_respuesta(prompt)
-            columnas_lista = ast.literal_eval(columnas_texto)
+
+            try:
+                columnas_texto = llm.generar_respuesta(prompt)
+                columnas_lista = ast.literal_eval(columnas_texto)
+
+            except Exception as e:
+                print(f"Error al interpretar la respuesta del LLM o tiempo de espera agotado: {e}")
+                raise ValueError(f"Error al interpretar la respuesta del LLM: {e}")
+
 
             columnas_validas = [columna for columna in columnas_lista if columna in X.columns]
             self.log_params["columnas"] = columnas_validas
@@ -241,11 +248,11 @@ class SeleccionarVariables(RegistroTecnica):
         porcentaje_varianza = self.log_params["porcentaje_varianza"]
         numeric_cols = X_df.select_dtypes(include=np.number).columns
 
-        if CUM_AVAILABLE:
+        if False:
             # Versión GPU con cuML
             import cupy as cp
             X_numeric_gpu = cp.asarray(X_df[numeric_cols].values)
-            pca = cuPCA(n_components=porcentaje_varianza, random_state=self.semilla)
+            pca = cuPCA(n_components=porcentaje_varianza)
             pca_result_gpu = pca.fit_transform(X_numeric_gpu)
             pca_result = cp.asnumpy(pca_result_gpu)  # Convertir a numpy para compatibilidad
         else:

@@ -89,14 +89,15 @@ class CrearNuevaVariable(RegistroTecnica):
             columnas = X.columns.tolist(),
             descripcion = self.descripcion,
         )
-        respuesta_llm = llm.generar_respuesta(prompt)
         
         try:
+            respuesta_llm = llm.generar_respuesta(prompt)
             variables_recomendadas = ast.literal_eval(respuesta_llm)
             if not isinstance(variables_recomendadas, dict):
                 raise ValueError("La respuesta del LLM no es un diccionario")
         
         except Exception as e:
+            print(f"Error al interpretar la respuesta del LLM o tiempo de espera agotado: {e}")
             raise ValueError(f"Error al interpretar la respuesta del LLM: {e}")
 
         

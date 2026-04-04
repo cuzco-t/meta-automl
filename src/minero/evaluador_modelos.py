@@ -18,11 +18,15 @@ class EvaluadorModelos:
     
     def _calcular_metricas_clasificacion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
         """Calcula métricas para tareas de clasificación."""
+        y_val_str = y_val.astype(str)
+        y_pred_str = y_pred.astype(str)
+        print(f"Valores reales: {y_val_str.tolist()[:10]}")
+        print(f"Predicciones: {y_pred_str.tolist()[:10]}")
         return {
-            "accuracy": accuracy_score(y_val, y_pred),
-            "precision": precision_score(y_val, y_pred, average="weighted", zero_division=0),
-            "recall": recall_score(y_val, y_pred, average="weighted", zero_division=0),
-            "f1": f1_score(y_val, y_pred, average="weighted", zero_division=0)
+            "accuracy": accuracy_score(y_val_str, y_pred_str),
+            "precision": precision_score(y_val_str, y_pred_str, average="weighted", zero_division=0),
+            "recall": recall_score(y_val_str, y_pred_str, average="weighted", zero_division=0),
+            "f1": f1_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
         }
     
     def _calcular_metricas_regresion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
@@ -79,12 +83,13 @@ class EvaluadorModelos:
         for resultado_list in lista_results_modelos:
             # Verificar si algún resultado en la lista es fallo
             if any(resultado.is_failure for resultado in resultado_list):
-                resultados_evaluacion.append(self._obtener_metricas_fallo(tarea))
+                resultados_evaluacion.append({"CRASH": "Fallo en entrenamiento de algún fold"})
                 continue
             
             metricas_folds = {fold_id: {} for fold_id in folds_data.keys()}
             
             # Evaluar en cada fold
+            fallo_en_evaluacion = False
             for fold_id, fold_data in folds_data.items():
                 X_val = fold_data["X_val"]
                 y_val = fold_data["y_val"]
@@ -96,15 +101,11 @@ class EvaluadorModelos:
                 try:
                     y_pred = modelo.predict(X_val)
                 
-                except ValueError as e:
-                    if "The feature names should match those that were passed during fit." in str(e):
-                        for fold in metricas_folds.keys():
-                            metricas_folds[fold] = self._obtener_metricas_fallo(tarea)
-                        break
-                    if "Input X contains NaN" in str(e):
-                        for fold in metricas_folds.keys():
-                            metricas_folds[fold] = self._obtener_metricas_fallo(tarea)
-                        break
+                except Exception as e:
+                    fallo_en_evaluacion = True
+                    for fold in metricas_folds.keys():
+                        metricas_folds[fold] = self._obtener_metricas_fallo(tarea)
+                    break
 
                 # Calcular métricas según tarea
                 if tarea.lower() == "clasificacion":

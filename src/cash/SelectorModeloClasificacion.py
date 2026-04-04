@@ -81,13 +81,13 @@ class SelectorModeloClasificacion(RegistroTecnica):
         ]
         self.max_tiempo_entrenamiento = Configuracion().max_segundos_entrenamiento
 
-    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series) -> None:
+    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features) -> None:
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
         else:
             self.registrar_algoritmo(self.log_algoritmo)
-            self._calcular_parametros(X, y)
+            self._calcular_parametros(X, y, meta_features)
         self.registrar_algoritmo(self.log_algoritmo)
         return None
 
@@ -115,7 +115,12 @@ class SelectorModeloClasificacion(RegistroTecnica):
     def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
         modelo, es_gpu = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
-        modelo.set_params(**hiper_parametros)
+        for param, valor in hiper_parametros.items():
+            if param in modelo.get_params():
+                modelo.set_params(**{param: valor})
+
+        if "n_jobs" in modelo.get_params():
+            modelo.set_params(n_jobs=-1)
 
         queue = mp.Queue()
         p = mp.Process(target=self.fit_model, args=(modelo, es_gpu, X, y, queue))
@@ -198,7 +203,7 @@ class SelectorModeloClasificacion(RegistroTecnica):
             case _:
                 raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
 
-    def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
+    def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features_globales_formateadas):
         # Sin cambios respecto al original
         if self.llm_seleccionado is None:
             instancia_modelo, es_gpu = self._get_instancia_modelo()
@@ -207,10 +212,6 @@ class SelectorModeloClasificacion(RegistroTecnica):
             return 
 
         llm = LLM(self.llm_seleccionado)
-        extractor = ExtractorMetaFeatures()
-        meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), y.copy())
-        meta_features_globales_limpias = extractor.eliminar_constantes_errores(meta_features_globales_totales)
-        meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales_limpias)
 
         instancia_modelo, _ = self._get_instancia_modelo()
 
@@ -224,8 +225,14 @@ class SelectorModeloClasificacion(RegistroTecnica):
             }
         )
 
-        hiper_parametros_texto = llm.generar_respuesta(prompt)
-        hiper_parametros = ast.literal_eval(hiper_parametros_texto)
+        try:
+            hiper_parametros_texto = llm.generar_respuesta(prompt)
+            hiper_parametros = ast.literal_eval(hiper_parametros_texto)
+        
+        except Exception as e:
+            print(f"Error al interpretar la respuesta del LLM o tiempo de espera agotado: {e}")
+            print("Usando hiperparámetros por defecto.")
+            hiper_parametros = instancia_modelo.get_params()
 
         self.log_params["params"] = hiper_parametros
         self.registrar_parametros(self.log_params)

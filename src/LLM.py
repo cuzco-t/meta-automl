@@ -1,3 +1,4 @@
+import time
 import ollama
 import pandas as pd
 import requests.exceptions
@@ -29,6 +30,7 @@ class LLM:
         self.num_ctx = config.llm_num_ctx
     
     def generar_respuesta(self, prompt):
+        tiempo_inicio = time.time()
         try:
             respuesta = self.client.chat(
                 model=self.modelo,
@@ -44,8 +46,10 @@ class LLM:
                 start = respuesta.message.content.find("```python") + len("```python")
                 end = respuesta.message.content.find("```", start)
                 respuesta.message.content = respuesta.message.content[start:end].strip()
-
+            tiempo_fin = time.time()
+            tiempo_total = tiempo_fin - tiempo_inicio
             print(f"Respuesta del modelo: {respuesta.message.content}")  # Para depuración
+            print(f"Tiempo de respuesta: {tiempo_total:.2f} segundos")
             return respuesta.message.content
 
         except requests.exceptions.Timeout:

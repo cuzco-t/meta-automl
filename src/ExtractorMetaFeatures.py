@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 import time
 import warnings
+from multiprocessing import Process, Queue
 
 import math
 import numpy as np
@@ -19,6 +20,29 @@ print_original = print
 def print(*args, **kwargs):
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print_original(f"{ahora} |", *args, **kwargs)
+
+
+class MetaFeatureTimeoutError(TimeoutError):
+    pass
+
+
+def _ejecutar_mfe_fit_extract_en_proceso(queue, mfe_kwargs, X, y, silenciar_warnings):
+    try:
+        mfe = MFE(**mfe_kwargs)
+
+        if silenciar_warnings:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                mfe.fit(X, y)
+                nombres, valores = mfe.extract()
+        else:
+            mfe.fit(X, y)
+            nombres, valores = mfe.extract()
+
+        queue.put(("ok", nombres, valores))
+    except Exception as e:
+        queue.put(("fail", repr(e)))
+
 
 class ExtractorMetaFeatures:
     _GRUPOS_META_FEATURES = [
@@ -38,15 +62,26 @@ class ExtractorMetaFeatures:
     _CONSTANTE_ERROR = -1111.0
     _CONSTANTE_INFINITO = 2222.0
     _RUTA_DATASET_TEMPORAL = "temp_dataset.csv"
+    _TIMEOUT_MFE_FIT_SEGUNDOS = 180   # 3 minutos para toda la extracción
 
     def __init__(self):
         self.df = None
         self.warnings_pymfe = Configuracion().silenciar_pymfe_warnings
+        # Mapeo de cada meta-feature a su grupo (construido una sola vez)
+        self._feature_to_group = self._construir_mapeo_feature_a_grupo()
+
+    def _construir_mapeo_feature_a_grupo(self):
+        """Construye un diccionario {nombre_meta_feature: nombre_grupo} a partir de los grupos conocidos."""
+        mapeo = {}
+        for grupo in self._GRUPOS_META_FEATURES:
+            for feature in self._setear_variables_grupo(grupo, 0).keys():
+                mapeo[feature] = grupo
+        return mapeo
 
     def extraer(self, ruta_absoluta, target):
         X, y = self._leer_dataset(ruta_absoluta, target)
         meta_features = self._extraer_meta_features_por_grupos(X, y)
-        
+
         meta_features = self._mapear_meta_features(meta_features)
         meta_features = self._agregar_meta_features_personalizadas(ruta_absoluta, X, meta_features)
         meta_features_vectorizadas = self._vectorizar_meta_features(meta_features)
@@ -54,12 +89,12 @@ class ExtractorMetaFeatures:
         print("OK - Extracción de meta-features completada para el dataset:", ruta_absoluta)
 
         return meta_features, meta_features_vectorizadas
-    
+
     def extraer_desde_dataframe(self, X_df: pd.DataFrame, y_df: pd.Series, vectorizar=False):
         X = X_df.copy().to_numpy()
         y = y_df.copy().to_numpy() if y_df is not None else None
         meta_features = self._extraer_meta_features_por_grupos(X, y)
-        
+
         meta_features = self._mapear_meta_features(meta_features)
 
         ruta_temporal = self._guardar_dataset_temporal(X_df, y_df)
@@ -76,44 +111,65 @@ class ExtractorMetaFeatures:
         return meta_features, meta_features_vectorizadas
 
     def _extraer_meta_features_por_grupos(self, X: np.ndarray, y: np.ndarray | None) -> dict:
+        """
+        Extrae grupos secuencialmente con timeout individual (30s por grupo) y
+        tiempo global máximo de 3 minutos. Los grupos completados se conservan;
+        los que fallen o excedan el tiempo se rellenan con _CONSTANTE_ERROR.
+        """
+        print("=" * 50)
+        print("EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)")
+        print("=" * 50)
+
+        TIEMPO_MAX_GLOBAL = self._TIMEOUT_MFE_FIT_SEGUNDOS  # 180 segundos
+        TIMEOUT_POR_GRUPO = 30  # segundos, ajustable
+
         meta_features = {}
+        tiempo_inicio_global = time.time()
 
-        print("=" * 50)
-        print("EXTRAYENDO META-FEATURES POR GRUPOS")
-        print("=" * 50)
+        for i, grupo in enumerate(self._GRUPOS_META_FEATURES):
+            # Verificar tiempo restante
+            tiempo_transcurrido = time.time() - tiempo_inicio_global
+            if tiempo_transcurrido >= TIEMPO_MAX_GLOBAL:
+                print(f"Tiempo global agotado ({TIEMPO_MAX_GLOBAL}s). Se rellenan los {len(self._GRUPOS_META_FEATURES)-i} grupos restantes con error.")
+                for grupo_restante in self._GRUPOS_META_FEATURES[i:]:
+                    meta_features[grupo_restante] = self._setear_variables_grupo(grupo_restante, self._CONSTANTE_ERROR)
+                break
 
-        for grupo in self._GRUPOS_META_FEATURES:
-            mfe = MFE(groups=[grupo])
+            # Tiempo disponible para este grupo (lo que quede hasta el límite global, pero sin exceder TIMEOUT_POR_GRUPO)
+            tiempo_restante = TIEMPO_MAX_GLOBAL - tiempo_transcurrido
+            timeout_usar = min(TIMEOUT_POR_GRUPO, tiempo_restante)
 
-            print("Grupo actual:", grupo)
-            timepo_inicio = time.time()
+            print(f"Grupo '{grupo}' - timeout: {timeout_usar:.1f}s (restante global: {tiempo_restante:.1f}s)")
+            tiempo_inicio_grupo = time.time()
 
             try:
-                with self.silenciar_warnings_pymfe():
-                    mfe.fit(X, y)
-                    nombres, valores = mfe.extract()
-                    meta_features_grupo = dict(zip(nombres, valores))
+                nombres, valores = self._ejecutar_mfe_con_timeout(
+                    mfe_kwargs={"groups": [grupo]},
+                    X=X,
+                    y=y,
+                    timeout_segundos=timeout_usar
+                )
+                meta_features_grupo = dict(zip(nombres, valores))
 
-                if len(meta_features_grupo) == 0:
-                    meta_features_grupo = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
-                    print(f"No existen variables, se insertan valores por defecto: {grupo}")
-                else:
-                    print(f"Completado grupo: {grupo}")
+                # Rellenar features faltantes dentro del grupo (si pymfe no devolvió alguna)
+                grupo_completo = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+                grupo_completo.update(meta_features_grupo)
+                meta_features[grupo] = grupo_completo
 
-            except Exception:
-                print(f"ERROR grupo: {grupo}")
-                meta_features_grupo = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+                duracion = time.time() - tiempo_inicio_grupo
+                print(f"  Completado en {duracion:.2f}s - {len(meta_features_grupo)} features extraídas")
 
-            meta_features[grupo] = meta_features_grupo
+            except MetaFeatureTimeoutError:
+                print(f"  TIMEOUT en grupo '{grupo}' después de {timeout_usar}s -> se rellena con error")
+                meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
+            except Exception as e:
+                print(f"  ERROR en grupo '{grupo}': {e} -> se rellena con error")
+                meta_features[grupo] = self._setear_variables_grupo(grupo, self._CONSTANTE_ERROR)
 
-            tiempo_fin = time.time()
-            print(f"Tiempo extracción grupo {grupo}: {tiempo_fin - timepo_inicio:.2f} segundos\n")
-            print("")
-
+        print(f"Extracción finalizada en {time.time() - tiempo_inicio_global:.2f} segundos globales")
         return meta_features
 
     def _guardar_dataset_temporal(self, X_df: pd.DataFrame, y_df: pd.Series | None) -> str:
-        # Se guarda en disco temporalmente para luego agregar el peso en KB como meta-feature personalizada.
         ruta_temporal = self._RUTA_DATASET_TEMPORAL
 
         if y_df is not None:
@@ -122,38 +178,46 @@ class ExtractorMetaFeatures:
             dataset_temporal = X_df.copy()
 
         dataset_temporal.to_csv(ruta_temporal, index=False)
-
         print("OK - Dataset temporal guardado en:", ruta_temporal)
-
         return ruta_temporal
 
+    def _ejecutar_mfe_con_timeout(self, mfe_kwargs: dict, X: np.ndarray, y: np.ndarray | None,
+                                  timeout_segundos: int | None = None):
+        timeout = self._TIMEOUT_MFE_FIT_SEGUNDOS if timeout_segundos is None else timeout_segundos
+        queue = Queue()
+        proceso = Process(
+            target=_ejecutar_mfe_fit_extract_en_proceso,
+            args=(queue, mfe_kwargs, X, y, self.warnings_pymfe),
+        )
+
+        proceso.start()
+        proceso.join(timeout=timeout)
+
+        if proceso.is_alive():
+            proceso.terminate()
+            proceso.join()
+            raise MetaFeatureTimeoutError(
+                f"Timeout: mfe.fit excedió el límite de {timeout} segundos"
+            )
+
+        try:
+            status, *payload = queue.get(timeout=1)
+        except Exception as e:
+            raise RuntimeError("No fue posible obtener el resultado del proceso de meta-features") from e
+
+        if status == "ok":
+            nombres, valores = payload
+            return nombres, valores
+
+        raise RuntimeError(f"Error en proceso de meta-features: {payload[0]}")
+
     def _leer_dataset(self, ruta_absoluta, target):
-        """
-        Lee el dataset desde la ruta absoluta proporcionada y separa las características (X) del target (y).
-        
-        :param self: Referencia de la instancia de la clase.
-        :param ruta_absoluta: Ruta absoluta del archivo CSV que contiene el dataset.
-        :param target: Nombre de la columna que se utilizará como target.
-        :return: Tuple con las características (X) y el target (y) del dataset
-        :rtype: tuple
-        """
         self.df = pd.read_csv(ruta_absoluta, encoding="utf-8")
         X = self.df.drop(columns=[target]).to_numpy()
         y = self.df[target].to_numpy()
-
         return X, y
 
-
     def _setear_variables_grupo(self, grupo, valor):
-        """
-        Devuelve un diccionario con todas las meta-features del grupo indicado seteadas
-        con el valor indicado.
-        
-        :param self: Referencia de la instancia de la clase.
-        :param grupo: Nombre del grupo de meta-features a setear.
-        :param valor: Valor con el que se setearán todas las meta-features del grupo.
-        :return: Diccionario con las meta-features del grupo seteadas con el valor indicado.
-        """
         grupos_meta_features = {
             "landmarking": {
                 "best_node.mean": valor,
@@ -358,16 +422,8 @@ class ExtractorMetaFeatures:
 
         return grupos_meta_features.get(grupo, {})
 
-
     def _mapear_meta_features(self, meta_features):
-        """
-        Recorre recursivamente un diccionario (con cualquier profundidad)
-        y transforma los valores hoja a tipos nativos de Python,
-        reemplazando NaN e infinitos.
-        """
-
         def _transformar_valor(valor):
-            # None o NaN
             if valor is None:
                 return self._CONSTANTE_ERROR
 
@@ -378,121 +434,49 @@ class ExtractorMetaFeatures:
                     return self._CONSTANTE_INFINITO
                 return round(float(valor), 2)
 
-            # Enteros numpy o Python → float
             if isinstance(valor, (int, np.integer)):
                 return round(float(valor), 2)
 
             return valor
 
         def _mapear_recursivo(obj):
-            # Si es diccionario → recorrer claves
             if isinstance(obj, Mapping):
                 return {k: _mapear_recursivo(v) for k, v in obj.items()}
-
-            # Si es lista o tupla → recorrer elementos
             elif isinstance(obj, list):
                 return [_mapear_recursivo(v) for v in obj]
-
             elif isinstance(obj, tuple):
                 return tuple(_mapear_recursivo(v) for v in obj)
-
-            # Si es hoja → transformar
             else:
                 return _transformar_valor(obj)
 
         print("OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados")
-
         return _mapear_recursivo(meta_features)
-                
 
     def _vectorizar_meta_features(self, meta_features: dict):
-        """
-        Vectoriza las meta-features extraídas en una lista, manteniendo el orden
-        de los grupos y de las meta-features.
-        
-        :param self: Referencia de la instancia de la clase.
-        :param meta_features: Diccionario con las meta-features a vectorizar.
-        :type meta_features: dict
-        :return: Lista con los valores de las meta-features vectorizadas.
-        :rtype: list
-        """
         meta_features_vectorizadas = [valor for subdict in meta_features.values() for valor in subdict.values()]
-
         print("OK - Meta-features vectorizadas en una lista con longitud:", len(meta_features_vectorizadas))
-
         return meta_features_vectorizadas
 
-
     def _agregar_meta_features_personalizadas(self, ruta_absoluta, X, meta_features: dict):
-        """
-        Agrega meta-features personalizadas que no se encuentran en la librería pymfe.
-        Las nuevas meta-features se agregarán al grupo "personalizadas" con el prefijo
-        "personalizado_".
-        
-        :param self: Referencia de la instancia de la clase.
-        :param ruta_absoluta: Ruta absoluta del archivo de datos.
-        :type ruta_absoluta: str
-        :param X: Matriz de características.
-        :type X: np.ndarray
-        :param meta_features: Diccionario con las meta-features al que se agregarán las personalizadas.
-        :type meta_features: dict
-        :return: Diccionario con las meta-features incluyendo las personalizadas.
-        :rtype: dict
-        """
-
         def calcular_peso_en_KB(ruta_absoluta: str) -> float:
-            """
-            Calcula el peso del archivo de datos en kilobytes (KB) a partir de su ruta absoluta.
-            :param ruta_absoluta: Ruta absoluta del archivo de datos.
-            :type ruta_absoluta: str
-            :return: Peso del archivo en KB.
-            :rtype: float
-            """
             peso_bytes = os.path.getsize(ruta_absoluta)
-            peso_kb = peso_bytes / 1024
-
-            return peso_kb
+            return peso_bytes / 1024
 
         def calcular_numero_de_columnas_con_valores_faltantes(X: np.ndarray) -> float:
-            """
-            Calcula el número de columnas que contienen valores faltantes en la matriz de características X.
-            Se consideran valores faltantes tanto los NaN estándar como ciertos strings específicos 
-            (como "", "na", "n/a", "null", "none").
-            
-            :param X: Matriz de características del dataset.
-            :type X: np.ndarray
-            :return: Número de columnas que contienen valores faltantes.
-            :rtype: float
-            """
-            STRINGS_FALTANTES = {"", "na", "n/a","null", "none"}
+            STRINGS_FALTANTES = {"", "na", "n/a", "null", "none"}
             df = pd.DataFrame(X)
-
             faltantes_std = df.isnull()
-
             faltantes_str = df.apply(
                 lambda col: col.astype(str).str.strip().str.lower().isin(STRINGS_FALTANTES)
                 if col.dtype == object else False
             )
-
             faltantes = faltantes_std | faltantes_str
-
             return float(faltantes.any(axis=0).sum())
 
         def calcular_numero_de_registros_duplicados(X: np.ndarray) -> float:
-            """
-            Calcula el número de registros duplicados en la matriz de características X.
-            
-            :param X: Matriz de características del dataset.
-            :type X: np.ndarray
-            :return: Número de registros duplicados.
-            :rtype: float
-            """
             df = pd.DataFrame(X)
-            num_duplicados = df.duplicated().sum()
+            return float(df.duplicated().sum())
 
-            return float(num_duplicados)
-
-        
         meta_features['personalizadas'] = {
             "peso_kb": calcular_peso_en_KB(ruta_absoluta),
             "num_columnas_con_valores_faltantes": calcular_numero_de_columnas_con_valores_faltantes(X),
@@ -500,80 +484,61 @@ class ExtractorMetaFeatures:
         }
 
         print("OK - Meta-features personalizadas calculadas y agregadas al diccionario")
-
         return meta_features
-    
 
     def eliminar_constantes_errores(self, meta_features):
         valores_a_eliminar = {self._CONSTANTE_ERROR, self._CONSTANTE_INFINITO}
         for col, subdict in meta_features.items():
             meta_features[col] = {k: v for k, v in subdict.items() if v not in valores_a_eliminar}
-
         return meta_features
-
 
     def extraer_meta_features_por_columna(self, X: pd.DataFrame, y: pd.Series, meta_feature_variables=None):
         meta_features_por_columna = {}
         if meta_feature_variables is None:
-            # meta_feature_variables = [
-            #     "mean",      # tendencia central
-            #     "median",    # tendencia robusta
-            #     "min",       # extremo inferior
-            #     "max",       # extremo superior
-            #     "var",       # dispersión general
-            #     "sd",        # desviación estándar
-            #     "iq_range",  # dispersión robusta
-            #     "can_cor"    # correlación con otras columnas
-            # ]
-            meta_feature_variables = self._setear_variables_grupo(grupo, 0).keys()
+            meta_feature_variables = list(self._setear_variables_grupo("statistical", 0).keys())
 
-        mfe = MFE(features=meta_feature_variables)
         for col in X.columns:
             X_col = X[[col]].to_numpy()
             try:
-                with self.silenciar_warnings_pymfe():
-                    mfe.fit(X_col, np.array(y) if y is not None else None)
-                    ft = mfe.extract()
-                    meta_features_por_columna[col] = dict(zip(ft[0], ft[1]))
-            except Exception as e:
+                ft = self._ejecutar_mfe_con_timeout(
+                    mfe_kwargs={"features": meta_feature_variables},
+                    X=X_col,
+                    y=np.array(y) if y is not None else None,
+                )
+                meta_features_por_columna[col] = dict(zip(ft[0], ft[1]))
+            except MetaFeatureTimeoutError:
+                print(f"TIMEOUT al extraer meta-features para la columna: {col}")
+            except Exception:
                 print(f"ERROR al extraer meta-features para la columna: {col}")
 
         meta_features_por_columna = self._mapear_meta_features(meta_features_por_columna)
         meta_features_por_columna = self.eliminar_constantes_errores(meta_features_por_columna)
-        
         return meta_features_por_columna
-    
+
     def formatear_meta_features_por_columna(self, meta_features):
-        # Se convierte a toon los valores de las meta-features
         df = pd.DataFrame(meta_features).T
         valores_meta_features_diccionario = df.to_dict(orient="records")
         valores_tton = encode(valores_meta_features_diccionario)
 
-        # Se convierte a toon la lista de columnas (features)
         lista_columnas = list(meta_features.keys())
         columnas_toon = encode(lista_columnas)
-        
-        texto_formateado = f"Columnas:\n{columnas_toon}\nMeta-features por columna:\n{valores_tton}"
 
+        texto_formateado = f"Columnas:\n{columnas_toon}\nMeta-features por columna:\n{valores_tton}"
         return texto_formateado
-    
+
     def formatear_meta_features_globales(self, meta_features):
         texto_formateado = ""
         for grupo, features in meta_features.items():
             texto_formateado += f"Grupo: {grupo}\n"
             for feature, valor in features.items():
                 texto_formateado += f"{feature}: {valor}\n"
-        
         return texto_formateado
 
     @contextmanager
     def silenciar_warnings_pymfe(self):
-        """
-        Context manager para silenciar warnings mientras se ejecuta pymfe.
-        """
         if self.warnings_pymfe:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 yield
         else:
-            yield  # No silencia nada
+            yield
