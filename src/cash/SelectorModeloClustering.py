@@ -40,7 +40,7 @@ class SelectorModeloClustering(RegistroTecnica):
             "birch"
         ]
 
-    def calcular_hiper_parametros(self, X: pd.DataFrame):
+    def calcular_hiper_parametros(self, X: pd.DataFrame, meta_features):
         """
         Selecciona aleatoriamente el modelo de clustering a usar, y configura sus
         hiperparámetros.
@@ -51,10 +51,7 @@ class SelectorModeloClustering(RegistroTecnica):
 
         else:
             self.registrar_algoritmo(self.log_algoritmo)
-            self._calcular_parametros(X)
-            #! Comentar en produccion
-            # self.log_params["params"] = self._get_instancia_modelo().get_params()
-            # self.registrar_parametros(self.log_params)
+            self._calcular_parametros(X, meta_features)
 
         self.registrar_algoritmo(self.log_algoritmo)
         return self
@@ -100,20 +97,15 @@ class SelectorModeloClustering(RegistroTecnica):
             case "birch": return Birch()
             case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
-    def _calcular_parametros(self, X: pd.DataFrame):
+    def _calcular_parametros(self, X: pd.DataFrame, meta_features):
         llm = LLM()
-
-        extractor = ExtractorMetaFeatures()
-        meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), None)
-        meta_features_globales_limpias = extractor.eliminar_constantes_errores(meta_features_globales_totales)
-        meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales_limpias)
 
         prompt = llm.plantillas_prompts(
             plantilla="seleccionar_hiper_parametros",
             kwargs={
                 "tarea": "clustering",
                 "modelo_ml": self.log_algoritmo,
-                "meta_features_globales": meta_features_globales_formateadas,
+                "meta_features_globales": meta_features,
                 "hiper_parametros_por_defecto": self._get_instancia_modelo().get_params(),
             }
         )

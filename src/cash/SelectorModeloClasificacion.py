@@ -68,7 +68,7 @@ class SelectorModeloClasificacion(RegistroTecnica):
             "quadratic_discriminant_analysis"
         ]
         
-    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series) -> None:
+    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features) -> None:
         """
         Consulta al LLM para obtener los hiperparámetros recomendados para el modelo seleccionado,
         basándose en las meta-features del dataset.
@@ -79,10 +79,7 @@ class SelectorModeloClasificacion(RegistroTecnica):
 
         else:
             self.registrar_algoritmo(self.log_algoritmo)
-            self._calcular_parametros(X, y)
-            #! Comentar en produccion
-            # self.log_params["params"] = self._get_instancia_modelo().get_params()
-            # self.registrar_parametros(self.log_params)
+            self._calcular_parametros(X, y, meta_features)
 
         self.registrar_algoritmo(self.log_algoritmo)
         return None
@@ -139,20 +136,15 @@ class SelectorModeloClasificacion(RegistroTecnica):
             case "quadratic_discriminant_analysis": return QuadraticDiscriminantAnalysis()
             case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
-    def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
+    def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features):
         llm = LLM()
-
-        extractor = ExtractorMetaFeatures()
-        meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), y.copy())
-        meta_features_globales_limpias = extractor.eliminar_constantes_errores(meta_features_globales_totales)
-        meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales_limpias)
 
         prompt = llm.plantillas_prompts(
             plantilla="seleccionar_hiper_parametros",
             kwargs={
                 "tarea": "clasificación",
                 "modelo_ml": self.log_algoritmo,
-                "meta_features_globales": meta_features_globales_formateadas,
+                "meta_features_globales": meta_features,
                 "hiper_parametros_por_defecto": self._get_instancia_modelo().get_params(),
             }
         )
