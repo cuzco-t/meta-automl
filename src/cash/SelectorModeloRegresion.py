@@ -7,146 +7,97 @@ from multiprocessing import Process, Queue
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
-from ..config.Configuracion import Configuracion
 
-# Intentar importar cuML (GPU)
-try:
-    from cuml.linear_model import LinearRegression as cuLinearRegression
-    from cuml.linear_model import Ridge as cuRidge
-    from cuml.linear_model import Lasso as cuLasso
-    from cuml.linear_model import ElasticNet as cuElasticNet
-    from cuml.svm import SVR as cuSVR
-    from cuml.neighbors import KNeighborsRegressor as cuKNeighborsRegressor
-    from cuml.ensemble import RandomForestRegressor as cuRandomForestRegressor
-    CUM_AVAILABLE = True
-except ImportError as e:
-    print(f"Error al importar cuML: {e}")
-    CUM_AVAILABLE = False
-    # Fallback a sklearn
-    from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
-    from sklearn.svm import SVR
-    from sklearn.neighbors import KNeighborsRegressor
-    from sklearn.ensemble import RandomForestRegressor
+# Modelos lineales
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
+from sklearn.linear_model import ElasticNet
 
-# Modelos sin aceleración GPU (solo sklearn)
+# Support Vector Regression
+from sklearn.svm import SVR
+
+# KNN
+from sklearn.neighbors import KNeighborsRegressor
+
+# Árboles y ensembles
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import GradientBoostingRegressor
-
 from sklearn.ensemble import AdaBoostRegressor
+
+# Red neuronal
 from sklearn.neural_network import MLPRegressor
-
-from datetime import datetime
-print_original = print
-
-def print(*args, **kwargs):
-    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print_original(f"{ahora} |", *args, **kwargs)
 
 class SelectorModeloRegresion(RegistroTecnica):
     def __init__(self, config_test=None):
         super().__init__(log_fase="selector_modelo_regresion")
         self.config_test = config_test
-        self.llm_seleccionado = None
         self.ALGORITMOS = [
             "lineal", 
             "ridge", 
-            "lasso", 
+            "lasso",
             "elasticnet",
-            "svr", 
-            "knn", 
-            "arbol_decision", 
+            "svr",
+            "knn",
+            "arbol_decision",
             "random_forest",
-            "gradient_boosting", 
-            "ada_boost", 
+            "gradient_boosting",
+            "ada_boost",
             "mlp_regressor",
         ]
-        self.max_tiempo_entrenamiento = Configuracion().max_segundos_entrenamiento
 
-    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features) -> None:
+
+    def calcular_hiper_parametros(self, X: pd.DataFrame, y: pd.Series) -> None:
         """
-        Selecciona el modelo de regresión y configura sus hiperparámetros vía LLM.
+        Selecciona aleatoriamente el modelo de regresión a usar, y configura sus
+        hiperparámetros.
         """
         if self.config_test is not None:
             self.log_algoritmo = self.config_test.get("algoritmo")
             self.log_params = self.config_test.get("params")
+
         else:
             self.registrar_algoritmo(self.log_algoritmo)
-            self._calcular_parametros(X, y, meta_features)
+            self._calcular_parametros(X, y)
+            #! Comentar en produccion
+            # self.log_params["params"] = self._get_instancia_modelo().get_params()
+            # self.registrar_parametros(self.log_params)
 
         self.registrar_algoritmo(self.log_algoritmo)
-        return self  # Se mantiene el comportamiento original (aunque no se use)
-
-    def fit_model(self, modelo, es_gpu, X, y, queue):
+        return self
+    
+    def fit_model(self, modelo, X, y, queue):
         try:
-            # Determinar si el modelo es de cuML o sklearn
-            if es_gpu:
-                # Modelo cuML: convertir a cupy
-                import cupy as cp
-                X_gpu = cp.asarray(X.values) if isinstance(X, pd.DataFrame) else cp.asarray(X)
-                y_gpu = cp.asarray(y.values) if isinstance(y, pd.Series) else cp.asarray(y)
-
-                print("Entrenando modelo en GPU con cuML...")
-                modelo.fit(X_gpu, y_gpu)
-            else:
-                # Modelo sklearn: usar numpy
-                print("Entrenando modelo en CPU con sklearn...")
-                modelo.fit(X.values if isinstance(X, pd.DataFrame) else X,
-                           y.values if isinstance(y, pd.Series) else y)
+            modelo.fit(X, y)
             queue.put(("ok", modelo))
         except Exception as e:
             queue.put(("fail", str(e)))
 
+        
     def entrenar_modelo(self, X: pd.DataFrame, y: pd.Series) -> Result[object, str]:
-        modelo, es_gpu = self._get_instancia_modelo()
+        modelo = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
-        for param, valor in hiper_parametros.items():
-            if param in modelo.get_params():
-                modelo.set_params(**{param: valor})
-
-        if "n_jobs" in modelo.get_params():
-            modelo.set_params(n_jobs=-1)
+        modelo.set_params(**hiper_parametros)
 
         queue = Queue()
-        p = Process(target=self.fit_model, args=(modelo, es_gpu, X, y, queue))
+        p = Process(target=self.fit_model, args=(modelo, X, y, queue))
         p.start()
-        p.join(timeout=self.max_tiempo_entrenamiento)
+        p.join(timeout=5)
 
         if p.is_alive():
             p.terminate()
-            return Result.fail("Timeout: el entrenamiento excedió el límite de tiempo")
-
+            return Result.fail("Timeout: el entrenamiento excedio el limite de tiempo")
+        
         status, result = queue.get()
         if status == "ok":
             return Result.ok(result)
         else:
             return Result.fail(result)
 
+        return result_entrenamiento
+    
     def _get_instancia_modelo(self):
-        """Retorna instancia del modelo (cuML si existe, sklearn si no o fallback)."""
-        if CUM_AVAILABLE:
-            match self.log_algoritmo:
-                case "lineal":
-                    return cuLinearRegression(), True
-                case "ridge":
-                    return cuRidge(), True
-                case "lasso":
-                    return cuLasso(), True
-                case "elasticnet":
-                    return cuElasticNet(), True
-                case "svr":
-                    return cuSVR(), True
-                case "knn":
-                    return cuKNeighborsRegressor(), True
-                case "random_forest":
-                    return cuRandomForestRegressor(), True
-                case _:
-                     return self._get_instancia_modelo_sklearn(), False
-        else:
-            # Fallback completo a sklearn
-            return self._get_instancia_modelo_sklearn(), False
-
-    def _get_instancia_modelo_sklearn(self):
-        """Instancias de modelos sklearn (CPU)."""
         if self.log_algoritmo == "lineal":
             return LinearRegression()
         elif self.log_algoritmo == "ridge":
@@ -171,16 +122,14 @@ class SelectorModeloRegresion(RegistroTecnica):
             return MLPRegressor()
         else:
             raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
+        
+    def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series):
+        llm = LLM()
 
-    def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features_globales_formateadas):
-        """Consulta al LLM para obtener hiperparámetros del modelo seleccionado."""
-        if self.llm_seleccionado is None:
-            instancia, es_gpu = self._get_instancia_modelo()
-            self.log_params["params"] = instancia.get_params()
-            self.registrar_parametros(self.log_params)
-            return
-            
-        llm = LLM(self.llm_seleccionado)
+        extractor = ExtractorMetaFeatures()
+        meta_features_globales_totales, _ = extractor.extraer_desde_dataframe(X.copy(), y.copy())
+        meta_features_globales_limpias = extractor.eliminar_constantes_errores(meta_features_globales_totales)
+        meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales_limpias)
 
         prompt = llm.plantillas_prompts(
             plantilla="seleccionar_hiper_parametros",
@@ -188,19 +137,13 @@ class SelectorModeloRegresion(RegistroTecnica):
                 "tarea": "regresión",
                 "modelo_ml": self.log_algoritmo,
                 "meta_features_globales": meta_features_globales_formateadas,
-                "hiper_parametros_por_defecto": meta_features_globales_formateadas,
+                "hiper_parametros_por_defecto": self._get_instancia_modelo().get_params(),
             }
         )
 
-        try:
-            hiper_parametros_texto = llm.generar_respuesta(prompt)
-            hiper_parametros = ast.literal_eval(hiper_parametros_texto)
-
-        except Exception as e:
-            print(f"Error al interpretar la respuesta del LLM o tiempo de espera agotado: {e}")
-            print("Usando hiperparámetros por defecto.")
-            instancia, es_gpu = self._get_instancia_modelo()
-            hiper_parametros = instancia.get_params()
-
+        hiper_parametros_texto = llm.generar_respuesta(prompt)
+        hiper_parametros = ast.literal_eval(hiper_parametros_texto)
+        
         self.log_params["params"] = hiper_parametros
         self.registrar_parametros(self.log_params)
+        
