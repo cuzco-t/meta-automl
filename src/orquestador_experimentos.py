@@ -1,6 +1,7 @@
 import logging
 import pandas as pd
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 
 from pathlib import Path
 from typing import Iterator
@@ -11,6 +12,7 @@ from src.ExtractorMetaFeatures import ExtractorMetaFeatures
 from src.minero.MineroDePipelines import MineroDePipelines
 from src.vectorizador_pipeline import VectorizadorPipeline
 from src.registrador_pipeline import RegistradorPipeline
+from src.Result import Result
 
 from datetime import datetime
 
@@ -105,19 +107,30 @@ class OrquestadorExperimentos:
         print("OK - Metafeatures extraídas para task_id:", task_id)
 
         # Añadir one-hot de tarea
-        meta_features_vector.extend(self.tarea_onehot.get(tarea, [0.0, 0.0, 0.0]))
+        meta_features_vector_tarea = meta_features_vector + self.tarea_onehot.get(tarea, [0.0, 0.0, 0.0])
+
+        configuraciones = self.minero.preparar_configuraciones_pipeline(tarea, self.num_pipelines)
 
         # 3. Ejecutar N pipelines aleatorios
-        for num_pipeline in range(1, self.num_pipelines + 1):
-            self._ejecutar_pipeline(
-                num_pipeline,
-                dataset_name,
-                descripcion,
-                X,
-                y,
-                tarea,
-                meta_features,
-                meta_features_vector,
+        resultados = self._ejecutar_pipelines_en_paralelo(
+            dataset_name=dataset_name,
+            descripcion=descripcion,
+            X=X,
+            y=y,
+            tarea=tarea,
+            meta_features=meta_features,
+            meta_features_vector=meta_features_vector_tarea,
+            configuraciones=configuraciones,
+        )
+
+        for resultado in resultados:
+            self._registrar_resultado_pipeline(
+                dataset_name=dataset_name,
+                tarea=tarea,
+                num_pipeline=resultado["num_pipeline"],
+                meta_features=meta_features,
+                meta_features_vector=meta_features_vector_tarea,
+                result=resultado["result"],
             )
 
     def _normalizar_tarea(self, tarea: str) -> str:
@@ -129,9 +142,8 @@ class OrquestadorExperimentos:
         )
         return texto
 
-    def _ejecutar_pipeline(
+    def _ejecutar_pipelines_en_paralelo(
         self,
-        num_pipeline: int,
         dataset_name: str,
         descripcion: str,
         X: pd.DataFrame,
@@ -139,14 +151,84 @@ class OrquestadorExperimentos:
         tarea: str,
         meta_features: dict,
         meta_features_vector: list,
-    ) -> None:
-        """Ejecuta un pipeline (supervisado o no supervisado) y registra los resultados."""
-        # Llamar al método correspondiente de MineroDePipelines
-        if tarea == "clustering":
-            result = self.minero.pipeline_no_supervisado(X, y, descripcion)
-        else:
-            result = self.minero.pipeline_supervisado(X, y, tarea, descripcion)
+        configuraciones: list,
+    ) -> list[dict]:
+        """Ejecuta los pipelines en paralelo y devuelve sus resultados en orden."""
+        if not configuraciones:
+            return []
 
+        max_workers = max(1, min(len(configuraciones), self.num_pipelines))
+        resultados = []
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futuros = []
+            for num_pipeline, configuracion in enumerate(configuraciones, start=1):
+                futuros.append(
+                    executor.submit(
+                        self._ejecutar_pipeline,
+                        num_pipeline,
+                        X,
+                        y,
+                        tarea,
+                        descripcion,
+                        configuracion,
+                    )
+                )
+
+            for future in futuros:
+                resultados.append(future.result())
+
+        return resultados
+
+    def _ejecutar_pipeline(
+        self,
+        num_pipeline: int,
+        X: pd.DataFrame,
+        y: pd.Series,
+        tarea: str,
+        descripcion: str,
+        configuracion,
+    ) -> dict:
+        """Ejecuta un pipeline ya configurado y devuelve el resultado para persistirlo luego."""
+        try:
+            if tarea == "clustering":
+                result = self.minero.ejecutar_pipeline_no_supervisado_configurado(
+                    X,
+                    y,
+                    configuracion,
+                    descripcion,
+                )
+            else:
+                result = self.minero.ejecutar_pipeline_configurado(
+                    X,
+                    y,
+                    tarea,
+                    configuracion,
+                    descripcion,
+                )
+        except Exception as exc:
+            result = Result.fail({
+                "error": str(exc),
+                "pipeline": configuracion.pipeline,
+                "fase": "desconocida",
+                "llm_vector": self.minero._vectorizar_llm_seleccionado(configuracion.llm_seleccionado),
+            })
+
+        return {
+            "num_pipeline": num_pipeline,
+            "result": result,
+        }
+
+    def _registrar_resultado_pipeline(
+        self,
+        dataset_name: str,
+        tarea: str,
+        num_pipeline: int,
+        meta_features: dict,
+        meta_features_vector: list,
+        result: Result,
+    ) -> None:
+        """Guarda en base de datos el resultado ya resuelto de un pipeline."""
         if result.is_failure:
             datos_fallidos = result.get_error()
             self.recorder.guardar_ejecucion_con_fallo(
@@ -158,27 +240,21 @@ class OrquestadorExperimentos:
                 pipeline=datos_fallidos["pipeline"],
                 fase=datos_fallidos["fase"],
                 error=datos_fallidos["error"],
-                llm_vector=datos_fallidos["llm_vector"]
+                llm_vector=datos_fallidos["llm_vector"],
             )
             return
 
         datos = result.get_value()
-        pipeline = datos["pipeline"]
-        metricas = datos["metricas"]      # dict con listas de métricas por modelo
-        modelos = datos["modelos"]        # lista de nombres de modelos
-        tiempos = datos["tiempos"]        # lista de tiempos por modelo
-        llm_vector = datos["llm_vector"]  # vector one-hot del LLM seleccionado
-
         self.recorder.guardar_ejecucion(
             dataset_name=dataset_name,
             tarea=tarea,
             num_pipeline=num_pipeline,
             meta_features=meta_features,
             meta_features_vector=meta_features_vector,
-            pipeline=pipeline,
-            modelos=modelos,
-            metricas_por_modelo=metricas,
-            tiempos=tiempos,
-            llm_vector=llm_vector
+            pipeline=datos["pipeline"],
+            modelos=datos["modelos"],
+            metricas_por_modelo=datos["metricas"],
+            tiempos=datos["tiempos"],
+            llm_vector=datos["llm_vector"],
         )
         
