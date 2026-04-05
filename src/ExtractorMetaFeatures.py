@@ -495,7 +495,15 @@ class ExtractorMetaFeatures:
     def extraer_meta_features_por_columna(self, X: pd.DataFrame, y: pd.Series, meta_feature_variables=None):
         meta_features_por_columna = {}
         if meta_feature_variables is None:
-            meta_feature_variables = list(self._setear_variables_grupo("statistical", 0).keys())
+            meta_feature_variables = [
+                "mean",      # tendencia central
+                "median",    # tendencia robusta
+                "min",       # extremo inferior
+                "max",       # extremo superior
+                "var",       # dispersión general
+                "sd",        # desviación estándar
+                "iq_range",  # dispersión robusta
+            ]
 
         for col in X.columns:
             X_col = X[[col]].to_numpy()
