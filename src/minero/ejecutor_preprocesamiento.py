@@ -64,6 +64,10 @@ class EjecutorPreprocesamiento:
         folds_procesados = {}
         
         tiempo_inicio_preprocesamiento = time.time()
+
+        params_crear_nueva_variable_llm = {}
+        params_seleccionar_variables_llm = []
+
         for fold_num, fold_data in folds.items():
             X_train = fold_data["X_train"].copy()
             y_train = fold_data["y_train"].copy() if fold_data["y_train"] is not None else None
@@ -80,9 +84,21 @@ class EjecutorPreprocesamiento:
 
                     if fase == "crear_nueva_variable" and descripcion:
                         instancia.descripcion = descripcion
-                    instancia.fit(X_train, y_train)
+
+                    if fold_num > 1 and fase == "crear_nueva_variable" and ("llm" in algoritmo):
+                        instancia.log_params = params_crear_nueva_variable_llm
+                    elif fold_num > 1 and fase == "seleccionar_variables" and ("llm" in algoritmo):
+                        instancia.log_params = params_seleccionar_variables_llm
+                    else:
+                        instancia.fit(X_train, y_train)
+
                     X_train, y_train = instancia.transform(X_train, y_train)
                     X_val, y_val = instancia.transform(X_val, y_val)
+                    
+                    if fold_num == 1 and fase == "crear_nueva_variable" and ("llm" in algoritmo):
+                        params_crear_nueva_variable_llm = instancia.log_params
+                    if fold_num == 1 and fase == "seleccionar_variables" and ("llm" in algoritmo):
+                        params_seleccionar_variables_llm = instancia.log_params
 
                     print(f"{estado:<5} - Fold: {fold_num:<3} | Fase: {fase:<45} | Algoritmo: {algoritmo:<10}")
                 
