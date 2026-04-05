@@ -29,15 +29,25 @@ class EvaluadorModelos:
             "f1": f1_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
         }
     
-    def _calcular_metricas_regresion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
+    def _calcular_metricas_regresion(self, y_val: pd.Series, y_pred: np.ndarray, shape: tuple) -> Dict[str, float]:
         """Calcula métricas para tareas de regresión."""
         
         mse = mean_squared_error(y_val, y_pred)
+        r2 = r2_score(y_val, y_pred)
+        n = shape[0]
+        p = shape[1] if len(shape) > 1 else 1
+
+        try:
+            r2_adj = 1 - (((1 - r2) * (n - 1)) / (n - p - 1))
+        except Exception:
+            r2_adj = -1.0
+
         return {
             "mae": mean_absolute_error(y_val, y_pred),
             "mse": mse,
             "rmse": np.sqrt(mse),
-            "r2": r2_score(y_val, y_pred),
+            "r2": r2,
+            "r2_adj": r2_adj,
             "medae": median_absolute_error(y_val, y_pred),
             "ev": explained_variance_score(y_val, y_pred)
         }
@@ -56,7 +66,7 @@ class EvaluadorModelos:
         if tarea.lower() == "clasificacion":
             return {"accuracy": -1.0, "precision": -1.0, "recall": -1.0, "f1": -1.0}
         elif tarea.lower() == "regresion":
-            return {"mae": 999.0, "mse": 999.0, "rmse": 999.0, "r2": -1.0, "medae": 999.0, "ev": -1.0}
+            return {"mae": 999.0, "mse": 999.0, "rmse": 999.0, "r2": -1.0, "r2_adj": -1.0, "medae": 999.0, "ev": -1.0}
         elif tarea.lower() == "clustering":
             return {"silhouette": -1.0, "calinski": 0.0, "davies": 999.0}
         return {}
@@ -114,7 +124,7 @@ class EvaluadorModelos:
                 if tarea.lower() == "clasificacion":
                     metricas_folds[fold_id] = self._calcular_metricas_clasificacion(y_val, y_pred)
                 elif tarea.lower() == "regresion":
-                    metricas_folds[fold_id] = self._calcular_metricas_regresion(y_val, y_pred)
+                    metricas_folds[fold_id] = self._calcular_metricas_regresion(y_val, y_pred, X_val.shape)
                 elif tarea.lower() == "clustering":
                     metricas_folds[fold_id] = self._calcular_metricas_clustering(X_val, y_pred)
             
