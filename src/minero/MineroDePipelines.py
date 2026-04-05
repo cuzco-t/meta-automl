@@ -194,7 +194,7 @@ class MineroDePipelines:
         print(f"Entrenando modelos para tarea 'clustering'")
         print("-" * 50)
         entrenador = Entrenador()
-        results_etiquetas, tiempos_modelos = entrenador.entrenar_clustering(
+        results_modelos, tiempos_modelos = entrenador.entrenar_clustering(
             X_proc,
             lista_modelos,
             llm_seleccionado
@@ -202,7 +202,7 @@ class MineroDePipelines:
 
         print("OK - Todos los modelos han sido entrenados en todos los folds")
 
-        metricas_evaluacion = self.evaluador.evaluar_modelos_clustering(results_etiquetas, X_proc, y_proc)
+        metricas_evaluacion = self.evaluador.evaluar_modelos_clustering(results_modelos, X_proc, y_proc)
         tiempos_totales = [tiempo_preprocesamiento + t for t in tiempos_modelos]
 
         return Result.ok({

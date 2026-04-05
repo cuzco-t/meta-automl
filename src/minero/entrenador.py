@@ -168,7 +168,7 @@ class Entrenador:
             except Exception as e:
                 logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
                 modelos_entrenados_results.append(
-                    Result.fail(f"Error al calcular hiperparámetros: {e}")
+                    Result.fail(f"{e}")
                 )
                 tiempos_entrenamiento.append(0.0)
                 continue
