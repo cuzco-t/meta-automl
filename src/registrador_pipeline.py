@@ -31,12 +31,15 @@ class RegistradorPipeline:
         modelos: List[str],
         metricas_por_modelo: List[Dict[str, float]],
         tiempos: List[float],
+        llm_seleccionado: str | None,
         llm_vector: List[float]
     ) -> None:
         """
         Para cada modelo asociado al pipeline, genera los vectores paso a paso
         y guarda un registro por cada paso en la base de datos.
         """
+
+        registros = []
 
         for idx_modelo, modelo in enumerate(modelos):
             metricas_modelo = metricas_por_modelo[idx_modelo]
@@ -67,6 +70,7 @@ class RegistradorPipeline:
                     "estado_actual": vector_actual,
                     "accion": fase_accion,
                     "estado_siguiente": vector_siguiente,
+                    "llm_seleccionado": llm_seleccionado,
                     "nombre_modelo": modelo,
                     "tipo_tarea": tarea,
                     "metricas": None if not es_final else json.dumps(metricas_modelo),
@@ -74,7 +78,10 @@ class RegistradorPipeline:
                     "tiempo_ejecucion": tiempos[idx_modelo] if es_final else None,
                 }
 
-                self.db.guardar_resultados_pipeline(registro)
+                registros.append(registro)
+
+        if registros:
+            self.db.guardar_resultados_pipelines_lote(registros)
     
     def guardar_ejecucion_con_fallo(
         self,
@@ -86,6 +93,7 @@ class RegistradorPipeline:
         pipeline: Dict[str, str],
         fase: str,
         error: str,
+        llm_seleccionado: str | None,
         llm_vector: List[float]
     ) -> None:
         """
@@ -103,6 +111,8 @@ class RegistradorPipeline:
         # Vectorizar solo hasta la fase de fallo
         historia = self.vectorizador.vectorizar_pipeline(tarea, pipeline_truncado, "modelo_no_ejecutado")
         
+        registros = []
+
         for paso_t, vector_estado in enumerate(historia):
             es_final = (paso_t == len(historia) - 1)
             vector_actual = meta_features_vector + vector_estado + llm_vector
@@ -128,14 +138,18 @@ class RegistradorPipeline:
                 "estado_actual": vector_actual,
                 "accion": fase_accion,
                 "estado_siguiente": vector_siguiente,
+                "llm_seleccionado": llm_seleccionado,
                 "nombre_modelo": "modelo_no_ejecutado",
                 "tipo_tarea": tarea,
                 "metricas": json.dumps({"estado": "CRASH", "error": error}) if es_final else None,
                 "completado": 1 if es_final else 0,
                 "tiempo_ejecucion": -1 if es_final else None,
             }
-            
-            self.db.guardar_resultados_pipeline(registro)
+
+            registros.append(registro)
+
+        if registros:
+            self.db.guardar_resultados_pipelines_lote(registros)
         
         print("")
         print(f"OK - Ejecución guardada con fallo en fase '{fase}' y error: {error}")

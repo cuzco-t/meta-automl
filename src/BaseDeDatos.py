@@ -1,14 +1,17 @@
 from datetime import datetime
-import os
+from typing import Iterable, Sequence
+
 import psycopg
 
 from src.config.Configuracion import Configuracion
 
 print_original = print
 
+
 def print(*args, **kwargs):
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print_original(f"{ahora} |", *args, **kwargs)
+
 
 class BaseDeDatos:
     _instance = None
@@ -19,13 +22,13 @@ class BaseDeDatos:
         return cls._instance
 
     def __init__(self):
-        # Evita que se reinicialice si ya se creó la instancia
+        # Evita que se reinicialice si ya se creó la instancia.
         if hasattr(self, "_initialized") and self._initialized:
             return
 
         self.conn = None
         self.conectar()
-        
+        self._initialized = True
 
     def conectar(self):
         configuracion = Configuracion()
@@ -39,9 +42,11 @@ class BaseDeDatos:
                 port=configuracion.db_port,
             )
             print("=" * 50)
-            print("CONEXIÓN A LA BASE DE DATOS ESTABLECIDA")
+            print("CONEXION A LA BASE DE DATOS ESTABLECIDA")
             print("=" * 50)
-    
+
+        return self.conn
+
     def guardar_meta_features_globales(self, meta_features_json: str, meta_features_vectorizadas: list):
         query = """
         INSERT INTO demo (meta_features_json_humano, meta_features_json_binario, meta_features_json_vector)
@@ -50,11 +55,8 @@ class BaseDeDatos:
         params = (meta_features_json, meta_features_json, meta_features_vectorizadas)
         self.insertar(query, params)
 
-
     def ejecutar_script_sql(self, ruta_sql):
-        """
-        Ejecuta un archivo .sql completo (schema, extensiones, etc.)
-        """
+        """Ejecuta un archivo .sql completo (schema, extensiones, etc.)."""
         conn = self.conectar()
 
         with open(ruta_sql, "r", encoding="utf-8") as f:
@@ -64,26 +66,34 @@ class BaseDeDatos:
             cur.execute(sql)
 
         conn.commit()
-        print(f"Script {ruta_sql} ejecutado con éxito.")
-
+        print(f"Script {ruta_sql} ejecutado con exito.")
 
     def insertar(self, query, params):
-        """
-        Ejecuta un INSERT parametrizado
-        """
+        """Ejecuta un INSERT parametrizado."""
         conn = self.conn
         with conn.cursor() as cur:
             cur.execute(query, params)
         conn.commit()
-        print("Inserción realizada con éxito.")
 
+    def insertar_muchos(self, query: str, params_lote: Iterable[Sequence]):
+        """Ejecuta inserciones en lote y hace un solo commit."""
+        conn = self.conn
+        with conn.cursor() as cur:
+            cur.executemany(query, params_lote)
+        conn.commit()
 
     def cerrar(self):
         if self.conn and not self.conn.closed:
             self.conn.close()
-            print("Conexión a la base de datos cerrada.")
+            print("Conexion a la base de datos cerrada.")
 
     def guardar_resultados_pipeline(self, pipeline_info: dict):
+        self.guardar_resultados_pipelines_lote([pipeline_info])
+
+    def guardar_resultados_pipelines_lote(self, pipelines_info: list[dict]):
+        if not pipelines_info:
+            return
+
         query = """
         INSERT INTO staging_resultados (
             nombre_dataset,
@@ -95,6 +105,7 @@ class BaseDeDatos:
             estado_actual,
             accion,
             estado_siguiente,
+            llm_seleccionado,
             nombre_modelo,
             tipo_tarea,
             metricas,
@@ -113,28 +124,33 @@ class BaseDeDatos:
             %s,
             %s,
             %s,
+            %s,
             %s::json,
             %s,
             %s
         )
         """
 
-        params = (
-            pipeline_info["nombre_dataset"],
-            pipeline_info["num_pipeline"],
-            pipeline_info["num_modelo"],
-            pipeline_info["mtf_json"],
-            pipeline_info["pipeline_json"],
-            pipeline_info["paso_t"],
-            pipeline_info["estado_actual"],      # vector(269)
-            pipeline_info["accion"],
-            pipeline_info["estado_siguiente"],   # vector(269)
-            pipeline_info["nombre_modelo"],
-            pipeline_info["tipo_tarea"],
-            pipeline_info["metricas"],
-            pipeline_info["completado"],
-            pipeline_info["tiempo_ejecucion"]
-        )
+        params_lote = [
+            (
+                pipeline_info["nombre_dataset"],
+                pipeline_info["num_pipeline"],
+                pipeline_info["num_modelo"],
+                pipeline_info["mtf_json"],
+                pipeline_info["pipeline_json"],
+                pipeline_info["paso_t"],
+                pipeline_info["estado_actual"],
+                pipeline_info["accion"],
+                pipeline_info["estado_siguiente"],
+                pipeline_info["llm_seleccionado"] if pipeline_info["llm_seleccionado"] is not None else "ninguno",
+                pipeline_info["nombre_modelo"],
+                pipeline_info["tipo_tarea"],
+                pipeline_info["metricas"],
+                pipeline_info["completado"],
+                pipeline_info["tiempo_ejecucion"],
+            )
+            for pipeline_info in pipelines_info
+        ]
 
-        self.insertar(query, params)
+        self.insertar_muchos(query, params_lote)
 

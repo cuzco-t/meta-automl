@@ -211,6 +211,7 @@ class OrquestadorExperimentos:
                 "error": str(exc),
                 "pipeline": configuracion.pipeline,
                 "fase": "desconocida",
+                "llm_seleccionado": configuracion.llm_seleccionado,
                 "llm_vector": self.minero._vectorizar_llm_seleccionado(configuracion.llm_seleccionado),
             })
 
@@ -240,6 +241,7 @@ class OrquestadorExperimentos:
                 pipeline=datos_fallidos["pipeline"],
                 fase=datos_fallidos["fase"],
                 error=datos_fallidos["error"],
+                llm_seleccionado=datos_fallidos["llm_seleccionado"],
                 llm_vector=datos_fallidos["llm_vector"],
             )
             return
@@ -255,6 +257,7 @@ class OrquestadorExperimentos:
             modelos=datos["modelos"],
             metricas_por_modelo=datos["metricas"],
             tiempos=datos["tiempos"],
+            llm_seleccionado=datos["llm_seleccionado"],
             llm_vector=datos["llm_vector"],
         )
         

@@ -142,7 +142,13 @@ class SelectorModeloClasificacion(RegistroTecnica):
             case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
     def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features):
-        llm = LLM()
+        if self.llm_seleccionado is None:
+            hiper_parametros = self._get_instancia_modelo().get_params()
+            self.log_params["params"] = hiper_parametros
+            self.registrar_parametros(self.log_params)
+            return
+
+        llm = LLM(self.llm_seleccionado)
 
         prompt = llm.plantillas_prompts(
             plantilla="seleccionar_hiper_parametros",

@@ -116,7 +116,7 @@ class MineroDePipelines:
                 "error": datos_fallidos['error'],
                 "pipeline": pipeline,
                 "fase": datos_fallidos["fase"],
-                "llm": llm_seleccionado,
+                "llm_seleccionado": llm_seleccionado,
                 "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
             })
 
@@ -143,7 +143,7 @@ class MineroDePipelines:
             "modelos": lista_modelos,
             "metricas": metricas_evaluacion,
             "tiempos": tiempos_totales,
-            "llm": llm_seleccionado,
+            "llm_seleccionado": llm_seleccionado,
             "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
         })
 
@@ -182,7 +182,7 @@ class MineroDePipelines:
                 "error": datos_fallidos['error'],
                 "pipeline": pipeline,
                 "fase": datos_fallidos["fase"],
-                "llm": llm_seleccionado,
+                "llm_seleccionado": llm_seleccionado,
                 "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
             })
 
@@ -210,7 +210,7 @@ class MineroDePipelines:
             "modelos": lista_modelos,
             "metricas": metricas_evaluacion,
             "tiempos": tiempos_totales,
-            "llm": llm_seleccionado,
+            "llm_seleccionado": llm_seleccionado,
             "llm_vector": self._vectorizar_llm_seleccionado(llm_seleccionado)
         })
 
