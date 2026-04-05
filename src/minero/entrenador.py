@@ -83,9 +83,9 @@ class Entrenador:
                 print(f"ERROR - al calcular hiperparámetros para el modelo '{nombre_modelo}'")
                 print(f"Exception: {e}")
                 modelos_entrenados_results.append([
-                    Result.fail(f"Error al calcular hiperparámetros: {e}"),
-                    Result.fail(f"Error al calcular hiperparámetros: {e}"),
-                    Result.fail(f"Error al calcular hiperparámetros: {e}")
+                    Result.fail(f"{e}"),
+                    Result.fail(f"{e}"),
+                    Result.fail(f"{e}")
                 ])
                 tiempos_promedio.append(0.0)
                 continue
@@ -166,7 +166,8 @@ class Entrenador:
             try:
                 selector.calcular_hiper_parametros(X, meta_features_globales_formateadas)
             except Exception as e:
-                logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
+                print(f"ERROR - al calcular hiperparámetros para el modelo '{nombre_modelo}'")
+                print(f"Exception: {e}")
                 modelos_entrenados_results.append(
                     Result.fail(f"Error al calcular hiperparámetros: {e}")
                 )
