@@ -162,16 +162,13 @@ class SeleccionarVariables(RegistroTecnica):
             self.log_params["n_components"] = int(n_components)
 
         elif self.log_algoritmo in self.MODELOS_LLM:
-            extractor = ExtractorMetaFeatures()
-            meta_features_por_columna = extractor.extraer_meta_features_por_columna(X, y)
-            meta_features_por_columna_toon = extractor.formatear_meta_features_por_columna(meta_features_por_columna)
-
             llm = LLM(self.MODELOS_LLM[self.log_algoritmo])
             prompt = llm.plantillas_prompts(
                 plantilla="seleccionar_variables",
                 kwargs={
                     "tarea": self.tarea,
-                    "meta_features_por_columna": meta_features_por_columna_toon
+                    "columnas": X.columns.tolist(),
+                    "descripcion": self.descripcion
                 }
             )
             columnas_texto = llm.generar_respuesta(prompt)

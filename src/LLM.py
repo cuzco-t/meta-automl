@@ -64,13 +64,31 @@ class LLM:
 
         def seleccionar_variables():
             prompt = f"""
-You are an expert in variable selection for ML models in tasks of {kwargs["kwargs"]["tarea"]}. 
-Analyze these meta-features (TOON format) per column that I extracted with pymfe:
-{kwargs["kwargs"]["meta_features_por_columna"]}
+You are an expert in feature selection for machine learning models, specialized in {kwargs["kwargs"]["tarea"]} tasks.
 
-Return **only a Python list with the names of the variables** that you recommend for training the model.
-Example: ["variable1", "variable2", "variable3"]
-No additional text or explanation.
+I will provide you with:
+1) The task description.
+2) The dataset column names.
+3) (Optional) A brief description of the dataset.
+
+Your goal is to analyze this information and select the most relevant variables for training the model.
+
+Guidelines:
+- Use the task type and dataset context (if available) to guide your selection.
+- Prioritize informative, non-redundant, and meaningful features.
+- Discard irrelevant, redundant, or potentially noisy variables (e.g., IDs, leakage-prone variables if identifiable).
+- Consider common best practices for feature selection depending on the task.
+
+Output format:
+- Return ONLY a valid Python list containing the selected column names.
+- Do NOT include explanations, comments, or any additional text.
+
+Example:
+["variable1", "variable2", "variable3"]
+
+Task: {kwargs["kwargs"]["tarea"]}
+Columns: {kwargs["kwargs"]["columnas"]}
+Description: {kwargs["kwargs"]["descripcion"]}
 """
 
             return prompt

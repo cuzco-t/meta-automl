@@ -80,6 +80,9 @@ class EjecutorPreprocesamiento:
 
                     if fase == "crear_nueva_variable" and descripcion:
                         instancia.descripcion = descripcion
+                    elif fase == "seleccionar_variables" and descripcion:
+                        instancia.descripcion = descripcion
+
                     instancia.fit(X_train, y_train)
                     X_train, y_train = instancia.transform(X_train, y_train)
                     X_val, y_val = instancia.transform(X_val, y_val)
@@ -133,6 +136,9 @@ class EjecutorPreprocesamiento:
 
                 if fase == "crear_nueva_variable" and descripcion:
                     instancia.descripcion = descripcion
+                elif fase == "seleccionar_variables" and descripcion:
+                    instancia.descripcion = descripcion
+
                 instancia.fit(X_proc, y_proc)
                 X_proc, y_proc = instancia.transform(X_proc, y_proc)
 
