@@ -160,7 +160,7 @@ class EvaluadorModelos:
             
             try:
                 # Obtener las etiquetas predichas (usar el primer resultado disponible)
-                y_pred = modelo_result.get_value()
+                y_pred = modelo_result.get_value().labels_
                 
                 # Calcular métricas de clustering
                 metricas_clustering = self._calcular_metricas_clustering(X, y_pred)
