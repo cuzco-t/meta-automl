@@ -142,7 +142,7 @@ class EvaluadorModelos:
 
     def evaluar_modelos_clustering(
         self,
-        lista_results_etiquetas: List[Result],
+        lista_modelos_result: List[Result],
         X: pd.DataFrame,
         y: pd.Series
     ) -> List[Dict[str, float]]:
@@ -150,7 +150,7 @@ class EvaluadorModelos:
         Evalúa modelos de clustering calculando métricas de clustering y clasificación.
         
         Args:
-            lista_results_etiquetas: Lista de objetos Result con etiquetas de clustering
+            lista_modelos_result: Lista de objetos Result con modelos de clustering
             X: DataFrame con las características
             y: Series con las etiquetas verdaderas
             
@@ -159,18 +159,18 @@ class EvaluadorModelos:
         """
         resultados_evaluacion = []
         
-        for etiquetas_list in lista_results_etiquetas:
+        for modelo_result in lista_modelos_result:
             # Verificar si el resultado es fallo
-            if etiquetas_list.is_failure:
+            if modelo_result.is_failure:
                 resultados_evaluacion.append({
                     "estado": "CRASH", 
-                    "error": etiquetas_list.get_error()
+                    "error": modelo_result.get_error()
                 })
                 continue
             
             try:
                 # Obtener las etiquetas predichas (usar el primer resultado disponible)
-                y_pred = etiquetas_list.get_value().labels_
+                y_pred = modelo_result.get_value().labels_
                 
                 # Calcular métricas de clustering
                 metricas_clustering = self._calcular_metricas_clustering(X, y_pred)
@@ -217,7 +217,7 @@ class EvaluadorModelos:
                 
             except Exception as e:
                 resultados_evaluacion.append({
-                    "estado": "ERROR", 
+                    "estado": "CRASH", 
                     "error": str(e)
                 })
 

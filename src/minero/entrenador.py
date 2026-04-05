@@ -169,7 +169,7 @@ class Entrenador:
                 print(f"ERROR - al calcular hiperparámetros para el modelo '{nombre_modelo}'")
                 print(f"Exception: {e}")
                 modelos_entrenados_results.append(
-                    Result.fail(f"Error al calcular hiperparámetros: {e}")
+                    Result.fail(f"{e}")
                 )
                 tiempos_entrenamiento.append(0.0)
                 continue
