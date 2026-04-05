@@ -163,14 +163,14 @@ class EvaluadorModelos:
             # Verificar si el resultado es fallo
             if etiquetas_list.is_failure:
                 resultados_evaluacion.append({
-                    **self._obtener_metricas_fallo("clustering"),
-                    **self._obtener_metricas_fallo("clasificacion")
+                    "estado": "CRASH", 
+                    "error": etiquetas_list.get_error()
                 })
                 continue
             
             try:
                 # Obtener las etiquetas predichas (usar el primer resultado disponible)
-                y_pred = etiquetas_list.get_value()
+                y_pred = etiquetas_list.get_value().labels_
                 
                 # Calcular métricas de clustering
                 metricas_clustering = self._calcular_metricas_clustering(X, y_pred)
@@ -217,8 +217,8 @@ class EvaluadorModelos:
                 
             except Exception as e:
                 resultados_evaluacion.append({
-                    **self._obtener_metricas_fallo("clustering"),
-                    **self._obtener_metricas_fallo("clasificacion")
+                    "estado": "ERROR", 
+                    "error": str(e)
                 })
 
         return resultados_evaluacion
