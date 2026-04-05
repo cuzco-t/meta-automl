@@ -3,6 +3,8 @@ import pandas as pd
 
 from multiprocessing import Process, Queue
 
+from ..config.Configuracion import Configuracion
+
 from ..LLM import LLM
 from ..RegistroTecnica import RegistroTecnica
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
@@ -39,6 +41,7 @@ class SelectorModeloClustering(RegistroTecnica):
             "spectral_clustering",
             "birch"
         ]
+        self.max_segundos_entrenamiento = Configuracion().max_segundos_entrenamiento
 
     def calcular_hiper_parametros(self, X: pd.DataFrame, meta_features):
         """
@@ -70,12 +73,14 @@ class SelectorModeloClustering(RegistroTecnica):
         """
         modelo = self._get_instancia_modelo()
         hiper_parametros = self.log_params["params"]
-        modelo.set_params(**hiper_parametros)
+        for param, valor in hiper_parametros.items():
+            if param in modelo.get_params():
+                 modelo.set_params(**{param: valor})
 
         queue = Queue()
         p = Process(target=self.fit_model, args=(modelo, X, queue))
         p.start()
-        p.join(timeout=5)
+        p.join(timeout=self.max_segundos_entrenamiento)
 
         if p.is_alive():
             p.terminate()
@@ -110,7 +115,7 @@ class SelectorModeloClustering(RegistroTecnica):
             }
         )
 
-        hiper_parametros_texto = llm.generar_respuesta(prompt)
+        hiper_parametros_texto = llm.generar_respuesta(prompt, 0.7)
         hiper_parametros = ast.literal_eval(hiper_parametros_texto)
         
         self.log_params["params"] = hiper_parametros

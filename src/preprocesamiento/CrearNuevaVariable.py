@@ -98,7 +98,7 @@ class CrearNuevaVariable(RegistroTecnica):
         
         except Exception as e:
             print(f"Error al interpretar la respuesta del LLM o tiempo de espera agotado: {e}")
-            raise ValueError(f"Error al interpretar la respuesta del LLM: {e}")
+            raise ValueError(f"{e}")
 
         
         for var, formula in variables_recomendadas.items():
