@@ -504,6 +504,7 @@ class ExtractorMetaFeatures:
                     mfe_kwargs={"features": meta_feature_variables},
                     X=X_col,
                     y=np.array(y) if y is not None else None,
+                    timeout_segundos=30  # Timeout de 30 segundos por columna
                 )
                 meta_features_por_columna[col] = dict(zip(ft[0], ft[1]))
             except MetaFeatureTimeoutError:
