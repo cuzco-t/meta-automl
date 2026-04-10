@@ -12,26 +12,40 @@ from sklearn.metrics import (
     silhouette_score, calinski_harabasz_score, davies_bouldin_score
 )
 
+from datetime import datetime
+
+print_original = print
+def print(*args, **kwargs):
+    ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print_original(f"{ahora} |", *args, **kwargs)
 
 class EvaluadorModelos:
     """Clase para evaluar modelos de machine learning según la tarea."""
     
     def _calcular_metricas_clasificacion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
         """Calcula métricas para tareas de clasificación."""
+        print("Iniciando evaluacion de clasificación...")
         y_val_str = y_val.astype(str)
         y_pred_str = y_pred.astype(str)
-        print(f"Valores reales: {y_val_str.tolist()[:10]}")
-        print(f"Predicciones: {y_pred_str.tolist()[:10]}")
+
+        acc = accuracy_score(y_val_str, y_pred_str)
+        prec = precision_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
+        rec = recall_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
+        f1 = f1_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
+
+        print("OK - Evaluacion de clasificacion completada.")
+
         return {
-            "accuracy": accuracy_score(y_val_str, y_pred_str),
-            "precision": precision_score(y_val_str, y_pred_str, average="weighted", zero_division=0),
-            "recall": recall_score(y_val_str, y_pred_str, average="weighted", zero_division=0),
-            "f1": f1_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
+            "accuracy": acc,
+            "precision": prec,
+            "recall": rec,
+            "f1": f1
         }
     
     def _calcular_metricas_regresion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
         """Calcula métricas para tareas de regresión de forma robusta."""
 
+        print("Iniciando evaluacion de regresion...")
         try:
             # Validaciones básicas
             if y_val is None or y_pred is None:
@@ -63,6 +77,7 @@ class EvaluadorModelos:
             except Exception:
                 r2 = -1.0
 
+            print("OK - Evaluacion de regresion completada.")
             return {
                 "mae": mae,
                 "mse": mse,
@@ -74,6 +89,7 @@ class EvaluadorModelos:
 
         except Exception:
             # Valores por defecto seguros
+            print("ERROR - Evaluacion de regresion fallida")
             return {
                 "mae": 999.0,
                 "mse": 999.0,
@@ -86,6 +102,8 @@ class EvaluadorModelos:
     def _calcular_metricas_clustering(self, X_val: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, float]:
         """Calcula métricas para tareas de clustering."""
         
+        print("Iniciando evaluacion de clustering...")
+
         # Validación inicial
         invalid_labels = (
             y_pred is None or
@@ -132,6 +150,7 @@ class EvaluadorModelos:
         except Exception:
             davies_score_val = 999.0
 
+        print("OK - Evaluacion de clustering completada.")
         return {
             "silhouette": silhouette_score_val,
             "calinski": calinski_score_val,
