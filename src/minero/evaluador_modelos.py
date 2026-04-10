@@ -30,25 +30,112 @@ class EvaluadorModelos:
         }
     
     def _calcular_metricas_regresion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
-        """Calcula métricas para tareas de regresión."""
-        
-        mse = mean_squared_error(y_val, y_pred)
-        return {
-            "mae": mean_absolute_error(y_val, y_pred),
-            "mse": mse,
-            "rmse": np.sqrt(mse),
-            "r2": r2_score(y_val, y_pred),
-            "medae": median_absolute_error(y_val, y_pred),
-            "ev": explained_variance_score(y_val, y_pred)
-        }
-    
+        """Calcula métricas para tareas de regresión de forma robusta."""
+
+        try:
+            # Validaciones básicas
+            if y_val is None or y_pred is None:
+                raise ValueError("Inputs None")
+
+            if len(y_val) == 0 or len(y_pred) == 0:
+                raise ValueError("Inputs vacíos")
+
+            if len(y_val) != len(y_pred):
+                raise ValueError("Tamaños inconsistentes")
+
+            # Convertir a numpy
+            y_val = np.asarray(y_val)
+            y_pred = np.asarray(y_pred)
+
+            # Métricas
+            mse = mean_squared_error(y_val, y_pred)
+            rmse = np.sqrt(mse)
+
+            mae = mean_absolute_error(y_val, y_pred)
+            medae = median_absolute_error(y_val, y_pred)
+            ev = explained_variance_score(y_val, y_pred)
+
+            # R2 puede ser problemático
+            try:
+                r2 = r2_score(y_val, y_pred)
+                if np.isnan(r2):
+                    r2 = -1.0
+            except Exception:
+                r2 = -1.0
+
+            return {
+                "mae": mae,
+                "mse": mse,
+                "rmse": rmse,
+                "r2": r2,
+                "medae": medae,
+                "ev": ev
+            }
+
+        except Exception:
+            # Valores por defecto seguros
+            return {
+                "mae": 999.0,
+                "mse": 999.0,
+                "rmse": 999.0,
+                "r2": -1.0,
+                "medae": 999.0,
+                "ev": -1.0
+            }
+
     def _calcular_metricas_clustering(self, X_val: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, float]:
         """Calcula métricas para tareas de clustering."""
         
+        # Validación inicial
+        invalid_labels = (
+            y_pred is None or
+            len(y_pred) == 0 or
+            len(set(y_pred)) < 2
+        )
+
+        # --- Silhouette ---
+        try:
+            if invalid_labels:
+                silhouette_score_val = -1.0
+            else:
+                val = silhouette_score(X_val, y_pred)
+                if val is None or np.isnan(val):
+                    silhouette_score_val = -1.0
+                else:
+                    silhouette_score_val = val
+        except Exception:
+            silhouette_score_val = -1.0
+
+        # --- Calinski-Harabasz ---
+        try:
+            if invalid_labels:
+                calinski_score_val = 0.0
+            else:
+                val = calinski_harabasz_score(X_val, y_pred)
+                if val is None or np.isnan(val):
+                    calinski_score_val = 0.0
+                else:
+                    calinski_score_val = val
+        except Exception:
+            calinski_score_val = 0.0
+
+        # --- Davies-Bouldin ---
+        try:
+            if invalid_labels:
+                davies_score_val = 999.0
+            else:
+                val = davies_bouldin_score(X_val, y_pred)
+                if val is None or np.isnan(val):
+                    davies_score_val = 999.0
+                else:
+                    davies_score_val = val
+        except Exception:
+            davies_score_val = 999.0
+
         return {
-            "silhouette": silhouette_score(X_val, y_pred),
-            "calinski": calinski_harabasz_score(X_val, y_pred),
-            "davies": davies_bouldin_score(X_val, y_pred)
+            "silhouette": silhouette_score_val,
+            "calinski": calinski_score_val,
+            "davies": davies_score_val
         }
     
     def _obtener_metricas_fallo(self, tarea: str) -> Dict[str, float]:
