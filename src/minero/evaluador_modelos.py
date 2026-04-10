@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+import multiprocessing as mp
 
 from typing import Any, Dict, List
+from queue import Empty
 
 from ..Result import Result
 from scipy.optimize import linear_sum_assignment
@@ -14,158 +16,209 @@ from sklearn.metrics import (
 
 from datetime import datetime
 
+TIMEOUT_EVALUACION_SEGUNDOS = 300
+
 print_original = print
 def print(*args, **kwargs):
     ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print_original(f"{ahora} |", *args, **kwargs)
 
+
+def _metricas_fallo_por_tarea(tarea: str) -> Dict[str, float]:
+    tarea_normalizada = tarea.lower()
+    if tarea_normalizada == "clasificacion":
+        return {"accuracy": -1.0, "precision": -1.0, "recall": -1.0, "f1": -1.0}
+    if tarea_normalizada == "regresion":
+        return {"mae": 999.0, "mse": 999.0, "rmse": 999.0, "r2": -1.0, "medae": 999.0, "ev": -1.0}
+    if tarea_normalizada == "clustering":
+        return {"silhouette": -1.0, "calinski": 0.0, "davies": 999.0}
+    return {}
+
+
+def _metricas_fallo_clustering_completo() -> Dict[str, float]:
+    return {
+        "silhouette": -1.0,
+        "calinski": 0.0,
+        "davies": 999.0,
+        "accuracy": -1.0,
+        "precision": -1.0,
+        "recall": -1.0,
+        "f1": -1.0,
+    }
+
+
+def _calcular_metricas_clasificacion_worker(y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
+    y_val_str = y_val.astype(str)
+    y_pred_str = np.asarray(y_pred).astype(str)
+
+    acc = accuracy_score(y_val_str, y_pred_str)
+    prec = precision_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
+    rec = recall_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
+    f1 = f1_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
+
+    return {
+        "accuracy": acc,
+        "precision": prec,
+        "recall": rec,
+        "f1": f1
+    }
+
+
+def _calcular_metricas_regresion_worker(y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
+    try:
+        if y_val is None or y_pred is None:
+            raise ValueError("Inputs None")
+
+        if len(y_val) == 0 or len(y_pred) == 0:
+            raise ValueError("Inputs vacios")
+
+        if len(y_val) != len(y_pred):
+            raise ValueError("Tamanos inconsistentes")
+
+        y_val_np = np.asarray(y_val)
+        y_pred_np = np.asarray(y_pred)
+
+        mse = mean_squared_error(y_val_np, y_pred_np)
+        rmse = np.sqrt(mse)
+
+        mae = mean_absolute_error(y_val_np, y_pred_np)
+        medae = median_absolute_error(y_val_np, y_pred_np)
+        ev = explained_variance_score(y_val_np, y_pred_np)
+
+        try:
+            r2 = r2_score(y_val_np, y_pred_np)
+            if np.isnan(r2):
+                r2 = -1.0
+        except Exception:
+            r2 = -1.0
+
+        return {
+            "mae": mae,
+            "mse": mse,
+            "rmse": rmse,
+            "r2": r2,
+            "medae": medae,
+            "ev": ev
+        }
+    except Exception:
+        return _metricas_fallo_por_tarea("regresion")
+
+
+def _calcular_metricas_clustering_worker(X_val: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, float]:
+    invalid_labels = (
+        y_pred is None or
+        len(y_pred) == 0 or
+        len(set(y_pred)) < 2
+    )
+
+    try:
+        if invalid_labels:
+            silhouette_score_val = -1.0
+        else:
+            val = silhouette_score(X_val, y_pred)
+            silhouette_score_val = -1.0 if val is None or np.isnan(val) else val
+    except Exception:
+        silhouette_score_val = -1.0
+
+    try:
+        if invalid_labels:
+            calinski_score_val = 0.0
+        else:
+            val = calinski_harabasz_score(X_val, y_pred)
+            calinski_score_val = 0.0 if val is None or np.isnan(val) else val
+    except Exception:
+        calinski_score_val = 0.0
+
+    try:
+        if invalid_labels:
+            davies_score_val = 999.0
+        else:
+            val = davies_bouldin_score(X_val, y_pred)
+            davies_score_val = 999.0 if val is None or np.isnan(val) else val
+    except Exception:
+        davies_score_val = 999.0
+
+    return {
+        "silhouette": silhouette_score_val,
+        "calinski": calinski_score_val,
+        "davies": davies_score_val
+    }
+
+
+def _evaluar_fold_worker(
+    cola_resultado: mp.Queue,
+    fold_id: int,
+    modelo: Any,
+    X_val: pd.DataFrame,
+    y_val: pd.Series,
+    tarea: str
+) -> None:
+    try:
+        y_pred = modelo.predict(X_val)
+
+        tarea_normalizada = tarea.lower()
+        if tarea_normalizada == "clasificacion":
+            metricas = _calcular_metricas_clasificacion_worker(y_val, y_pred)
+        elif tarea_normalizada == "regresion":
+            metricas = _calcular_metricas_regresion_worker(y_val, y_pred)
+        else:
+            metricas = _metricas_fallo_por_tarea(tarea)
+
+        cola_resultado.put({"ok": True, "fold_id": fold_id, "metricas": metricas})
+    except Exception as e:
+        cola_resultado.put({"ok": False, "fold_id": fold_id, "error": str(e)})
+
+
+def _evaluar_modelo_clustering_worker(
+    cola_resultado: mp.Queue,
+    modelo: Any,
+    X: pd.DataFrame,
+    y: pd.Series
+) -> None:
+    try:
+        y_pred = modelo.labels_
+
+        metricas_clustering = _calcular_metricas_clustering_worker(X, y_pred)
+
+        y_true = y.astype(str).to_numpy()
+        y_pred_str = np.array(y_pred).astype(str)
+
+        clases_unicas = np.unique(y_true)
+        clusters_unicos = np.unique(y_pred_str)
+
+        map_clases = {clase: idx for idx, clase in enumerate(clases_unicas)}
+        map_clusters = {cluster: idx for idx, cluster in enumerate(clusters_unicos)}
+
+        matriz_confusion = np.zeros((len(clusters_unicos), len(clases_unicas)))
+        for i in range(len(y_true)):
+            fila = map_clusters[y_pred_str[i]]
+            columna = map_clases[y_true[i]]
+            matriz_confusion[fila, columna] += 1
+
+        row_ind, col_ind = linear_sum_assignment(-matriz_confusion)
+        cluster_to_clase = {
+            clusters_unicos[row]: clases_unicas[col]
+            for row, col in zip(row_ind, col_ind)
+        }
+
+        y_pred_mapeado = np.array([
+            cluster_to_clase.get(label, label)
+            for label in y_pred_str
+        ])
+
+        metricas_clasificacion = _calcular_metricas_clasificacion_worker(y, y_pred_mapeado)
+        metricas_totales = {**metricas_clustering, **metricas_clasificacion}
+
+        cola_resultado.put({"ok": True, "metricas": metricas_totales})
+    except Exception as e:
+        cola_resultado.put({"ok": False, "error": str(e)})
+
 class EvaluadorModelos:
     """Clase para evaluar modelos de machine learning según la tarea."""
-    
-    def _calcular_metricas_clasificacion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
-        """Calcula métricas para tareas de clasificación."""
-        print("Iniciando evaluacion de clasificación...")
-        y_val_str = y_val.astype(str)
-        y_pred_str = y_pred.astype(str)
-
-        acc = accuracy_score(y_val_str, y_pred_str)
-        prec = precision_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
-        rec = recall_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
-        f1 = f1_score(y_val_str, y_pred_str, average="weighted", zero_division=0)
-
-        print("OK - Evaluacion de clasificacion completada.")
-
-        return {
-            "accuracy": acc,
-            "precision": prec,
-            "recall": rec,
-            "f1": f1
-        }
-    
-    def _calcular_metricas_regresion(self, y_val: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
-        """Calcula métricas para tareas de regresión de forma robusta."""
-
-        print("Iniciando evaluacion de regresion...")
-        try:
-            # Validaciones básicas
-            if y_val is None or y_pred is None:
-                raise ValueError("Inputs None")
-
-            if len(y_val) == 0 or len(y_pred) == 0:
-                raise ValueError("Inputs vacíos")
-
-            if len(y_val) != len(y_pred):
-                raise ValueError("Tamaños inconsistentes")
-
-            # Convertir a numpy
-            y_val = np.asarray(y_val)
-            y_pred = np.asarray(y_pred)
-
-            # Métricas
-            mse = mean_squared_error(y_val, y_pred)
-            rmse = np.sqrt(mse)
-
-            mae = mean_absolute_error(y_val, y_pred)
-            medae = median_absolute_error(y_val, y_pred)
-            ev = explained_variance_score(y_val, y_pred)
-
-            # R2 puede ser problemático
-            try:
-                r2 = r2_score(y_val, y_pred)
-                if np.isnan(r2):
-                    r2 = -1.0
-            except Exception:
-                r2 = -1.0
-
-            print("OK - Evaluacion de regresion completada.")
-            return {
-                "mae": mae,
-                "mse": mse,
-                "rmse": rmse,
-                "r2": r2,
-                "medae": medae,
-                "ev": ev
-            }
-
-        except Exception:
-            # Valores por defecto seguros
-            print("ERROR - Evaluacion de regresion fallida")
-            return {
-                "mae": 999.0,
-                "mse": 999.0,
-                "rmse": 999.0,
-                "r2": -1.0,
-                "medae": 999.0,
-                "ev": -1.0
-            }
-
-    def _calcular_metricas_clustering(self, X_val: pd.DataFrame, y_pred: np.ndarray) -> Dict[str, float]:
-        """Calcula métricas para tareas de clustering."""
         
-        print("Iniciando evaluacion de clustering...")
-
-        # Validación inicial
-        invalid_labels = (
-            y_pred is None or
-            len(y_pred) == 0 or
-            len(set(y_pred)) < 2
-        )
-
-        # --- Silhouette ---
-        try:
-            if invalid_labels:
-                silhouette_score_val = -1.0
-            else:
-                val = silhouette_score(X_val, y_pred)
-                if val is None or np.isnan(val):
-                    silhouette_score_val = -1.0
-                else:
-                    silhouette_score_val = val
-        except Exception:
-            silhouette_score_val = -1.0
-
-        # --- Calinski-Harabasz ---
-        try:
-            if invalid_labels:
-                calinski_score_val = 0.0
-            else:
-                val = calinski_harabasz_score(X_val, y_pred)
-                if val is None or np.isnan(val):
-                    calinski_score_val = 0.0
-                else:
-                    calinski_score_val = val
-        except Exception:
-            calinski_score_val = 0.0
-
-        # --- Davies-Bouldin ---
-        try:
-            if invalid_labels:
-                davies_score_val = 999.0
-            else:
-                val = davies_bouldin_score(X_val, y_pred)
-                if val is None or np.isnan(val):
-                    davies_score_val = 999.0
-                else:
-                    davies_score_val = val
-        except Exception:
-            davies_score_val = 999.0
-
-        print("OK - Evaluacion de clustering completada.")
-        return {
-            "silhouette": silhouette_score_val,
-            "calinski": calinski_score_val,
-            "davies": davies_score_val
-        }
-    
     def _obtener_metricas_fallo(self, tarea: str) -> Dict[str, float]:
         """Retorna métricas con valores de fallo según la tarea."""
-        if tarea.lower() == "clasificacion":
-            return {"accuracy": -1.0, "precision": -1.0, "recall": -1.0, "f1": -1.0}
-        elif tarea.lower() == "regresion":
-            return {"mae": 999.0, "mse": 999.0, "rmse": 999.0, "r2": -1.0, "medae": 999.0, "ev": -1.0}
-        elif tarea.lower() == "clustering":
-            return {"silhouette": -1.0, "calinski": 0.0, "davies": 999.0}
-        return {}
+        return _metricas_fallo_por_tarea(tarea)
     
     def evaluar_modelos(
         self,
@@ -196,9 +249,11 @@ class EvaluadorModelos:
                 continue
             
             metricas_folds = {fold_id: {} for fold_id in folds_data.keys()}
-            
-            # Evaluar en cada fold
-            fallo_en_evaluacion = False
+
+            # Evaluar en cada fold en procesos separados
+            procesos = {}
+            colas = {}
+
             for fold_id, fold_data in folds_data.items():
                 X_val = fold_data["X_val"]
                 y_val = fold_data["y_val"]
@@ -206,23 +261,44 @@ class EvaluadorModelos:
                 # Obtener el modelo correspondiente al fold (índice fold_id - 1)
                 modelo = resultado_list[fold_id - 1].get_value()
 
-                # Predicción
-                try:
-                    y_pred = modelo.predict(X_val)
-                
-                except Exception as e:
-                    fallo_en_evaluacion = True
-                    for fold in metricas_folds.keys():
-                        metricas_folds[fold] = self._obtener_metricas_fallo(tarea)
-                    break
+                cola_resultado = mp.Queue()
+                proceso = mp.Process(
+                    target=_evaluar_fold_worker,
+                    args=(cola_resultado, fold_id, modelo, X_val, y_val, tarea)
+                )
+                proceso.start()
 
-                # Calcular métricas según tarea
-                if tarea.lower() == "clasificacion":
-                    metricas_folds[fold_id] = self._calcular_metricas_clasificacion(y_val, y_pred)
-                elif tarea.lower() == "regresion":
-                    metricas_folds[fold_id] = self._calcular_metricas_regresion(y_val, y_pred)
-                elif tarea.lower() == "clustering":
-                    metricas_folds[fold_id] = self._calcular_metricas_clustering(X_val, y_pred)
+                procesos[fold_id] = proceso
+                colas[fold_id] = cola_resultado
+
+            for fold_id in folds_data.keys():
+                proceso = procesos[fold_id]
+                cola_resultado = colas[fold_id]
+
+                proceso.join(TIMEOUT_EVALUACION_SEGUNDOS)
+
+                if proceso.is_alive():
+                    proceso.terminate()
+                    proceso.join()
+                    print(f"TIMEOUT en fold {fold_id}. Se asignan metricas por defecto.")
+                    metricas_folds[fold_id] = self._obtener_metricas_fallo(tarea)
+                    cola_resultado.close()
+                    cola_resultado.join_thread()
+                    continue
+
+                try:
+                    resultado = cola_resultado.get_nowait()
+                except Empty:
+                    resultado = {"ok": False, "error": "Sin resultado en cola"}
+
+                if resultado.get("ok"):
+                    metricas_folds[fold_id] = resultado["metricas"]
+                else:
+                    print(f"ERROR en fold {fold_id}: {resultado.get('error', 'Error desconocido')}")
+                    metricas_folds[fold_id] = self._obtener_metricas_fallo(tarea)
+
+                cola_resultado.close()
+                cola_resultado.join_thread()
             
             # Promediar métricas de los folds
             metricas_promedio = {}
@@ -265,56 +341,42 @@ class EvaluadorModelos:
                 continue
             
             try:
-                # Obtener las etiquetas predichas (usar el primer resultado disponible)
-                y_pred = modelo_result.get_value().labels_
-                
-                # Calcular métricas de clustering
-                metricas_clustering = self._calcular_metricas_clustering(X, y_pred)
-                
-                # Convertir todo a string (opcional pero recomendable)
-                y_true = y.astype(str).to_numpy()
-                y_pred = np.array(y_pred).astype(str)
+                modelo = modelo_result.get_value()
 
-                clases_unicas = np.unique(y_true)
-                clusters_unicos = np.unique(y_pred)
+                cola_resultado = mp.Queue()
+                proceso = mp.Process(
+                    target=_evaluar_modelo_clustering_worker,
+                    args=(cola_resultado, modelo, X, y)
+                )
+                proceso.start()
 
-                # Crear mapeos seguros
-                map_clases = {clase: idx for idx, clase in enumerate(clases_unicas)}
-                map_clusters = {cluster: idx for idx, cluster in enumerate(clusters_unicos)}
+                proceso.join(TIMEOUT_EVALUACION_SEGUNDOS)
 
-                # Crear matriz de confusión
-                matriz_confusion = np.zeros((len(clusters_unicos), len(clases_unicas)))
+                if proceso.is_alive():
+                    proceso.terminate()
+                    proceso.join()
+                    print("TIMEOUT en evaluacion de clustering. Se asignan metricas por defecto.")
+                    resultados_evaluacion.append(_metricas_fallo_clustering_completo())
+                    cola_resultado.close()
+                    cola_resultado.join_thread()
+                    continue
 
-                for i in range(len(y_true)):
-                    fila = map_clusters[y_pred[i]]
-                    columna = map_clases[y_true[i]]
-                    matriz_confusion[fila, columna] += 1
-                
-                # Aplicar algoritmo húngaro (maximizar coincidencias)
-                row_ind, col_ind = linear_sum_assignment(-matriz_confusion)
-                
-                # Mapear índices internos
-                cluster_to_clase = {
-                    clusters_unicos[row]: clases_unicas[col]
-                    for row, col in zip(row_ind, col_ind)
-                }
+                try:
+                    resultado = cola_resultado.get_nowait()
+                except Empty:
+                    resultado = {"ok": False, "error": "Sin resultado en cola"}
 
-                y_pred_mapeado = np.array([
-                    cluster_to_clase.get(label, label)
-                    for label in y_pred
-                ])
-                
-                # Calcular métricas de clasificación
-                metricas_clasificacion = self._calcular_metricas_clasificacion(y, y_pred_mapeado)
-                
-                # Combinar métricas
-                metricas_totales = {**metricas_clustering, **metricas_clasificacion}
-                resultados_evaluacion.append(metricas_totales)
+                if resultado.get("ok"):
+                    resultados_evaluacion.append(resultado["metricas"])
+                else:
+                    print(f"ERROR en evaluacion de clustering: {resultado.get('error', 'Error desconocido')}")
+                    resultados_evaluacion.append(_metricas_fallo_clustering_completo())
+
+                cola_resultado.close()
+                cola_resultado.join_thread()
                 
             except Exception as e:
-                resultados_evaluacion.append({
-                    "estado": "CRASH", 
-                    "error": str(e)
-                })
+                print(f"ERROR preparando evaluacion de clustering: {str(e)}")
+                resultados_evaluacion.append(_metricas_fallo_clustering_completo())
 
         return resultados_evaluacion
