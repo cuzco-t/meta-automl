@@ -40,6 +40,7 @@ class BaseDeDatos:
                 user=configuracion.db_user,
                 password=configuracion.db_password,
                 port=configuracion.db_port,
+                prepare_threshold=0
             )
             print("=" * 50)
             print("CONEXION A LA BASE DE DATOS ESTABLECIDA")
