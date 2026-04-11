@@ -3,7 +3,6 @@ import numpy as np
 from dataclasses import dataclass
 
 from ..config.Configuracion import Configuracion
-from ..PipelineLogger import PipelineLogger
 from ..Result import Result
 
 from ..cash.SelectorModeloClasificacion import SelectorModeloClasificacion
@@ -35,7 +34,6 @@ class MineroDePipelines:
         config = Configuracion()
         self.semilla = config.semilla_aleatoria
         self.rng = np.random.default_rng(self.semilla)
-        self.logger = PipelineLogger().get_logger()
         self.generador = GeneradorPipeline(self.semilla, config.permitir_none, config.permitir_llm)
         self.ejecutor = EjecutorPreprocesamiento(self.logger)
         self.evaluador = EvaluadorModelos()

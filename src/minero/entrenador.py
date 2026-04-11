@@ -6,7 +6,6 @@ from datetime import datetime
 from dataclasses import dataclass
 
 from ..Result import Result
-from ..PipelineLogger import PipelineLogger
 from ..ExtractorMetaFeatures import ExtractorMetaFeatures
 
 from ..cash.SelectorModeloClasificacion import SelectorModeloClasificacion
@@ -147,7 +146,6 @@ class Entrenador:
                 - Lista de objetos Result con las etiquetas predichas por cada modelo
                 - Lista con tiempos de entrenamiento por modelo
         """
-        logger = PipelineLogger().get_logger()
         modelos_entrenados_results = []
         tiempos_entrenamiento = []
         
@@ -166,7 +164,7 @@ class Entrenador:
             try:
                 selector.calcular_hiper_parametros(X, meta_features_globales_formateadas)
             except Exception as e:
-                logger.error(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
+                print(f"Error al calcular hiperparámetros para el modelo '{nombre_modelo}': {e}")
                 modelos_entrenados_results.append(
                     Result.fail(f"{e}")
                 )

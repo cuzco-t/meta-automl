@@ -13,6 +13,7 @@ from src.minero.MineroDePipelines import MineroDePipelines
 from src.vectorizador_pipeline import VectorizadorPipeline
 from src.registrador_pipeline import RegistradorPipeline
 from src.Result import Result
+from src.PipelineLogger import PipelineLogger
 
 from datetime import datetime
 
@@ -47,7 +48,7 @@ class OrquestadorExperimentos:
         self.minero = minero
         self.vectorizador = vectorizador
         self.recorder = recorder
-        self.logger = logger
+        self.logger = PipelineLogger().get_logger() 
         self.num_pipelines = config.num_pipelines_por_dataset
 
         # Mapeo de tarea a vector one-hot
@@ -160,6 +161,7 @@ class OrquestadorExperimentos:
         max_workers = max(1, min(len(configuraciones), self.num_pipelines))
         resultados = []
 
+        self.logger.info(f"Iniciando ejecución pipelines en paralelo (max_workers={max_workers}) para dataset '{dataset_name}'")
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futuros = []
             for num_pipeline, configuracion in enumerate(configuraciones, start=1):
@@ -176,7 +178,9 @@ class OrquestadorExperimentos:
                 )
 
             for future in futuros:
-                resultados.append(future.result())
+                future_result = future.result()  # Esto esperará a que cada pipeline termine
+                self.logger.info(f"Pipeline {future_result['num_pipeline']} completado.")
+                resultados.append(future_result)
 
         return resultados
 
