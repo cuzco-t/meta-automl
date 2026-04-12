@@ -35,7 +35,7 @@ class MineroDePipelines:
         self.semilla = config.semilla_aleatoria
         self.rng = np.random.default_rng(self.semilla)
         self.generador = GeneradorPipeline(self.semilla, config.permitir_none, config.permitir_llm)
-        self.ejecutor = EjecutorPreprocesamiento(self.logger)
+        self.ejecutor = EjecutorPreprocesamiento(None)
         self.evaluador = EvaluadorModelos()
         self.n_folds = 3
         self.n_modelos = config.num_modelos_por_pipeline

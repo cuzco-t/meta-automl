@@ -31,7 +31,7 @@ def main():
     config = Configuracion()
 
     # Construir mapa de índices (necesita las fases y los modelos por tarea)
-    ejecutor = EjecutorPreprocesamiento(logger)
+    ejecutor = EjecutorPreprocesamiento(None)
     fases_instancias = ejecutor.crear_fases_instancias()  # Corregir typo en el nombre del método si es necesario
     # Obtener modelos por tarea desde minero (suponiendo que existe el atributo)
     modelos_por_tarea = minero.tarea_modelos  # O podrías obtenerlos de los selectores directamente
@@ -45,7 +45,7 @@ def main():
         minero=minero,
         vectorizador=vectorizador,
         recorder=recorder,
-        logger=logger,
+        logger=None,
         num_pipelines_por_dataset=config.num_pipelines_por_dataset
     )
 
