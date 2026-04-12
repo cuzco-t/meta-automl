@@ -2,6 +2,7 @@ import logging
 import pandas as pd
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Process, Queue
 
 from pathlib import Path
 from typing import Iterator
@@ -85,6 +86,29 @@ class OrquestadorExperimentos:
                 if linea:
                     yield int(linea)
 
+    def _pipeline_multiproceso(
+        self, 
+        num_pipeline: int, 
+        X: pd.DataFrame, 
+        y: pd.Series, 
+        tarea: str, 
+        descripcion: str, 
+        configuracion,
+        queue: Queue
+    ) -> dict:
+        try:
+            resultado = self._ejecutar_pipeline(
+                num_pipeline=num_pipeline,
+                X=X,
+                y=y,
+                tarea=tarea,
+                descripcion=descripcion,
+                configuracion=configuracion,
+            )
+            queue.put(("ok", resultado))
+        except Exception as e:
+            queue.put(("fail", str(e)))
+
     def _procesar_task(self, task_id: int, tarea: str) -> None:
         """Procesa un único task_id: descarga, extrae metafeatures, ejecuta pipelines."""
 
@@ -112,27 +136,31 @@ class OrquestadorExperimentos:
 
         configuraciones = self.minero.preparar_configuraciones_pipeline(tarea, self.num_pipelines)
 
-        # 3. Ejecutar N pipelines aleatorios
-        resultados = self._ejecutar_pipelines_en_paralelo(
-            dataset_name=dataset_name,
-            descripcion=descripcion,
-            X=X,
-            y=y,
-            tarea=tarea,
-            meta_features=meta_features,
-            meta_features_vector=meta_features_vector_tarea,
-            configuraciones=configuraciones,
-        )
+        for i, configuracion in enumerate(configuraciones):
+            self.logger.info(f"Iniciando ejecución pipeline {i+1}/{len(configuraciones)} para task_id {task_id} (tarea: {tarea})")
+            queue = Queue()
+            p = Process(target=self._pipeline_multiproceso, args=(i+1, X, y, tarea, descripcion, configuracion, queue))
+            p.start()
+            p.join(timeout=1_200)  # Timeout de 20 minutos por pipeline
 
-        for resultado in resultados:
-            self._registrar_resultado_pipeline(
-                dataset_name=dataset_name,
-                tarea=tarea,
-                num_pipeline=resultado["num_pipeline"],
-                meta_features=meta_features,
-                meta_features_vector=meta_features_vector_tarea,
-                result=resultado["result"],
-            )
+            if p.is_alive():
+                p.terminate()
+                self.logger.info(f"Pipeline {i+1} para task_id {task_id} excedió el tiempo límite y fue terminado.")
+                continue
+
+            status, result = queue.get()
+            if status == "ok":
+                self.logger.info(f"Pipeline {i+1} para task_id {task_id} completado exitosamente.")
+                self._registrar_resultado_pipeline(
+                    dataset_name=dataset_name,
+                    tarea=tarea,
+                    num_pipeline=result["num_pipeline"],
+                    meta_features=meta_features,
+                    meta_features_vector=meta_features_vector_tarea,
+                    result=result["result"],
+                )
+            else:
+                self.logger.info(f"Pipeline {i+1} para task_id {task_id} falló.")
 
     def _normalizar_tarea(self, tarea: str) -> str:
         """Convierte tarea a formato interno: clasificacion, regresion o clustering."""
