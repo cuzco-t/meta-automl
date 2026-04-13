@@ -1,4 +1,5 @@
 import logging
+import time
 import pandas as pd
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
@@ -105,9 +106,9 @@ class OrquestadorExperimentos:
                 descripcion=descripcion,
                 configuracion=configuracion,
             )
-            queue.put(("ok", resultado))
+            queue.put((num_pipeline, "ok", resultado))
         except Exception as e:
-            queue.put(("fail", str(e)))
+            queue.put((num_pipeline, "fail", str(e)))
 
     def _procesar_task(self, task_id: int, tarea: str) -> None:
         """Procesa un único task_id: descarga, extrae metafeatures, ejecuta pipelines."""
@@ -136,31 +137,59 @@ class OrquestadorExperimentos:
 
         configuraciones = self.minero.preparar_configuraciones_pipeline(tarea, self.num_pipelines)
 
-        for i, configuracion in enumerate(configuraciones):
-            self.logger.info(f"Iniciando ejecución pipeline {i+1}/{len(configuraciones)} para task_id {task_id} (tarea: {tarea})")
-            queue = Queue()
-            p = Process(target=self._pipeline_multiproceso, args=(i+1, X, y, tarea, descripcion, configuracion, queue))
+        cola_resultados = Queue()
+
+        procesos = [
+            Process(
+                target=self._pipeline_multiproceso,
+                args=(i+1, X, y, tarea, descripcion, config, cola_resultados)
+            )
+            for i, config in enumerate(configuraciones)
+        ]
+
+        for p in procesos:
             p.start()
-            p.join(timeout=1_200)  # Timeout de 20 minutos por pipeline
 
-            if p.is_alive():
-                p.terminate()
-                self.logger.info(f"Pipeline {i+1} para task_id {task_id} excedió el tiempo límite y fue terminado.")
-                continue
+        procesos_activos = len(procesos)
+        start_time = time.time()
+        timeout = 1200  # 20 minutos
 
-            status, result = queue.get()
-            if status == "ok":
-                self.logger.info(f"Pipeline {i+1} para task_id {task_id} completado exitosamente.")
-                self._registrar_resultado_pipeline(
-                    dataset_name=dataset_name,
-                    tarea=tarea,
-                    num_pipeline=result["num_pipeline"],
-                    meta_features=meta_features,
-                    meta_features_vector=meta_features_vector_tarea,
-                    result=result["result"],
-                )
-            else:
-                self.logger.info(f"Pipeline {i+1} para task_id {task_id} falló.")
+        while procesos_activos > 0:
+            try:
+                # Espera no bloqueante larga pero controlada
+                pipeline_id, status, result = cola_resultados.get(timeout=1)
+
+                if status == "ok":
+                    self.logger.info(f"Pipeline {pipeline_id} completado exitosamente.")
+                    self._registrar_resultado_pipeline(
+                        dataset_name=dataset_name,
+                        tarea=tarea,
+                        num_pipeline=pipeline_id,
+                        meta_features=meta_features,
+                        meta_features_vector=meta_features_vector_tarea,
+                        result=result["result"],
+                    )
+                else:
+                    self.logger.info(f"Pipeline {pipeline_id} falló.")
+
+                procesos_activos -= 1
+
+            except:
+                pass  # No hay resultados aún
+
+            # Control de timeout global
+            if time.time() - start_time > timeout:
+                self.logger.info("Timeout global alcanzado. Terminando procesos...")
+                for i, p in enumerate(procesos):
+                    if p.is_alive():
+                        p.terminate()
+                        self.logger.info(f"Pipeline {i+1} terminado por timeout.")
+                break
+
+        # Limpieza final
+        for p in procesos:
+            p.join()
+        
 
     def _normalizar_tarea(self, tarea: str) -> str:
         """Convierte tarea a formato interno: clasificacion, regresion o clustering."""
