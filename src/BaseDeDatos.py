@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Iterable, Sequence
 
-import psycopg
+import psycopg2
+from psycopg2.extras import execute_values
 
 from src.config.Configuracion import Configuracion
 
@@ -34,12 +35,13 @@ class BaseDeDatos:
         configuracion = Configuracion()
 
         if self.conn is None or self.conn.closed:
-            self.conn = psycopg.connect(
+            self.conn = psycopg2.connect(
                 host=configuracion.db_host,
                 dbname=configuracion.db_name,
                 user=configuracion.db_user,
                 password=configuracion.db_password,
                 port=configuracion.db_port,
+                prepare_threshold=None
             )
             print("=" * 50)
             print("CONEXION A LA BASE DE DATOS ESTABLECIDA")
@@ -79,7 +81,30 @@ class BaseDeDatos:
         """Ejecuta inserciones en lote y hace un solo commit."""
         conn = self.conectar()
         with conn.cursor() as cur:
-            cur.executemany(query, params_lote, prepare=False)
+            execute_values(
+                cur,
+                query,
+                params_lote,
+                template="""
+                (
+                    %s,
+                    %s,
+                    %s,
+                    %s::json,
+                    %s::json,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s::json,
+                    %s,
+                    %s
+                )
+                """
+            )
         conn.commit()
         print("OK - Pipeline guardado en la DB")
         print("="*300)
@@ -97,40 +122,24 @@ class BaseDeDatos:
             return
 
         query = """
-        INSERT INTO staging_resultados3 (
-            nombre_dataset,
-            num_pipeline,
-            num_modelo,
-            mtf_json,
-            pipeline_json,
-            paso_t,
-            estado_actual,
-            accion,
-            estado_siguiente,
-            llm_seleccionado,
-            nombre_modelo,
-            tipo_tarea,
-            metricas,
-            completado,
-            tiempo_ejecucion
-        )
-        VALUES (
-            %s,
-            %s,
-            %s,
-            %s::json,
-            %s::json,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s::json,
-            %s,
-            %s
-        )
+            INSERT INTO staging_resultados3 (
+                nombre_dataset,
+                num_pipeline,
+                num_modelo,
+                mtf_json,
+                pipeline_json,
+                paso_t,
+                estado_actual,
+                accion,
+                estado_siguiente,
+                llm_seleccionado,
+                nombre_modelo,
+                tipo_tarea,
+                metricas,
+                completado,
+                tiempo_ejecucion
+            )
+            VALUES %s
         """
 
         params_lote = [

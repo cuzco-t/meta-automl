@@ -175,6 +175,14 @@ class OrquestadorExperimentos:
                     )
                 else:
                     self.logger.info(f"Pipeline {pipeline_id} falló.")
+                    self._registrar_resultado_pipeline(
+                        dataset_name=dataset_name,
+                        tarea=tarea,
+                        num_pipeline=pipeline_id,
+                        meta_features=meta_features,
+                        meta_features_vector=meta_features_vector_tarea,
+                        result=result["result"],
+                    )
 
                 procesos_activos -= 1
 
