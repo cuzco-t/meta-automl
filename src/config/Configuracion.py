@@ -27,7 +27,8 @@ class Configuracion:
         self.db_password = os.getenv('DB_PASSWORD')
         
         # Semilla para reproducibilidad
-        self.semilla_aleatoria = int(os.getenv('SEMILLA_ALEATORIA', 42))
+        valor = os.getenv('SEMILLA_ALEATORIA')
+        self.semilla_aleatoria = None
         
         # Configuración para silenciar warnings de pymfe
         self.silenciar_pymfe_warnings = os.getenv('SILENCIAR_PYMFE_WARNINGS').lower() == 'true'

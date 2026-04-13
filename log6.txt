@@ -1,0 +1,713 @@
+2026-04-11 10:47:47 | ==================================================
+2026-04-11 10:47:47 | CONEXION A LA BASE DE DATOS ESTABLECIDA
+2026-04-11 10:47:47 | ==================================================
+2026-04-11 10:47:47 | ==================================================
+2026-04-11 10:47:47 | INICIANDO PROCESO PARA TASK_ID: 133 (Tarea: clustering)
+2026-04-11 10:47:47 | ==================================================
+2026-04-11 10:47:47 | OK - Datos descargados para task_id: 133
+2026-04-11 10:47:47 | ==================================================
+2026-04-11 10:47:47 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:47:47 | ==================================================
+2026-04-11 10:47:47 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:48:17 |   TIMEOUT en grupo 'landmarking' después de 30s -> se rellena con error
+2026-04-11 10:48:17 | Grupo 'general' - timeout: 30.0s (restante global: 150.0s)
+2026-04-11 10:48:47 |   TIMEOUT en grupo 'general' después de 30s -> se rellena con error
+2026-04-11 10:48:47 | Grupo 'statistical' - timeout: 30.0s (restante global: 119.9s)
+2026-04-11 10:49:17 |   TIMEOUT en grupo 'statistical' después de 30s -> se rellena con error
+2026-04-11 10:49:17 | Grupo 'model-based' - timeout: 30.0s (restante global: 89.9s)
+2026-04-11 10:49:48 |   TIMEOUT en grupo 'model-based' después de 30s -> se rellena con error
+2026-04-11 10:49:48 | Grupo 'info-theory' - timeout: 30.0s (restante global: 59.8s)
+2026-04-11 10:50:18 |   TIMEOUT en grupo 'info-theory' después de 30s -> se rellena con error
+2026-04-11 10:50:18 | Grupo 'relative' - timeout: 29.7s (restante global: 29.7s)
+2026-04-11 10:50:47 |   TIMEOUT en grupo 'relative' después de 29.724567890167236s -> se rellena con error
+2026-04-11 10:50:47 | Tiempo global agotado (180s). Se rellenan los 4 grupos restantes con error.
+2026-04-11 10:50:47 | Extracción finalizada en 180.05 segundos globales
+2026-04-11 10:50:47 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:50:53 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:51:05 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-11 10:51:05 | OK - Meta-features vectorizadas en una lista con longitud: 182
+2026-04-11 10:51:05 | OK - Metafeatures extraídas para task_id: 133
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "mediana",
+    "tratar_faltantes_strings": "eliminar",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "aleatorio",
+    "escalar_datos_numericos": "robust_scaler",
+    "normalizar_datos_numericos": "cuadrado",
+    "crear_nueva_variable": "llm_deepseek-r1:8b",
+    "seleccionar_variables": "pca_90"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. spectral_clustering
+2026-04-11 10:51:06 | 2. mean_shift
+2026-04-11 10:51:06 | 3. agglomerative_clustering
+2026-04-11 10:51:06 | 4. birch
+2026-04-11 10:51:06 | LLM seleccionado: deepseek-r1:8b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "moda",
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "aleatorio",
+    "escalar_datos_numericos": "standard_scaler",
+    "normalizar_datos_numericos": "ln",
+    "crear_nueva_variable": "llm_qwen2.5-coder:7b",
+    "seleccionar_variables": "mutual_info_75"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. kmeans
+2026-04-11 10:51:06 | 2. agglomerative_clustering
+2026-04-11 10:51:06 | 3. spectral_clustering
+2026-04-11 10:51:06 | 4. birch
+2026-04-11 10:51:06 | LLM seleccionado: deepseek-r1:8b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "moda",
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media_geometrica",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "ln",
+    "crear_nueva_variable": "llm_deepseek-r1:8b",
+    "seleccionar_variables": "llm_llama3.1:8b"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. agglomerative_clustering
+2026-04-11 10:51:06 | 2. birch
+2026-04-11 10:51:06 | 3. kmeans
+2026-04-11 10:51:06 | 4. mean_shift
+2026-04-11 10:51:06 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "aleatorio",
+    "tratar_faltantes_strings": "moda",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "mediana",
+    "escalar_datos_numericos": "max_abs_scaler",
+    "normalizar_datos_numericos": "sqrt",
+    "crear_nueva_variable": "llm_qwen2.5-coder:7b",
+    "seleccionar_variables": "mutual_info_50"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. spectral_clustering
+2026-04-11 10:51:06 | 2. dbscan
+2026-04-11 10:51:06 | 3. birch
+2026-04-11 10:51:06 | 4. mean_shift
+2026-04-11 10:51:06 | LLM seleccionado: None
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "media_geometrica",
+    "tratar_faltantes_strings": "moda",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "moda",
+    "escalar_datos_numericos": "max_abs_scaler",
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": null
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. kmeans
+2026-04-11 10:51:06 | 2. mean_shift
+2026-04-11 10:51:06 | 3. dbscan
+2026-04-11 10:51:06 | 4. birch
+2026-04-11 10:51:06 | LLM seleccionado: deepseek-r1:8b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "eliminar",
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "moda",
+    "escalar_datos_numericos": "min_max",
+    "normalizar_datos_numericos": "z_score",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "mutual_info_50"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. agglomerative_clustering
+2026-04-11 10:51:06 | 2. dbscan
+2026-04-11 10:51:06 | 3. mean_shift
+2026-04-11 10:51:06 | 4. kmeans
+2026-04-11 10:51:06 | LLM seleccionado: deepseek-r1:8b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "aleatorio",
+    "tratar_faltantes_strings": "eliminar",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media_geometrica",
+    "escalar_datos_numericos": "max_abs_scaler",
+    "normalizar_datos_numericos": null,
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "mutual_info_50"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. kmeans
+2026-04-11 10:51:06 | 2. agglomerative_clustering
+2026-04-11 10:51:06 | 3. birch
+2026-04-11 10:51:06 | 4. mean_shift
+2026-04-11 10:51:06 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "mediana",
+    "tratar_faltantes_strings": "moda",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "moda",
+    "escalar_datos_numericos": "robust_scaler",
+    "normalizar_datos_numericos": null,
+    "crear_nueva_variable": "llm_deepseek-r1:8b",
+    "seleccionar_variables": "mutual_info_50"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. kmeans
+2026-04-11 10:51:06 | 2. birch
+2026-04-11 10:51:06 | 3. agglomerative_clustering
+2026-04-11 10:51:06 | 4. mean_shift
+2026-04-11 10:51:06 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "media_geometrica",
+    "tratar_faltantes_strings": "moda",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": null,
+    "escalar_datos_numericos": "min_max",
+    "normalizar_datos_numericos": "cuadrado",
+    "crear_nueva_variable": "llm_qwen2.5-coder:7b",
+    "seleccionar_variables": "pca_95"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. birch
+2026-04-11 10:51:06 | 2. kmeans
+2026-04-11 10:51:06 | 3. dbscan
+2026-04-11 10:51:06 | 4. mean_shift
+2026-04-11 10:51:06 | LLM seleccionado: llama3.1:8b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Pipeline generado
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "eliminar",
+    "tratar_faltantes_strings": "moda",
+    "codificar_variables_categoricas_rango_bajo": "label_encoding",
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "moda",
+    "escalar_datos_numericos": "robust_scaler",
+    "normalizar_datos_numericos": null,
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "pca_99"
+}
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | Modelos seleccionados
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | 1. dbscan
+2026-04-11 10:51:06 | 2. spectral_clustering
+2026-04-11 10:51:06 | 3. agglomerative_clustering
+2026-04-11 10:51:06 | 4. kmeans
+2026-04-11 10:51:06 | LLM seleccionado: llama3.1:8b
+2026-04-11 10:51:06 | --------------------------------------------------
+2026-04-11 10:51:06 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-11 10:51:06 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:06 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-11 10:51:06 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:06 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-11 10:51:06 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-11 10:51:06 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:06 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: moda      
+2026-04-11 10:51:06 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: aleatorio 
+2026-04-11 10:51:06 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: media_geometrica
+2026-04-11 10:51:06 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: moda      
+2026-04-11 10:51:06 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: moda      
+2026-04-11 10:51:06 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: etiqueta_desconocido
+2026-04-11 10:51:06 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: label_encoding
+2026-04-11 10:51:06 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: aleatorio 
+2026-04-11 10:51:07 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: etiqueta_desconocido
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: mediana   
+2026-04-11 10:51:07 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: media_geometrica
+2026-04-11 10:51:07 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: moda      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: moda      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: moda      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: mediana   
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: etiqueta_desconocido
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: moda      
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: eliminar  
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:07 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: media_geometrica
+2026-04-11 10:51:07 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:07 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: ln        
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:07 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: aleatorio 
+2026-04-11 10:51:07 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: robust_scaler
+2026-04-11 10:51:07 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: moda      
+2026-04-11 10:51:07 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: cuadrado  
+2026-04-11 10:51:07 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: robust_scaler
+2026-04-11 10:51:07 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: None      
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: label_encoding
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-11 10:51:07 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:07 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: moda      
+2026-04-11 10:51:08 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: robust_scaler
+2026-04-11 10:51:08 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: None      
+2026-04-11 10:51:09 | Respuesta del modelo: {"steel_ratio": "`steel` / `carbon`", "hardness_index": "(`hardness` * 100) + (`temper_rolling`)", "surface_quality_score": "(`surface-finish` + `surface-quality`) / 2", "strength_to_weight_ratio": "`strength` / (`bc` + `bf`)"}
+2026-04-11 10:51:09 | Tiempo de respuesta: 1.52 segundos
+2026-04-11 10:51:09 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-11 10:51:09 | ERROR - Fase: seleccionar_variables                         | Algoritmo: pca_99    
+2026-04-11 10:51:09 | Exception: Input X contains NaN.
+PCA does not accept missing values encoded as NaN natively. For supervised learning, you might want to consider sklearn.ensemble.HistGradientBoostingClassifier and Regressor which accept missing values encoded as NaNs natively. Alternatively, it is possible to preprocess the data, for instance by using an imputer transformer in a pipeline or drop samples with missing values. See https://scikit-learn.org/stable/modules/impute.html You can find a list of all estimators that handle NaN values at the following page: https://scikit-learn.org/stable/modules/impute.html#estimators-that-handle-nan-values
+2026-04-11 10:51:10 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-11 10:51:10 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-11 10:51:10 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-11 10:51:10 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:10 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-11 10:51:10 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: moda      
+2026-04-11 10:51:10 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:11 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: moda      
+2026-04-11 10:51:11 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: min_max   
+2026-04-11 10:51:11 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: max_abs_scaler
+2026-04-11 10:51:11 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: z_score   
+2026-04-11 10:51:11 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: inverso   
+2026-04-11 10:51:13 | Respuesta del modelo: {'family_ZF_ratio': '`family_ZF` / `family_TN`',
+ 'steel_S_ratio': '`steel_S` / `steel_A`',
+ 'surface-quality_E_ratio': '`surface-quality_E` / `surface-quality_G`',
+ 'bore_600_minus_bore_0': '`bore_600` - `bore_0`',
+ 'packing_2_plus_packing_3': '`packing_2` + `packing_3`'}
+2026-04-11 10:51:13 | Tiempo de respuesta: 2.11 segundos
+2026-04-11 10:51:13 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-11 10:51:13 | OK    - Fase: seleccionar_variables                         | Algoritmo: mutual_info_50
+2026-04-11 10:51:13 | --------------------------------------------------
+2026-04-11 10:51:13 | --------------------------------------------------
+2026-04-11 10:51:13 | Entrenando modelos para tarea 'clustering'
+2026-04-11 10:51:13 | --------------------------------------------------
+2026-04-11 10:51:13 | ==================================================
+2026-04-11 10:51:13 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:51:13 | ==================================================
+2026-04-11 10:51:13 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:51:14 |   ERROR en grupo 'landmarking': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'general' - timeout: 30.0s (restante global: 179.9s)
+2026-04-11 10:51:14 |   ERROR en grupo 'general': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.8s)
+2026-04-11 10:51:14 |   ERROR en grupo 'statistical': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.7s)
+2026-04-11 10:51:14 |   ERROR en grupo 'model-based': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.6s)
+2026-04-11 10:51:14 |   ERROR en grupo 'info-theory': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'relative' - timeout: 30.0s (restante global: 179.4s)
+2026-04-11 10:51:14 |   ERROR en grupo 'relative': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'clustering' - timeout: 30.0s (restante global: 179.4s)
+2026-04-11 10:51:14 |   ERROR en grupo 'clustering': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'complexity' - timeout: 30.0s (restante global: 179.2s)
+2026-04-11 10:51:14 |   ERROR en grupo 'complexity': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'itemset' - timeout: 30.0s (restante global: 179.1s)
+2026-04-11 10:51:14 |   ERROR en grupo 'itemset': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:14 | Grupo 'concept' - timeout: 30.0s (restante global: 179.0s)
+2026-04-11 10:51:15 |   ERROR en grupo 'concept': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:15 | Extracción finalizada en 1.12 segundos globales
+2026-04-11 10:51:15 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:51:15 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:51:15 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-11 10:51:15 | Respuesta del modelo: {'family_ZF_ratio': '`family_ZF` / `family_TN`',
+ 'steel_S_ratio': '`steel_S` / `steel_A`',
+ 'surface-quality_E_ratio': '`surface-quality_E` / `surface-quality_G`',
+ 'bore_600_minus_bore_0': '`bore_600` - `bore_0`',
+ 'packing_2_plus_packing_3': '`packing_2` + `packing_3`'}
+2026-04-11 10:51:15 | Tiempo de respuesta: 3.73 segundos
+2026-04-11 10:51:15 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-11 10:51:15 | OK    - Fase: seleccionar_variables                         | Algoritmo: None      
+2026-04-11 10:51:15 | --------------------------------------------------
+2026-04-11 10:51:15 | --------------------------------------------------
+2026-04-11 10:51:15 | Entrenando modelos para tarea 'clustering'
+2026-04-11 10:51:15 | --------------------------------------------------
+2026-04-11 10:51:15 | ==================================================
+2026-04-11 10:51:15 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:51:15 | ==================================================
+2026-04-11 10:51:15 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:51:17 |   Completado en 1.92s - 0 features extraídas
+2026-04-11 10:51:17 | Grupo 'general' - timeout: 30.0s (restante global: 178.1s)
+2026-04-11 10:51:19 |   Completado en 1.97s - 9 features extraídas
+2026-04-11 10:51:19 | Grupo 'statistical' - timeout: 30.0s (restante global: 176.1s)
+2026-04-11 10:51:23 |   Completado en 3.63s - 39 features extraídas
+2026-04-11 10:51:23 | Grupo 'model-based' - timeout: 30.0s (restante global: 172.5s)
+2026-04-11 10:51:25 |   Completado en 1.92s - 0 features extraídas
+2026-04-11 10:51:25 | Grupo 'info-theory' - timeout: 30.0s (restante global: 170.6s)
+2026-04-11 10:51:25 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-11 10:51:26 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-11 10:51:26 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:26 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: None      
+2026-04-11 10:51:26 | Respuesta del modelo: {"carbon_chrom_ratio": "(`carbon` / `chrom`)", "strength_formability_ratio": "(`strength` / `formability`)", "non_ageing_strength_ratio": "(`non_ageing` / `strength`)", "carbon_steel_ratio": "(`carbon` / `steel`)", "chrom_phos_ratio": "(`chrom` / `phos`)"}
+2026-04-11 10:51:26 | Tiempo de respuesta: 18.92 segundos
+2026-04-11 10:51:26 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_deepseek-r1:8b
+2026-04-11 10:51:26 | ERROR - Fase: seleccionar_variables                         | Algoritmo: llm_llama3.1:8b
+2026-04-11 10:51:26 | Exception: 'SeleccionarVariables' object has no attribute 'descripcion'
+2026-04-11 10:51:28 |   Completado en 3.85s - 4 features extraídas
+2026-04-11 10:51:28 | Grupo 'relative' - timeout: 30.0s (restante global: 166.7s)
+2026-04-11 10:51:28 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: min_max   
+2026-04-11 10:51:29 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: cuadrado  
+2026-04-11 10:51:30 | Respuesta del modelo: {}
+2026-04-11 10:51:30 | Tiempo de respuesta: 0.25 segundos
+2026-04-11 10:51:30 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_qwen2.5-coder:7b
+2026-04-11 10:51:30 |   Completado en 1.90s - 0 features extraídas
+2026-04-11 10:51:30 | Grupo 'clustering' - timeout: 30.0s (restante global: 164.8s)
+2026-04-11 10:51:30 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-11 10:51:31 | OK    - Fase: seleccionar_variables                         | Algoritmo: pca_95    
+2026-04-11 10:51:31 | --------------------------------------------------
+2026-04-11 10:51:31 | --------------------------------------------------
+2026-04-11 10:51:31 | Entrenando modelos para tarea 'clustering'
+2026-04-11 10:51:31 | --------------------------------------------------
+2026-04-11 10:51:31 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-11 10:51:31 | ==================================================
+2026-04-11 10:51:31 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:51:31 | ==================================================
+2026-04-11 10:51:31 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:51:32 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:32 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: media_geometrica
+2026-04-11 10:51:32 |   Completado en 2.10s - 0 features extraídas
+2026-04-11 10:51:32 | Grupo 'complexity' - timeout: 30.0s (restante global: 162.7s)
+2026-04-11 10:51:33 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-11 10:51:33 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-11 10:51:34 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-11 10:51:34 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-11 10:51:34 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:34 |   Completado en 1.97s - 3 features extraídas
+2026-04-11 10:51:34 | Grupo 'itemset' - timeout: 30.0s (restante global: 160.7s)
+2026-04-11 10:51:34 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-11 10:51:34 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: max_abs_scaler
+2026-04-11 10:51:34 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: aleatorio 
+2026-04-11 10:51:35 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: mediana   
+2026-04-11 10:51:35 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: None      
+2026-04-11 10:51:36 | Respuesta del modelo: {'surface-quality_ratio': '`surface-quality_E` / (`surface-quality_G` + `surface-quality_D`)'}
+2026-04-11 10:51:36 | Tiempo de respuesta: 0.78 segundos
+2026-04-11 10:51:36 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-11 10:51:36 | OK    - Fase: seleccionar_variables                         | Algoritmo: mutual_info_50
+2026-04-11 10:51:36 | --------------------------------------------------
+2026-04-11 10:51:36 | --------------------------------------------------
+2026-04-11 10:51:36 | Entrenando modelos para tarea 'clustering'
+2026-04-11 10:51:36 | --------------------------------------------------
+2026-04-11 10:51:36 | ==================================================
+2026-04-11 10:51:36 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:51:36 | ==================================================
+2026-04-11 10:51:36 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:51:36 |   ERROR en grupo 'landmarking': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:36 | Grupo 'general' - timeout: 30.0s (restante global: 179.9s)
+2026-04-11 10:51:36 |   ERROR en grupo 'general': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:36 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.8s)
+2026-04-11 10:51:36 |   ERROR en grupo 'statistical': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:36 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.7s)
+2026-04-11 10:51:37 |   ERROR en grupo 'model-based': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:37 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.5s)
+2026-04-11 10:51:37 |   ERROR en grupo 'info-theory': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:37 | Grupo 'relative' - timeout: 30.0s (restante global: 179.4s)
+2026-04-11 10:51:37 |   ERROR en grupo 'relative': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:37 | Grupo 'clustering' - timeout: 30.0s (restante global: 179.3s)
+2026-04-11 10:51:37 |   ERROR en grupo 'clustering': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:37 | Grupo 'complexity' - timeout: 30.0s (restante global: 179.3s)
+2026-04-11 10:51:37 |   ERROR en grupo 'complexity': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:37 | Grupo 'itemset' - timeout: 30.0s (restante global: 179.2s)
+2026-04-11 10:51:37 |   ERROR en grupo 'itemset': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:37 | Grupo 'concept' - timeout: 30.0s (restante global: 179.1s)
+2026-04-11 10:51:37 |   ERROR en grupo 'concept': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:37 | Extracción finalizada en 1.02 segundos globales
+2026-04-11 10:51:37 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:51:37 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: max_abs_scaler
+2026-04-11 10:51:37 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:51:37 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-11 10:51:38 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: standard_scaler
+2026-04-11 10:51:38 |   Completado en 3.80s - 4 features extraídas
+2026-04-11 10:51:38 | Grupo 'concept' - timeout: 30.0s (restante global: 156.9s)
+2026-04-11 10:51:38 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: sqrt      
+2026-04-11 10:51:39 |   Completado en 7.14s - 0 features extraídas
+2026-04-11 10:51:39 | Grupo 'general' - timeout: 30.0s (restante global: 172.9s)
+2026-04-11 10:51:39 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: ln        
+2026-04-11 10:51:40 |   Completado en 1.76s - 4 features extraídas
+2026-04-11 10:51:40 | Extracción finalizada en 24.83 segundos globales
+2026-04-11 10:51:40 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:51:42 | Respuesta del modelo: {
+    'n_clusters': 5,
+    'init': 'k-means++',
+    'max_iter': 300,
+    'tol': 0.0001,
+    'algorithm': 'auto'
+}
+2026-04-11 10:51:42 | Tiempo de respuesta: 4.29 segundos
+2026-04-11 10:51:42 | Respuesta del modelo: {}
+2026-04-11 10:51:42 | Tiempo de respuesta: 3.82 segundos
+2026-04-11 10:51:42 | Respuesta del modelo: {}
+2026-04-11 10:51:42 | Tiempo de respuesta: 2.98 segundos
+2026-04-11 10:51:44 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:51:44 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_qwen2.5-coder:7b
+2026-04-11 10:51:44 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_qwen2.5-coder:7b
+2026-04-11 10:51:44 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-11 10:51:44 | OK    - Fase: seleccionar_variables                         | Algoritmo: mutual_info_50
+2026-04-11 10:51:44 | --------------------------------------------------
+2026-04-11 10:51:44 | --------------------------------------------------
+2026-04-11 10:51:44 | Entrenando modelos para tarea 'clustering'
+2026-04-11 10:51:44 | --------------------------------------------------
+2026-04-11 10:51:44 | ==================================================
+2026-04-11 10:51:44 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:51:44 | ==================================================
+2026-04-11 10:51:44 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:51:44 | Respuesta del modelo: {
+    'linkage': 'complete',
+    'distance_threshold': 0.5,
+    'n_clusters': 3
+}
+2026-04-11 10:51:44 | Tiempo de respuesta: 2.60 segundos
+2026-04-11 10:51:45 | OK    - Fase: seleccionar_variables                         | Algoritmo: mutual_info_75
+2026-04-11 10:51:45 | --------------------------------------------------
+2026-04-11 10:51:45 | --------------------------------------------------
+2026-04-11 10:51:45 | Entrenando modelos para tarea 'clustering'
+2026-04-11 10:51:45 | --------------------------------------------------
+2026-04-11 10:51:45 | ==================================================
+2026-04-11 10:51:45 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:51:45 | ==================================================
+2026-04-11 10:51:45 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:51:45 |   ERROR en grupo 'landmarking': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'general' - timeout: 30.0s (restante global: 179.9s)
+2026-04-11 10:51:45 |   ERROR en grupo 'landmarking': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'general' - timeout: 30.0s (restante global: 179.9s)
+2026-04-11 10:51:45 |   ERROR en grupo 'general': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.8s)
+2026-04-11 10:51:45 |   ERROR en grupo 'general': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.8s)
+2026-04-11 10:51:45 |   ERROR en grupo 'statistical': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.7s)
+2026-04-11 10:51:45 |   ERROR en grupo 'statistical': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.7s)
+2026-04-11 10:51:45 |   ERROR en grupo 'model-based': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.6s)
+2026-04-11 10:51:45 |   ERROR en grupo 'model-based': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.6s)
+2026-04-11 10:51:45 |   ERROR en grupo 'info-theory': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'relative' - timeout: 30.0s (restante global: 179.5s)
+2026-04-11 10:51:45 |   ERROR en grupo 'info-theory': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'relative' - timeout: 30.0s (restante global: 179.5s)
+2026-04-11 10:51:45 |   ERROR en grupo 'relative': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'clustering' - timeout: 30.0s (restante global: 179.4s)
+2026-04-11 10:51:45 |   ERROR en grupo 'relative': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'clustering' - timeout: 30.0s (restante global: 179.4s)
+2026-04-11 10:51:45 |   ERROR en grupo 'clustering': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'complexity' - timeout: 30.0s (restante global: 179.3s)
+2026-04-11 10:51:45 |   ERROR en grupo 'clustering': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'complexity' - timeout: 30.0s (restante global: 179.3s)
+2026-04-11 10:51:45 |   ERROR en grupo 'complexity': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'itemset' - timeout: 30.0s (restante global: 179.2s)
+2026-04-11 10:51:45 |   ERROR en grupo 'complexity': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'itemset' - timeout: 30.0s (restante global: 179.2s)
+2026-04-11 10:51:45 |   ERROR en grupo 'itemset': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'concept' - timeout: 30.0s (restante global: 179.1s)
+2026-04-11 10:51:45 |   ERROR en grupo 'itemset': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Grupo 'concept' - timeout: 30.0s (restante global: 179.1s)
+2026-04-11 10:51:45 |   ERROR en grupo 'concept': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:45 | Extracción finalizada en 1.02 segundos globales
+2026-04-11 10:51:45 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:51:46 | Respuesta del modelo: {'branching_factor': 30, 'compute_labels': False, 'copy': 'deep', 'n_clusters': 5, 'threshold': 0.4}
+2026-04-11 10:51:46 | Tiempo de respuesta: 0.87 segundos
+2026-04-11 10:51:46 |   ERROR en grupo 'concept': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:51:46 | Extracción finalizada en 0.98 segundos globales
+2026-04-11 10:51:46 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:51:46 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:51:46 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-11 10:51:46 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:51:46 |   Completado en 7.20s - 9 features extraídas
+2026-04-11 10:51:46 | Grupo 'statistical' - timeout: 30.0s (restante global: 165.7s)
+2026-04-11 10:51:46 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-11 10:51:47 | Respuesta del modelo: {'bandwidth': 0.5, 'bin_seeding': True, 'cluster_all': False, 'max_iter': 500, 'min_bin_freq': 2, 'n_jobs': -1, 'seeds': None}
+2026-04-11 10:51:47 | Tiempo de respuesta: 1.17 segundos
+2026-04-11 10:51:47 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-11 10:51:57 | Respuesta del modelo: {"chemical_composition": "(`carbon` + `chrom` + `phos` + `cbond` + `marvi` + `exptl` + `ferro` + `corr`)", "surface_properties": "(`surface-finish` + `surface-quality` + `enamelability` + `lustre`)", "mechanical_strength": "(`hardness` + `strength` + `formability`)", "size_measure": "(`thick` * `width` * `len`)", "process_related": "(`temper_rolling` + `condition` + `non-ageing` + `bc` + `bf` + `bt` + `bw%2Fme` + `bl` + `m` + `phos` + `corr` + `blue%2Fbright%2Fvarn%2Fclean` + `jurofm` + `s` + `p` + `shape` + `oil` + `bore` + `packing`)"}
+2026-04-11 10:51:57 | Tiempo de respuesta: 49.42 segundos
+2026-04-11 10:51:57 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_deepseek-r1:8b
+2026-04-11 10:51:57 | ERROR - Fase: seleccionar_variables                         | Algoritmo: pca_90    
+2026-04-11 10:51:57 | Exception: at least one array or dtype is required
+2026-04-11 10:51:57 |   Completado en 11.49s - 39 features extraídas
+2026-04-11 10:51:57 | Grupo 'model-based' - timeout: 30.0s (restante global: 154.2s)
+2026-04-11 10:52:04 |   Completado en 7.08s - 0 features extraídas
+2026-04-11 10:52:04 | Grupo 'info-theory' - timeout: 30.0s (restante global: 147.1s)
+2026-04-11 10:52:21 | Respuesta del modelo: {"chemical_composition": "(`carbon` + `chrom` + `phos` + `cbond` + `marvi` + `exptl` + `ferro` + `corr`)", "surface_properties": "(`surface-finish` + `surface-quality` + `enamelability` + `lustre`)", "mechanical_strength": "(`hardness` + `strength` + `formability`)", "size_measure": "(`thick` * `width` * `len`)", "process_related": "(`temper_rolling` + `condition` + `non-ageing` + `bc` + `bf` + `bt` + `bw%2Fme` + `bl` + `m` + `phos` + `corr` + `blue%2Fbright%2Fvarn%2Fclean` + `jurofm` + `s` + `p` + `shape` + `oil` + `bore` + `packing`)"}
+2026-04-11 10:52:21 | Tiempo de respuesta: 73.89 segundos
+2026-04-11 10:52:21 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_deepseek-r1:8b
+2026-04-11 10:52:21 | OK    - Fase: seleccionar_variables                         | Algoritmo: mutual_info_50
+2026-04-11 10:52:21 | --------------------------------------------------
+2026-04-11 10:52:21 | --------------------------------------------------
+2026-04-11 10:52:21 | Entrenando modelos para tarea 'clustering'
+2026-04-11 10:52:21 | --------------------------------------------------
+2026-04-11 10:52:21 | ==================================================
+2026-04-11 10:52:21 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-11 10:52:21 | ==================================================
+2026-04-11 10:52:21 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-11 10:52:21 |   ERROR en grupo 'landmarking': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:21 | Grupo 'general' - timeout: 30.0s (restante global: 179.9s)
+2026-04-11 10:52:21 |   ERROR en grupo 'general': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:21 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.8s)
+2026-04-11 10:52:21 |   ERROR en grupo 'statistical': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:21 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.7s)
+2026-04-11 10:52:22 |   ERROR en grupo 'model-based': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:22 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.6s)
+2026-04-11 10:52:22 |   ERROR en grupo 'info-theory': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:22 | Grupo 'relative' - timeout: 30.0s (restante global: 179.5s)
+2026-04-11 10:52:22 |   ERROR en grupo 'relative': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:22 | Grupo 'clustering' - timeout: 30.0s (restante global: 179.4s)
+2026-04-11 10:52:22 |   ERROR en grupo 'clustering': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:22 | Grupo 'complexity' - timeout: 30.0s (restante global: 179.3s)
+2026-04-11 10:52:22 |   ERROR en grupo 'complexity': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:22 | Grupo 'itemset' - timeout: 30.0s (restante global: 179.2s)
+2026-04-11 10:52:22 |   ERROR en grupo 'itemset': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:22 | Grupo 'concept' - timeout: 30.0s (restante global: 179.2s)
+2026-04-11 10:52:22 |   ERROR en grupo 'concept': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-11 10:52:22 | Extracción finalizada en 0.94 segundos globales
+2026-04-11 10:52:22 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:52:22 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:52:22 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-11 10:52:22 | Respuesta del modelo: {'n_clusters': 4}
+2026-04-11 10:52:22 | Tiempo de respuesta: 0.36 segundos
+2026-04-11 10:52:23 | Respuesta del modelo: {'branching_factor': 30, 'compute_labels': True, 'n_clusters': 4, 'threshold': 0.6}
+2026-04-11 10:52:23 | Tiempo de respuesta: 0.78 segundos
+2026-04-11 10:52:24 | Respuesta del modelo: {'n_clusters': 3}
+2026-04-11 10:52:24 | Tiempo de respuesta: 0.42 segundos
+2026-04-11 10:52:26 | Respuesta del modelo: {
+    'bandwidth': 0.5,
+    'bin_seeding': True,
+    'cluster_all': False,
+    'max_iter': 500,
+    'min_bin_freq': 3,
+    'n_jobs': -1,
+    'seeds': None
+}
+2026-04-11 10:52:26 | Tiempo de respuesta: 2.27 segundos
+2026-04-11 10:52:26 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-11 10:52:31 |   Completado en 26.22s - 4 features extraídas
+2026-04-11 10:52:31 | Grupo 'relative' - timeout: 30.0s (restante global: 120.9s)
+2026-04-11 10:52:37 |   Completado en 6.91s - 0 features extraídas
+2026-04-11 10:52:37 | Grupo 'clustering' - timeout: 30.0s (restante global: 114.0s)
+2026-04-11 10:52:41 | Respuesta del modelo: {'compute_distances': False, 'compute_full_tree': 'auto', 'connectivity': None, 'distance_threshold': None, 'linkage': 'ward', 'memory': None, 'metric': 'euclidean', 'n_clusters': 2}
+2026-04-11 10:52:41 | Tiempo de respuesta: 86.64 segundos
+2026-04-11 10:52:45 |   Completado en 7.09s - 0 features extraídas
+2026-04-11 10:52:45 | Grupo 'complexity' - timeout: 30.0s (restante global: 106.9s)
+2026-04-11 10:52:52 |   Completado en 7.34s - 3 features extraídas
+2026-04-11 10:52:52 | Grupo 'itemset' - timeout: 30.0s (restante global: 99.5s)
+2026-04-11 10:53:20 | Respuesta del modelo: {'algorithm': 'lloyd', 'copy_x': True, 'init': 'k-means++', 'max_iter': 300, 'n_clusters': 8, 'n_init': 'auto', 'random_state': None, 'tol': 0.0001, 'verbose': 0}
+2026-04-11 10:53:20 | Tiempo de respuesta: 95.21 segundos
+2026-04-11 10:53:22 |   TIMEOUT en grupo 'itemset' después de 30s -> se rellena con error
+2026-04-11 10:53:22 | Grupo 'concept' - timeout: 30.0s (restante global: 69.4s)
+2026-04-11 10:53:29 |   Completado en 7.25s - 4 features extraídas
+2026-04-11 10:53:29 | Extracción finalizada en 117.84 segundos globales
+2026-04-11 10:53:29 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-11 10:53:57 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-11 10:53:57 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-11 10:53:57 | Respuesta del modelo: {'eps': 0.5, 'min_samples': 5, 'algorithm': 'auto', 'metric': 'euclidean', 'leaf_size': 30}
+2026-04-11 10:53:57 | Tiempo de respuesta: 76.03 segundos
+2026-04-11 10:53:58 | Respuesta del modelo: {'branching_factor': 100, 'compute_labels': False, 'n_clusters': 5, 'threshold': 0.7}
+2026-04-11 10:53:58 | Tiempo de respuesta: 0.95 segundos
+2026-04-11 10:54:41 | Respuesta del modelo: {'bandwidth': None, 'bin_seeding': True, 'min_bin_freq': 10, 'n_jobs': -1}
+2026-04-11 10:54:41 | Tiempo de respuesta: 81.43 segundos
+2026-04-11 10:54:58 | Respuesta del modelo: {'bandwidth': None, 'bin_seeding': True, 'max_iter': 300, 'min_bin_freq': 1, 'n_jobs': None, 'seeds': None}
+2026-04-11 10:54:58 | Tiempo de respuesta: 60.57 segundos
+2026-04-11 10:55:33 | Respuesta del modelo: {'eps': 100, 'min_samples': 5, 'n_jobs': -1}
+2026-04-11 10:55:33 | Tiempo de respuesta: 51.79 segundos
+2026-04-11 10:55:55 | Respuesta del modelo: {'n_clusters': 8, 'algorithm': 'lloyd', 'max_iter': 300, 'tol': 0.0001, 'random_state': None, 'init': 'k-means++', 'n_init': 'auto'}
+2026-04-11 10:55:55 | Tiempo de respuesta: 56.59 segundos
+2026-04-11 10:55:55 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-11 10:56:21 | Respuesta del modelo: {'n_clusters': 100, 'threshold': 0.5, 'branching_factor': 30, 'compute_labels': True}
+2026-04-11 10:56:21 | Tiempo de respuesta: 47.38 segundos

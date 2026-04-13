@@ -40,7 +40,6 @@ class BaseDeDatos:
                 user=configuracion.db_user,
                 password=configuracion.db_password,
                 port=configuracion.db_port,
-                prepare_threshold=0
             )
             print("=" * 50)
             print("CONEXION A LA BASE DE DATOS ESTABLECIDA")
@@ -78,10 +77,12 @@ class BaseDeDatos:
 
     def insertar_muchos(self, query: str, params_lote: Iterable[Sequence]):
         """Ejecuta inserciones en lote y hace un solo commit."""
-        conn = self.conn
+        conn = self.conectar()
         with conn.cursor() as cur:
-            cur.executemany(query, params_lote)
+            cur.executemany(query, params_lote, prepare=False)
         conn.commit()
+        print("OK - Pipeline guardado en la DB")
+        print("="*300)
 
     def cerrar(self):
         if self.conn and not self.conn.closed:
@@ -96,7 +97,7 @@ class BaseDeDatos:
             return
 
         query = """
-        INSERT INTO staging_resultados (
+        INSERT INTO staging_resultados3 (
             nombre_dataset,
             num_pipeline,
             num_modelo,

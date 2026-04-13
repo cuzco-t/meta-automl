@@ -161,6 +161,10 @@ class OrquestadorExperimentos:
 
                 if status == "ok":
                     self.logger.info(f"Pipeline {pipeline_id} completado exitosamente.")
+
+                    print("\n"*5)
+                    print("="*100)
+                    print("OK - Este pipeline se completo correctamente")
                     self._registrar_resultado_pipeline(
                         dataset_name=dataset_name,
                         tarea=tarea,
@@ -174,12 +178,16 @@ class OrquestadorExperimentos:
 
                 procesos_activos -= 1
 
-            except:
+            except Exception as e:
+                print("\n"*5)
+                print(f"Error al procesar resultado: {e}")
                 pass  # No hay resultados aún
 
             # Control de timeout global
             if time.time() - start_time > timeout:
                 self.logger.info("Timeout global alcanzado. Terminando procesos...")
+                print("\n")
+                print("TIMEOUT GLOBAL")
                 for i, p in enumerate(procesos):
                     if p.is_alive():
                         p.terminate()
@@ -188,6 +196,8 @@ class OrquestadorExperimentos:
 
         # Limpieza final
         for p in procesos:
+            print("\n"*5)
+            print("LIMPIEZA")
             p.join()
         
 

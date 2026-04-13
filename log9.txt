@@ -1,0 +1,984 @@
+2026-04-13 09:24:02 | ==================================================
+2026-04-13 09:24:02 | CONEXION A LA BASE DE DATOS ESTABLECIDA
+2026-04-13 09:24:02 | ==================================================
+2026-04-13 09:24:02 | ==================================================
+2026-04-13 09:24:02 | INICIANDO PROCESO PARA TASK_ID: 2997 (Tarea: regresion)
+2026-04-13 09:24:02 | ==================================================
+2026-04-13 09:24:05 | OK - Datos descargados para task_id: 2997
+2026-04-13 09:24:05 | ==================================================
+2026-04-13 09:24:05 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 09:24:05 | ==================================================
+2026-04-13 09:24:05 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 09:24:05 |   Completado en 0.12s - 14 features extraídas
+2026-04-13 09:24:05 | Grupo 'general' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 09:24:05 |   Completado en 0.04s - 12 features extraídas
+2026-04-13 09:24:05 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.8s)
+2026-04-13 09:24:06 |   Completado en 0.40s - 48 features extraídas
+2026-04-13 09:24:06 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.4s)
+2026-04-13 09:24:06 |   Completado en 0.04s - 0 features extraídas
+2026-04-13 09:24:06 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.4s)
+2026-04-13 09:24:06 |   Completado en 0.86s - 13 features extraídas
+2026-04-13 09:24:06 | Grupo 'relative' - timeout: 30.0s (restante global: 178.5s)
+2026-04-13 09:24:06 |   Completado en 0.04s - 14 features extraídas
+2026-04-13 09:24:06 | Grupo 'clustering' - timeout: 30.0s (restante global: 178.5s)
+2026-04-13 09:24:07 |   Completado en 0.11s - 8 features extraídas
+2026-04-13 09:24:07 | Grupo 'complexity' - timeout: 30.0s (restante global: 178.4s)
+2026-04-13 09:24:07 |   ERROR en grupo 'complexity': Error en proceso de meta-features: Exception() -> se rellena con error
+2026-04-13 09:24:07 | Grupo 'itemset' - timeout: 30.0s (restante global: 178.3s)
+2026-04-13 09:24:07 |   Completado en 0.07s - 4 features extraídas
+2026-04-13 09:24:07 | Grupo 'concept' - timeout: 30.0s (restante global: 178.3s)
+2026-04-13 09:24:07 |   Completado en 0.04s - 8 features extraídas
+2026-04-13 09:24:07 | Extracción finalizada en 1.78 segundos globales
+2026-04-13 09:24:07 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 09:24:07 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 09:24:07 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 09:24:07 | OK - Meta-features vectorizadas en una lista con longitud: 182
+2026-04-13 09:24:07 | OK - Metafeatures extraídas para task_id: 2997
+2026-04-13 09:24:08 | --------------------------------------------------
+2026-04-13 09:24:08 | Pipeline generado
+2026-04-13 09:24:08 | --------------------------------------------------
+2026-04-13 09:24:08 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "media",
+    "tratar_faltantes_strings": "eliminar",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "moda",
+    "escalar_datos_numericos": "max_abs_scaler",
+    "normalizar_datos_numericos": "ln",
+    "crear_nueva_variable": "llm_deepseek-r1:8b",
+    "seleccionar_variables": "mutual_info_50"
+}
+2026-04-13 09:24:08 | --------------------------------------------------
+2026-04-13 09:24:08 | Modelos seleccionados
+2026-04-13 09:24:08 | --------------------------------------------------
+2026-04-13 09:24:08 | 1. lineal
+2026-04-13 09:24:08 | 2. ridge
+2026-04-13 09:24:08 | 3. gradient_boosting
+2026-04-13 09:24:08 | 4. ada_boost
+2026-04-13 09:24:08 | 5. arbol_decision
+2026-04-13 09:24:08 | 6. mlp_regressor
+2026-04-13 09:24:08 | 7. random_forest
+2026-04-13 09:24:08 | LLM seleccionado: None
+2026-04-13 09:24:08 | --------------------------------------------------
+2026-04-13 09:24:09 | --------------------------------------------------
+2026-04-13 09:24:09 | Pipeline generado
+2026-04-13 09:24:09 | --------------------------------------------------
+2026-04-13 09:24:09 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "moda",
+    "tratar_faltantes_strings": "aleatorio",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "aleatorio",
+    "escalar_datos_numericos": "robust_scaler",
+    "normalizar_datos_numericos": "cuadrado",
+    "crear_nueva_variable": null,
+    "seleccionar_variables": null
+}
+2026-04-13 09:24:09 | --------------------------------------------------
+2026-04-13 09:24:09 | Modelos seleccionados
+2026-04-13 09:24:09 | --------------------------------------------------
+2026-04-13 09:24:09 | 1. knn
+2026-04-13 09:24:09 | 2. lasso
+2026-04-13 09:24:09 | 3. ridge
+2026-04-13 09:24:09 | 4. ada_boost
+2026-04-13 09:24:09 | 5. arbol_decision
+2026-04-13 09:24:09 | 6. gradient_boosting
+2026-04-13 09:24:09 | 7. svr
+2026-04-13 09:24:09 | LLM seleccionado: llama3.1:8b
+2026-04-13 09:24:09 | --------------------------------------------------
+2026-04-13 09:24:11 | --------------------------------------------------
+2026-04-13 09:24:11 | Pipeline generado
+2026-04-13 09:24:11 | --------------------------------------------------
+2026-04-13 09:24:11 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": null,
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": "label_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media_geometrica",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "z_score",
+    "crear_nueva_variable": null,
+    "seleccionar_variables": "llm_llama3.1:8b"
+}
+2026-04-13 09:24:11 | --------------------------------------------------
+2026-04-13 09:24:11 | Modelos seleccionados
+2026-04-13 09:24:11 | --------------------------------------------------
+2026-04-13 09:24:11 | 1. mlp_regressor
+2026-04-13 09:24:11 | 2. lasso
+2026-04-13 09:24:11 | 3. elasticnet
+2026-04-13 09:24:11 | 4. lineal
+2026-04-13 09:24:11 | 5. knn
+2026-04-13 09:24:11 | 6. arbol_decision
+2026-04-13 09:24:11 | 7. ridge
+2026-04-13 09:24:11 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-13 09:24:11 | --------------------------------------------------
+2026-04-13 09:24:12 | --------------------------------------------------
+2026-04-13 09:24:12 | Pipeline generado
+2026-04-13 09:24:12 | --------------------------------------------------
+2026-04-13 09:24:12 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "aleatorio",
+    "tratar_faltantes_strings": "aleatorio",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "mediana",
+    "escalar_datos_numericos": "min_max",
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_deepseek-r1:8b",
+    "seleccionar_variables": "llm_deepseek-r1:8b"
+}
+2026-04-13 09:24:12 | --------------------------------------------------
+2026-04-13 09:24:12 | Modelos seleccionados
+2026-04-13 09:24:12 | --------------------------------------------------
+2026-04-13 09:24:12 | 1. lasso
+2026-04-13 09:24:12 | 2. knn
+2026-04-13 09:24:12 | 3. ada_boost
+2026-04-13 09:24:12 | 4. mlp_regressor
+2026-04-13 09:24:12 | 5. ridge
+2026-04-13 09:24:12 | 6. gradient_boosting
+2026-04-13 09:24:12 | 7. lineal
+2026-04-13 09:24:12 | LLM seleccionado: deepseek-r1:8b
+2026-04-13 09:24:12 | --------------------------------------------------
+2026-04-13 09:24:13 | --------------------------------------------------
+2026-04-13 09:24:13 | Pipeline generado
+2026-04-13 09:24:13 | --------------------------------------------------
+2026-04-13 09:24:13 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": null,
+    "tratar_faltantes_strings": "aleatorio",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "mediana",
+    "escalar_datos_numericos": "robust_scaler",
+    "normalizar_datos_numericos": "sqrt",
+    "crear_nueva_variable": null,
+    "seleccionar_variables": "umap_50"
+}
+2026-04-13 09:24:13 | --------------------------------------------------
+2026-04-13 09:24:13 | Modelos seleccionados
+2026-04-13 09:24:13 | --------------------------------------------------
+2026-04-13 09:24:13 | 1. gradient_boosting
+2026-04-13 09:24:13 | 2. mlp_regressor
+2026-04-13 09:24:13 | 3. ada_boost
+2026-04-13 09:24:13 | 4. arbol_decision
+2026-04-13 09:24:13 | 5. lineal
+2026-04-13 09:24:13 | 6. svr
+2026-04-13 09:24:13 | 7. random_forest
+2026-04-13 09:24:13 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-13 09:24:13 | --------------------------------------------------
+2026-04-13 09:24:15 | --------------------------------------------------
+2026-04-13 09:24:15 | Pipeline generado
+2026-04-13 09:24:15 | --------------------------------------------------
+2026-04-13 09:24:15 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "media",
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "aleatorio",
+    "escalar_datos_numericos": "robust_scaler",
+    "normalizar_datos_numericos": "sqrt",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "pca_90"
+}
+2026-04-13 09:24:15 | --------------------------------------------------
+2026-04-13 09:24:15 | Modelos seleccionados
+2026-04-13 09:24:15 | --------------------------------------------------
+2026-04-13 09:24:15 | 1. knn
+2026-04-13 09:24:15 | 2. svr
+2026-04-13 09:24:15 | 3. gradient_boosting
+2026-04-13 09:24:15 | 4. ridge
+2026-04-13 09:24:15 | 5. random_forest
+2026-04-13 09:24:15 | 6. lineal
+2026-04-13 09:24:15 | 7. lasso
+2026-04-13 09:24:15 | LLM seleccionado: None
+2026-04-13 09:24:15 | --------------------------------------------------
+2026-04-13 09:24:16 | --------------------------------------------------
+2026-04-13 09:24:16 | Pipeline generado
+2026-04-13 09:24:16 | --------------------------------------------------
+2026-04-13 09:24:16 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "media_geometrica",
+    "tratar_faltantes_strings": "moda",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "moda",
+    "escalar_datos_numericos": "min_max",
+    "normalizar_datos_numericos": "cuadrado",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "mutual_info_50"
+}
+2026-04-13 09:24:16 | --------------------------------------------------
+2026-04-13 09:24:16 | Modelos seleccionados
+2026-04-13 09:24:16 | --------------------------------------------------
+2026-04-13 09:24:16 | 1. svr
+2026-04-13 09:24:16 | 2. random_forest
+2026-04-13 09:24:16 | 3. mlp_regressor
+2026-04-13 09:24:16 | 4. arbol_decision
+2026-04-13 09:24:16 | 5. gradient_boosting
+2026-04-13 09:24:16 | 6. lineal
+2026-04-13 09:24:16 | 7. elasticnet
+2026-04-13 09:24:16 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-13 09:24:16 | --------------------------------------------------
+2026-04-13 09:24:17 | --------------------------------------------------
+2026-04-13 09:24:17 | Pipeline generado
+2026-04-13 09:24:17 | --------------------------------------------------
+2026-04-13 09:24:17 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "media",
+    "tratar_faltantes_strings": "eliminar",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": null,
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "pca_99"
+}
+2026-04-13 09:24:17 | --------------------------------------------------
+2026-04-13 09:24:17 | Modelos seleccionados
+2026-04-13 09:24:17 | --------------------------------------------------
+2026-04-13 09:24:17 | 1. gradient_boosting
+2026-04-13 09:24:17 | 2. svr
+2026-04-13 09:24:17 | 3. elasticnet
+2026-04-13 09:24:17 | 4. knn
+2026-04-13 09:24:17 | 5. ridge
+2026-04-13 09:24:17 | 6. random_forest
+2026-04-13 09:24:17 | 7. arbol_decision
+2026-04-13 09:24:17 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-13 09:24:17 | --------------------------------------------------
+2026-04-13 09:24:19 | --------------------------------------------------
+2026-04-13 09:24:19 | Pipeline generado
+2026-04-13 09:24:19 | --------------------------------------------------
+2026-04-13 09:24:19 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "eliminar",
+    "tratar_faltantes_strings": "aleatorio",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media_geometrica",
+    "escalar_datos_numericos": "standard_scaler",
+    "normalizar_datos_numericos": "ln",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "llm_llama3.1:8b"
+}
+2026-04-13 09:24:19 | --------------------------------------------------
+2026-04-13 09:24:19 | Modelos seleccionados
+2026-04-13 09:24:19 | --------------------------------------------------
+2026-04-13 09:24:19 | 1. lineal
+2026-04-13 09:24:19 | 2. ada_boost
+2026-04-13 09:24:19 | 3. arbol_decision
+2026-04-13 09:24:19 | 4. lasso
+2026-04-13 09:24:19 | 5. svr
+2026-04-13 09:24:19 | 6. elasticnet
+2026-04-13 09:24:19 | 7. knn
+2026-04-13 09:24:19 | LLM seleccionado: deepseek-r1:8b
+2026-04-13 09:24:19 | --------------------------------------------------
+2026-04-13 09:24:20 | --------------------------------------------------
+2026-04-13 09:24:20 | Pipeline generado
+2026-04-13 09:24:20 | --------------------------------------------------
+2026-04-13 09:24:20 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "eliminar",
+    "tratar_faltantes_strings": "aleatorio",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media_geometrica",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "select_from_model"
+}
+2026-04-13 09:24:20 | --------------------------------------------------
+2026-04-13 09:24:20 | Modelos seleccionados
+2026-04-13 09:24:20 | --------------------------------------------------
+2026-04-13 09:24:20 | 1. knn
+2026-04-13 09:24:20 | 2. svr
+2026-04-13 09:24:20 | 3. lasso
+2026-04-13 09:24:20 | 4. gradient_boosting
+2026-04-13 09:24:20 | 5. ada_boost
+2026-04-13 09:24:20 | 6. mlp_regressor
+2026-04-13 09:24:20 | 7. arbol_decision
+2026-04-13 09:24:20 | LLM seleccionado: llama3.1:8b
+2026-04-13 09:24:20 | --------------------------------------------------
+2026-04-13 09:24:21 | ==================================================
+2026-04-13 09:24:21 | INICIANDO PROCESO PARA TASK_ID: 141 (Tarea: clustering)
+2026-04-13 09:24:21 | ==================================================
+2026-04-13 09:24:21 | OK - Datos descargados para task_id: 141
+2026-04-13 09:24:22 | ==================================================
+2026-04-13 09:24:22 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 09:24:22 | ==================================================
+2026-04-13 09:24:22 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 09:24:52 |   TIMEOUT en grupo 'landmarking' después de 30s -> se rellena con error
+2026-04-13 09:24:52 | Grupo 'general' - timeout: 30.0s (restante global: 149.9s)
+2026-04-13 09:25:22 |   TIMEOUT en grupo 'general' después de 30s -> se rellena con error
+2026-04-13 09:25:22 | Grupo 'statistical' - timeout: 30.0s (restante global: 119.9s)
+2026-04-13 09:25:52 |   TIMEOUT en grupo 'statistical' después de 30s -> se rellena con error
+2026-04-13 09:25:52 | Grupo 'model-based' - timeout: 30.0s (restante global: 89.8s)
+2026-04-13 09:26:22 |   TIMEOUT en grupo 'model-based' después de 30s -> se rellena con error
+2026-04-13 09:26:22 | Grupo 'info-theory' - timeout: 30.0s (restante global: 59.8s)
+2026-04-13 09:26:52 |   TIMEOUT en grupo 'info-theory' después de 30s -> se rellena con error
+2026-04-13 09:26:52 | Grupo 'relative' - timeout: 29.7s (restante global: 29.7s)
+2026-04-13 09:27:22 |   TIMEOUT en grupo 'relative' después de 29.69927167892456s -> se rellena con error
+2026-04-13 09:27:22 | Tiempo global agotado (180s). Se rellenan los 4 grupos restantes con error.
+2026-04-13 09:27:22 | Extracción finalizada en 180.06 segundos globales
+2026-04-13 09:27:22 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 09:27:35 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 09:27:56 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 09:27:56 | OK - Meta-features vectorizadas en una lista con longitud: 182
+2026-04-13 09:27:56 | OK - Metafeatures extraídas para task_id: 141
+2026-04-13 09:27:57 | --------------------------------------------------
+2026-04-13 09:27:57 | Pipeline generado
+2026-04-13 09:27:57 | --------------------------------------------------
+2026-04-13 09:27:57 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "moda",
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "mediana",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_qwen2.5-coder:7b",
+    "seleccionar_variables": null
+}
+2026-04-13 09:27:57 | --------------------------------------------------
+2026-04-13 09:27:57 | Modelos seleccionados
+2026-04-13 09:27:57 | --------------------------------------------------
+2026-04-13 09:27:57 | 1. mean_shift
+2026-04-13 09:27:57 | 2. spectral_clustering
+2026-04-13 09:27:57 | 3. birch
+2026-04-13 09:27:57 | 4. kmeans
+2026-04-13 09:27:57 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-13 09:27:57 | --------------------------------------------------
+2026-04-13 09:27:57 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-13 09:27:57 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-13 09:27:57 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: moda      
+2026-04-13 09:27:57 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: etiqueta_desconocido
+2026-04-13 09:27:57 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: None      
+2026-04-13 09:27:57 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-13 09:27:58 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 09:27:58 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: mediana   
+2026-04-13 09:27:58 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: None      
+2026-04-13 09:27:58 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: inverso   
+2026-04-13 09:28:38 | Respuesta del modelo: {}
+2026-04-13 09:28:38 | Tiempo de respuesta: 40.46 segundos
+2026-04-13 09:28:38 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_qwen2.5-coder:7b
+2026-04-13 09:28:38 | OK    - Fase: seleccionar_variables                         | Algoritmo: None      
+2026-04-13 09:28:38 | --------------------------------------------------
+2026-04-13 09:28:38 | --------------------------------------------------
+2026-04-13 09:28:38 | Entrenando modelos para tarea 'clustering'
+2026-04-13 09:28:38 | --------------------------------------------------
+2026-04-13 09:28:39 | ==================================================
+2026-04-13 09:28:39 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 09:28:39 | ==================================================
+2026-04-13 09:28:39 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 09:29:09 |   TIMEOUT en grupo 'landmarking' después de 30s -> se rellena con error
+2026-04-13 09:29:09 | Grupo 'general' - timeout: 30.0s (restante global: 149.9s)
+2026-04-13 09:29:39 |   TIMEOUT en grupo 'general' después de 30s -> se rellena con error
+2026-04-13 09:29:39 | Grupo 'statistical' - timeout: 30.0s (restante global: 119.9s)
+2026-04-13 09:30:09 |   TIMEOUT en grupo 'statistical' después de 30s -> se rellena con error
+2026-04-13 09:30:09 | Grupo 'model-based' - timeout: 30.0s (restante global: 89.8s)
+2026-04-13 09:30:39 |   TIMEOUT en grupo 'model-based' después de 30s -> se rellena con error
+2026-04-13 09:30:39 | Grupo 'info-theory' - timeout: 30.0s (restante global: 59.7s)
+2026-04-13 09:31:09 |   TIMEOUT en grupo 'info-theory' después de 30s -> se rellena con error
+2026-04-13 09:31:09 | Grupo 'relative' - timeout: 29.7s (restante global: 29.7s)
+2026-04-13 09:31:39 |   TIMEOUT en grupo 'relative' después de 29.682854413986206s -> se rellena con error
+2026-04-13 09:31:39 | Tiempo global agotado (180s). Se rellenan los 4 grupos restantes con error.
+2026-04-13 09:31:39 | Extracción finalizada en 180.07 segundos globales
+2026-04-13 09:31:39 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 09:31:52 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 09:32:12 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 09:32:13 | Respuesta del modelo: {'bandwidth': 1.0}
+2026-04-13 09:32:13 | Tiempo de respuesta: 0.35 segundos
+2026-04-13 09:32:15 | Respuesta del modelo: {
+    'affinity': 'precomputed',
+    'assign_labels': 'kmeans',
+    'gamma': 0.1,
+    'n_clusters': 5,
+    'n_init': 5,
+    'random_state': 42
+}
+2026-04-13 09:32:15 | Tiempo de respuesta: 0.68 segundos
+2026-04-13 09:32:17 | Respuesta del modelo: {'branching_factor': 50, 'compute_labels': True, 'n_clusters': 3, 'threshold': 0.5}
+2026-04-13 09:32:17 | Tiempo de respuesta: 1.17 segundos
+2026-04-13 09:32:18 | Respuesta del modelo: {'n_clusters': 2}
+2026-04-13 09:32:18 | Tiempo de respuesta: 0.26 segundos
+2026-04-13 09:32:18 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-13 09:32:21 | --------------------------------------------------
+2026-04-13 09:32:21 | Pipeline generado
+2026-04-13 09:32:21 | --------------------------------------------------
+2026-04-13 09:32:21 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": null,
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media_geometrica",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": null
+}
+2026-04-13 09:32:21 | --------------------------------------------------
+2026-04-13 09:32:21 | Modelos seleccionados
+2026-04-13 09:32:21 | --------------------------------------------------
+2026-04-13 09:32:21 | 1. birch
+2026-04-13 09:32:21 | 2. kmeans
+2026-04-13 09:32:21 | 3. agglomerative_clustering
+2026-04-13 09:32:21 | 4. spectral_clustering
+2026-04-13 09:32:21 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-13 09:32:21 | --------------------------------------------------
+2026-04-13 09:32:22 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-13 09:32:22 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-13 09:32:22 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: None      
+2026-04-13 09:32:22 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: etiqueta_desconocido
+2026-04-13 09:32:22 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: None      
+2026-04-13 09:32:22 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-13 09:32:22 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 09:32:22 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: media_geometrica
+2026-04-13 09:32:22 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: None      
+2026-04-13 09:32:22 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: inverso   
+2026-04-13 09:32:59 | Respuesta del modelo: {"att1_att2_ratio": "(`att1` / `att2`)", "att3_att4_product": "(`att3` * `att4`)"}
+ 
+Please provide the dataset description to generate more variables.
+2026-04-13 09:32:59 | Tiempo de respuesta: 36.42 segundos
+Error al interpretar la respuesta del LLM o tiempo de espera agotado: invalid syntax (<unknown>, line 3)
+2026-04-13 09:32:59 | ERROR - Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-13 09:32:59 | Exception: invalid syntax (<unknown>, line 3)
+2026-04-13 09:33:00 | 
+2026-04-13 09:33:00 | OK - Ejecución guardada con fallo en fase 'crear_nueva_variable' y error: invalid syntax (<unknown>, line 3)
+2026-04-13 09:33:01 | --------------------------------------------------
+2026-04-13 09:33:01 | Pipeline generado
+2026-04-13 09:33:01 | --------------------------------------------------
+2026-04-13 09:33:01 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": null,
+    "tratar_faltantes_strings": "eliminar",
+    "codificar_variables_categoricas_rango_bajo": "label_encoding",
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media_geometrica",
+    "escalar_datos_numericos": "standard_scaler",
+    "normalizar_datos_numericos": "cuadrado",
+    "crear_nueva_variable": null,
+    "seleccionar_variables": "select_from_model"
+}
+2026-04-13 09:33:01 | --------------------------------------------------
+2026-04-13 09:33:01 | Modelos seleccionados
+2026-04-13 09:33:01 | --------------------------------------------------
+2026-04-13 09:33:01 | 1. mean_shift
+2026-04-13 09:33:01 | 2. dbscan
+2026-04-13 09:33:01 | 3. kmeans
+2026-04-13 09:33:01 | 4. agglomerative_clustering
+2026-04-13 09:33:01 | LLM seleccionado: deepseek-r1:8b
+2026-04-13 09:33:01 | --------------------------------------------------
+2026-04-13 09:33:01 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-13 09:33:01 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-13 09:33:01 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: None      
+2026-04-13 09:33:01 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: eliminar  
+2026-04-13 09:33:02 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: label_encoding
+2026-04-13 09:33:02 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-13 09:33:02 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 09:33:02 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: media_geometrica
+2026-04-13 09:33:03 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: standard_scaler
+2026-04-13 09:33:04 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: cuadrado  
+2026-04-13 09:33:04 | OK    - Fase: crear_nueva_variable                          | Algoritmo: None      
+2026-04-13 09:33:04 | OK    - Fase: seleccionar_variables                         | Algoritmo: select_from_model
+2026-04-13 09:33:04 | --------------------------------------------------
+2026-04-13 09:33:04 | --------------------------------------------------
+2026-04-13 09:33:04 | Entrenando modelos para tarea 'clustering'
+2026-04-13 09:33:04 | --------------------------------------------------
+2026-04-13 09:33:04 | ==================================================
+2026-04-13 09:33:04 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 09:33:04 | ==================================================
+2026-04-13 09:33:04 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 09:33:04 |   ERROR en grupo 'landmarking': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'general' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 09:33:04 |   ERROR en grupo 'general': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 09:33:04 |   ERROR en grupo 'statistical': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 09:33:04 |   ERROR en grupo 'model-based': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 09:33:04 |   ERROR en grupo 'info-theory': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'relative' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 09:33:04 |   ERROR en grupo 'relative': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'clustering' - timeout: 30.0s (restante global: 179.8s)
+2026-04-13 09:33:04 |   ERROR en grupo 'clustering': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'complexity' - timeout: 30.0s (restante global: 179.8s)
+2026-04-13 09:33:04 |   ERROR en grupo 'complexity': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'itemset' - timeout: 30.0s (restante global: 179.8s)
+2026-04-13 09:33:04 |   ERROR en grupo 'itemset': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Grupo 'concept' - timeout: 30.0s (restante global: 179.7s)
+2026-04-13 09:33:04 |   ERROR en grupo 'concept': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 09:33:04 | Extracción finalizada en 0.30 segundos globales
+2026-04-13 09:33:04 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 09:33:04 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 09:33:04 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 09:33:35 | Respuesta del modelo: {'bandwidth': None, 'bin_seeding': False, 'cluster_all': True, 'max_iter': 300, 'min_bin_freq': 1, 'n_jobs': None, 'seeds': None}
+2026-04-13 09:33:35 | Tiempo de respuesta: 31.07 segundos
+2026-04-13 09:34:00 | Respuesta del modelo: {'eps': 0.5, 'min_samples': 5}
+2026-04-13 09:34:00 | Tiempo de respuesta: 25.03 segundos
+2026-04-13 09:34:24 | Respuesta del modelo: {'n_clusters': 4}
+2026-04-13 09:34:24 | Tiempo de respuesta: 23.56 segundos
+2026-04-13 09:34:40 | Respuesta del modelo: {'n_clusters': 2, 'linkage': 'ward', 'metric': 'euclidean', 'compute_distances': False, 'compute_full_tree': 'auto', 'connectivity': None, 'distance_threshold': None, 'memory': None}
+2026-04-13 09:34:40 | Tiempo de respuesta: 16.12 segundos
+2026-04-13 09:34:40 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-13 09:34:42 | --------------------------------------------------
+2026-04-13 09:34:42 | Pipeline generado
+2026-04-13 09:34:42 | --------------------------------------------------
+2026-04-13 09:34:42 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "aleatorio",
+    "tratar_faltantes_strings": "eliminar",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media",
+    "escalar_datos_numericos": "min_max",
+    "normalizar_datos_numericos": null,
+    "crear_nueva_variable": "llm_qwen2.5-coder:7b",
+    "seleccionar_variables": "pca_99"
+}
+2026-04-13 09:34:42 | --------------------------------------------------
+2026-04-13 09:34:42 | Modelos seleccionados
+2026-04-13 09:34:42 | --------------------------------------------------
+2026-04-13 09:34:42 | 1. dbscan
+2026-04-13 09:34:42 | 2. birch
+2026-04-13 09:34:42 | 3. spectral_clustering
+2026-04-13 09:34:42 | 4. mean_shift
+2026-04-13 09:34:42 | LLM seleccionado: None
+2026-04-13 09:34:42 | --------------------------------------------------
+2026-04-13 09:34:43 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-13 09:34:43 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: label_encoding
+2026-04-13 09:34:43 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: aleatorio 
+2026-04-13 09:34:43 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: eliminar  
+2026-04-13 09:35:11 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-13 09:35:12 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-13 09:35:12 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 09:35:13 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: media     
+2026-04-13 09:35:16 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: min_max   
+2026-04-13 09:35:16 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: None      
+2026-04-13 09:35:17 | Respuesta del modelo: {}
+2026-04-13 09:35:17 | Tiempo de respuesta: 0.65 segundos
+2026-04-13 09:35:17 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_qwen2.5-coder:7b
+2026-04-13 09:35:18 | OK    - Fase: seleccionar_variables                         | Algoritmo: pca_99    
+2026-04-13 09:35:18 | --------------------------------------------------
+2026-04-13 09:35:18 | --------------------------------------------------
+2026-04-13 09:35:18 | Entrenando modelos para tarea 'clustering'
+2026-04-13 09:35:18 | --------------------------------------------------
+2026-04-13 09:35:19 | ==================================================
+2026-04-13 09:35:19 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 09:35:19 | ==================================================
+2026-04-13 09:35:19 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 09:35:49 |   TIMEOUT en grupo 'landmarking' después de 30s -> se rellena con error
+2026-04-13 09:35:49 | Grupo 'general' - timeout: 30.0s (restante global: 149.9s)
+2026-04-13 09:36:19 |   TIMEOUT en grupo 'general' después de 30s -> se rellena con error
+2026-04-13 09:36:19 | Grupo 'statistical' - timeout: 30.0s (restante global: 119.9s)
+2026-04-13 09:36:49 |   TIMEOUT en grupo 'statistical' después de 30s -> se rellena con error
+2026-04-13 09:36:49 | Grupo 'model-based' - timeout: 30.0s (restante global: 89.8s)
+2026-04-13 09:37:19 |   TIMEOUT en grupo 'model-based' después de 30s -> se rellena con error
+2026-04-13 09:37:19 | Grupo 'info-theory' - timeout: 30.0s (restante global: 59.7s)
+2026-04-13 09:37:49 |   TIMEOUT en grupo 'info-theory' después de 30s -> se rellena con error
+2026-04-13 09:37:49 | Grupo 'relative' - timeout: 29.7s (restante global: 29.7s)
+2026-04-13 09:38:19 |   TIMEOUT en grupo 'relative' después de 29.655902862548828s -> se rellena con error
+2026-04-13 09:38:19 | Tiempo global agotado (180s). Se rellenan los 4 grupos restantes con error.
+2026-04-13 09:38:19 | Extracción finalizada en 180.07 segundos globales
+2026-04-13 09:38:19 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 09:40:20 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 09:40:28 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 09:54:44 | --------------------------------------------------
+2026-04-13 09:54:44 | Pipeline generado
+2026-04-13 09:54:44 | --------------------------------------------------
+2026-04-13 09:54:44 | {
+    "tratar_duplicados": "eliminar",
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "moda",
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": "label_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "moda",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "mutual_info_50"
+}
+2026-04-13 09:54:44 | --------------------------------------------------
+2026-04-13 09:54:44 | Modelos seleccionados
+2026-04-13 09:54:44 | --------------------------------------------------
+2026-04-13 09:54:44 | 1. agglomerative_clustering
+2026-04-13 09:54:44 | 2. kmeans
+2026-04-13 09:54:44 | 3. spectral_clustering
+2026-04-13 09:54:44 | 4. dbscan
+2026-04-13 09:54:44 | LLM seleccionado: llama3.1:8b
+2026-04-13 09:54:44 | --------------------------------------------------
+2026-04-13 09:54:45 | OK    - Fase: tratar_duplicados                             | Algoritmo: eliminar  
+2026-04-13 09:54:45 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: label_encoding
+2026-04-13 09:54:45 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: moda      
+2026-04-13 09:54:45 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: etiqueta_desconocido
+2026-04-13 09:54:46 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: label_encoding
+2026-04-13 09:54:46 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-13 09:54:46 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 09:54:47 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: moda      
+2026-04-13 09:54:47 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: None      
+2026-04-13 09:54:47 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: inverso   
+2026-04-13 09:54:48 | Respuesta del modelo: {"att1_att2_ratio": "(`att1` / `att2`)", "att3_att4_product": "(`att3` * `att4`)"}
+ 
+Please provide the dataset description to generate more variables.
+2026-04-13 09:54:48 | Tiempo de respuesta: 0.87 segundos
+Error al interpretar la respuesta del LLM o tiempo de espera agotado: invalid syntax (<unknown>, line 3)
+2026-04-13 09:54:48 | ERROR - Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-13 09:54:48 | Exception: invalid syntax (<unknown>, line 3)
+2026-04-13 09:54:49 | 
+2026-04-13 09:54:49 | OK - Ejecución guardada con fallo en fase 'crear_nueva_variable' y error: invalid syntax (<unknown>, line 3)
+2026-04-13 09:54:50 | --------------------------------------------------
+2026-04-13 09:54:50 | Pipeline generado
+2026-04-13 09:54:50 | --------------------------------------------------
+2026-04-13 09:54:50 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "media_geometrica",
+    "tratar_faltantes_strings": "moda",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "eliminar",
+    "escalar_datos_numericos": "max_abs_scaler",
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": null,
+    "seleccionar_variables": "umap_80"
+}
+2026-04-13 09:54:50 | --------------------------------------------------
+2026-04-13 09:54:50 | Modelos seleccionados
+2026-04-13 09:54:50 | --------------------------------------------------
+2026-04-13 09:54:50 | 1. agglomerative_clustering
+2026-04-13 09:54:50 | 2. birch
+2026-04-13 09:54:50 | 3. spectral_clustering
+2026-04-13 09:54:50 | 4. dbscan
+2026-04-13 09:54:50 | LLM seleccionado: None
+2026-04-13 09:54:50 | --------------------------------------------------
+2026-04-13 09:54:50 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-13 09:54:50 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: label_encoding
+2026-04-13 09:54:50 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: media_geometrica
+2026-04-13 09:54:50 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: moda      
+2026-04-13 09:55:18 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-13 09:55:19 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-13 09:55:19 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 09:55:20 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: eliminar  
+2026-04-13 09:55:23 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: max_abs_scaler
+2026-04-13 09:55:25 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: inverso   
+2026-04-13 09:55:25 | OK    - Fase: crear_nueva_variable                          | Algoritmo: None      
+2026-04-13 09:55:26 | ERROR - Fase: seleccionar_variables                         | Algoritmo: umap_80   
+2026-04-13 09:55:26 | Exception: Input contains infinity or a value too large for dtype('float32').
+2026-04-13 09:55:27 | 
+2026-04-13 09:55:27 | OK - Ejecución guardada con fallo en fase 'seleccionar_variables' y error: Input contains infinity or a value too large for dtype('float32').
+2026-04-13 09:55:28 | --------------------------------------------------
+2026-04-13 09:55:28 | Pipeline generado
+2026-04-13 09:55:28 | --------------------------------------------------
+2026-04-13 09:55:28 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "mediana",
+    "tratar_faltantes_strings": "etiqueta_desconocido",
+    "codificar_variables_categoricas_rango_bajo": "one_hot_encoding",
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "media",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "inverso",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": null
+}
+2026-04-13 09:55:28 | --------------------------------------------------
+2026-04-13 09:55:28 | Modelos seleccionados
+2026-04-13 09:55:28 | --------------------------------------------------
+2026-04-13 09:55:28 | 1. birch
+2026-04-13 09:55:28 | 2. spectral_clustering
+2026-04-13 09:55:28 | 3. kmeans
+2026-04-13 09:55:28 | 4. mean_shift
+2026-04-13 09:55:28 | LLM seleccionado: qwen2.5-coder:7b
+2026-04-13 09:55:28 | --------------------------------------------------
+2026-04-13 09:55:28 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-13 09:55:28 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-13 09:55:28 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: mediana   
+2026-04-13 09:55:28 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: etiqueta_desconocido
+2026-04-13 09:55:56 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: one_hot_encoding
+2026-04-13 09:55:57 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-13 09:55:57 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 09:55:57 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: media     
+2026-04-13 09:55:57 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: None      
+2026-04-13 09:55:58 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: inverso   
+2026-04-13 09:56:00 | Respuesta del modelo: {"att1_diff": "`att1_'B2of3'` - `att1_'B1of3'`", "att2_diff": "`att2_'B2of3'` - `att2_'B1of3'`", "att3_diff": "`att3_'B2of3'` - `att3_'B1of3'`", "att4_diff": "`att4_'B2of3'` - `att4_'B1of3'`", "att5_diff": "`att5_'B2of3'` - `att5_'B1of3'`"}
+2026-04-13 09:56:00 | Tiempo de respuesta: 1.70 segundos
+2026-04-13 09:56:01 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-13 09:56:01 | OK    - Fase: seleccionar_variables                         | Algoritmo: None      
+2026-04-13 09:56:01 | --------------------------------------------------
+2026-04-13 09:56:01 | --------------------------------------------------
+2026-04-13 09:56:01 | Entrenando modelos para tarea 'clustering'
+2026-04-13 09:56:01 | --------------------------------------------------
+2026-04-13 09:56:02 | ==================================================
+2026-04-13 09:56:02 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 09:56:02 | ==================================================
+2026-04-13 09:56:02 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 09:56:32 |   TIMEOUT en grupo 'landmarking' después de 30s -> se rellena con error
+2026-04-13 09:56:32 | Grupo 'general' - timeout: 30.0s (restante global: 149.9s)
+2026-04-13 09:57:02 |   TIMEOUT en grupo 'general' después de 30s -> se rellena con error
+2026-04-13 09:57:02 | Grupo 'statistical' - timeout: 30.0s (restante global: 119.8s)
+2026-04-13 09:57:32 |   TIMEOUT en grupo 'statistical' después de 30s -> se rellena con error
+2026-04-13 09:57:32 | Grupo 'model-based' - timeout: 30.0s (restante global: 89.8s)
+2026-04-13 09:58:02 |   TIMEOUT en grupo 'model-based' después de 30s -> se rellena con error
+2026-04-13 09:58:02 | Grupo 'info-theory' - timeout: 30.0s (restante global: 59.7s)
+2026-04-13 09:58:32 |   TIMEOUT en grupo 'info-theory' después de 30s -> se rellena con error
+2026-04-13 09:58:32 | Grupo 'relative' - timeout: 29.6s (restante global: 29.6s)
+2026-04-13 09:59:02 |   TIMEOUT en grupo 'relative' después de 29.600852966308594s -> se rellena con error
+2026-04-13 09:59:02 | Tiempo global agotado (180s). Se rellenan los 4 grupos restantes con error.
+2026-04-13 09:59:02 | Extracción finalizada en 180.06 segundos globales
+2026-04-13 09:59:02 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 10:00:33 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 10:00:35 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 10:00:37 | Respuesta del modelo: {'branching_factor': 30, 'compute_labels': True, 'n_clusters': 4, 'threshold': 0.7}
+2026-04-13 10:00:37 | Tiempo de respuesta: 1.98 segundos
+2026-04-13 10:00:38 | Respuesta del modelo: {'n_clusters': 5, 'gamma': 0.1, 'affinity': 'nearest_neighbors'}
+2026-04-13 10:00:38 | Tiempo de respuesta: 0.44 segundos
+2026-04-13 10:00:39 | Respuesta del modelo: {'n_clusters': 5}
+2026-04-13 10:00:39 | Tiempo de respuesta: 0.26 segundos
+2026-04-13 10:00:41 | Respuesta del modelo: {'bandwidth': 0.5, 'bin_seeding': False, 'cluster_all': True, 'max_iter': 300, 'min_bin_freq': 1, 'n_jobs': None, 'seeds': None}
+2026-04-13 10:00:41 | Tiempo de respuesta: 0.60 segundos
+2026-04-13 10:00:41 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-13 10:00:44 | --------------------------------------------------
+2026-04-13 10:00:44 | Pipeline generado
+2026-04-13 10:00:44 | --------------------------------------------------
+2026-04-13 10:00:44 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": null,
+    "tratar_faltantes_numericos": "media",
+    "tratar_faltantes_strings": "eliminar",
+    "codificar_variables_categoricas_rango_bajo": "label_encoding",
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": null,
+    "escalar_datos_numericos": "min_max",
+    "normalizar_datos_numericos": "box_cox",
+    "crear_nueva_variable": "llm_qwen2.5-coder:7b",
+    "seleccionar_variables": "llm_deepseek-r1:8b"
+}
+2026-04-13 10:00:44 | --------------------------------------------------
+2026-04-13 10:00:44 | Modelos seleccionados
+2026-04-13 10:00:44 | --------------------------------------------------
+2026-04-13 10:00:44 | 1. agglomerative_clustering
+2026-04-13 10:00:44 | 2. spectral_clustering
+2026-04-13 10:00:44 | 3. birch
+2026-04-13 10:00:44 | 4. kmeans
+2026-04-13 10:00:44 | LLM seleccionado: deepseek-r1:8b
+2026-04-13 10:00:44 | --------------------------------------------------
+2026-04-13 10:00:44 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-13 10:00:44 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: None      
+2026-04-13 10:00:44 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: media     
+2026-04-13 10:00:44 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: eliminar  
+2026-04-13 10:00:45 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: label_encoding
+2026-04-13 10:00:45 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-13 10:00:45 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 10:00:45 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: None      
+2026-04-13 10:00:46 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: min_max   
+2026-04-13 10:10:41 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: box_cox   
+2026-04-13 10:10:42 | Respuesta del modelo: {}
+2026-04-13 10:10:42 | Tiempo de respuesta: 0.35 segundos
+2026-04-13 10:10:42 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_qwen2.5-coder:7b
+2026-04-13 10:10:42 | ERROR - Fase: seleccionar_variables                         | Algoritmo: llm_deepseek-r1:8b
+2026-04-13 10:10:42 | Exception: 'SeleccionarVariables' object has no attribute 'descripcion'
+2026-04-13 10:10:43 | 
+2026-04-13 10:10:43 | OK - Ejecución guardada con fallo en fase 'seleccionar_variables' y error: 'SeleccionarVariables' object has no attribute 'descripcion'
+2026-04-13 10:10:44 | --------------------------------------------------
+2026-04-13 10:10:44 | Pipeline generado
+2026-04-13 10:10:44 | --------------------------------------------------
+2026-04-13 10:10:44 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "moda",
+    "tratar_faltantes_strings": "aleatorio",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "frequency_encoding",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "aleatorio",
+    "escalar_datos_numericos": "robust_scaler",
+    "normalizar_datos_numericos": null,
+    "crear_nueva_variable": "llm_qwen2.5-coder:7b",
+    "seleccionar_variables": "mutual_info_25"
+}
+2026-04-13 10:10:44 | --------------------------------------------------
+2026-04-13 10:10:44 | Modelos seleccionados
+2026-04-13 10:10:44 | --------------------------------------------------
+2026-04-13 10:10:44 | 1. agglomerative_clustering
+2026-04-13 10:10:44 | 2. mean_shift
+2026-04-13 10:10:44 | 3. dbscan
+2026-04-13 10:10:44 | 4. birch
+2026-04-13 10:10:44 | LLM seleccionado: deepseek-r1:8b
+2026-04-13 10:10:44 | --------------------------------------------------
+2026-04-13 10:10:44 | OK    - Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-13 10:10:44 | OK    - Fase: codificar_variables_binarias                  | Algoritmo: label_encoding
+2026-04-13 10:10:44 | OK    - Fase: tratar_faltantes_numericos                    | Algoritmo: moda      
+2026-04-13 10:10:44 | OK    - Fase: tratar_faltantes_strings                      | Algoritmo: aleatorio 
+2026-04-13 10:10:44 | OK    - Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: None      
+2026-04-13 10:10:44 | OK    - Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: frequency_encoding
+2026-04-13 10:10:45 | OK    - Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 10:10:45 | OK    - Fase: tratar_outliers_numericos                     | Algoritmo: aleatorio 
+2026-04-13 10:10:45 | OK    - Fase: escalar_datos_numericos                       | Algoritmo: robust_scaler
+2026-04-13 10:10:45 | OK    - Fase: normalizar_datos_numericos                    | Algoritmo: None      
+2026-04-13 10:10:45 | Respuesta del modelo: {}
+2026-04-13 10:10:45 | Tiempo de respuesta: 0.19 segundos
+2026-04-13 10:10:45 | OK    - Fase: crear_nueva_variable                          | Algoritmo: llm_qwen2.5-coder:7b
+2026-04-13 10:10:45 | OK    - Fase: seleccionar_variables                         | Algoritmo: mutual_info_25
+2026-04-13 10:10:45 | --------------------------------------------------
+2026-04-13 10:10:45 | --------------------------------------------------
+2026-04-13 10:10:45 | Entrenando modelos para tarea 'clustering'
+2026-04-13 10:10:45 | --------------------------------------------------
+2026-04-13 10:10:45 | ==================================================
+2026-04-13 10:10:45 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 10:10:45 | ==================================================
+2026-04-13 10:10:45 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 10:10:45 |   ERROR en grupo 'landmarking': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'general' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 10:10:45 |   ERROR en grupo 'general': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'statistical' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 10:10:45 |   ERROR en grupo 'statistical': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'model-based' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 10:10:45 |   ERROR en grupo 'model-based': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'info-theory' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 10:10:45 |   ERROR en grupo 'info-theory': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'relative' - timeout: 30.0s (restante global: 179.9s)
+2026-04-13 10:10:45 |   ERROR en grupo 'relative': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'clustering' - timeout: 30.0s (restante global: 179.8s)
+2026-04-13 10:10:45 |   ERROR en grupo 'clustering': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'complexity' - timeout: 30.0s (restante global: 179.8s)
+2026-04-13 10:10:45 |   ERROR en grupo 'complexity': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'itemset' - timeout: 30.0s (restante global: 179.8s)
+2026-04-13 10:10:45 |   ERROR en grupo 'itemset': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Grupo 'concept' - timeout: 30.0s (restante global: 179.7s)
+2026-04-13 10:10:45 |   ERROR en grupo 'concept': Error en proceso de meta-features: ValueError('Neither "X" nor "y" can be empty.') -> se rellena con error
+2026-04-13 10:10:45 | Extracción finalizada en 0.30 segundos globales
+2026-04-13 10:10:45 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 10:10:45 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 10:10:45 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 10:11:00 | Respuesta del modelo: {'compute_distances': False, 'compute_full_tree': 'auto', 'connectivity': None, 'distance_threshold': None, 'linkage': 'ward', 'memory': None, 'metric': 'euclidean', 'n_clusters': 2}
+2026-04-13 10:11:00 | Tiempo de respuesta: 14.59 segundos
+2026-04-13 10:11:32 | Respuesta del modelo: {
+    "bandwidth": None,
+    "bin_seeding": False,
+    "cluster_all": True,
+    "max_iter": 300,
+    "min_bin_freq": 1,
+    "n_jobs": None,
+    "seeds": None
+}
+2026-04-13 10:11:32 | Tiempo de respuesta: 32.46 segundos
+2026-04-13 10:12:09 | Respuesta del modelo: {'eps': 0.5, 'min_samples': 5, 'n_jobs': None}
+2026-04-13 10:12:09 | Tiempo de respuesta: 36.34 segundos
+2026-04-13 10:12:27 | Respuesta del modelo: {'branching_factor': 50, 'compute_labels': True, 'copy': False, 'n_clusters': 3, 'threshold': 0.5}
+2026-04-13 10:12:27 | Tiempo de respuesta: 18.36 segundos
+2026-04-13 10:12:27 | OK - Todos los modelos han sido entrenados en todos los folds
+2026-04-13 10:32:31 | ==================================================
+2026-04-13 10:32:31 | INICIANDO PROCESO PARA TASK_ID: 142 (Tarea: clasificacion)
+2026-04-13 10:32:31 | ==================================================
+2026-04-13 10:32:44 | OK - Datos descargados para task_id: 142
+2026-04-13 10:32:44 | ==================================================
+2026-04-13 10:32:44 | EXTRAYENDO META-FEATURES POR GRUPOS (con timeout individual y global)
+2026-04-13 10:32:44 | ==================================================
+2026-04-13 10:32:44 | Grupo 'landmarking' - timeout: 30.0s (restante global: 180.0s)
+2026-04-13 10:33:14 |   TIMEOUT en grupo 'landmarking' después de 30s -> se rellena con error
+2026-04-13 10:33:14 | Grupo 'general' - timeout: 30.0s (restante global: 149.9s)
+2026-04-13 10:33:44 |   TIMEOUT en grupo 'general' después de 30s -> se rellena con error
+2026-04-13 10:33:44 | Grupo 'statistical' - timeout: 30.0s (restante global: 119.9s)
+2026-04-13 10:34:14 |   TIMEOUT en grupo 'statistical' después de 30s -> se rellena con error
+2026-04-13 10:34:14 | Grupo 'model-based' - timeout: 30.0s (restante global: 89.8s)
+2026-04-13 10:34:44 |   TIMEOUT en grupo 'model-based' después de 30s -> se rellena con error
+2026-04-13 10:34:44 | Grupo 'info-theory' - timeout: 30.0s (restante global: 59.8s)
+2026-04-13 10:35:14 |   TIMEOUT en grupo 'info-theory' después de 30s -> se rellena con error
+2026-04-13 10:35:14 | Grupo 'relative' - timeout: 29.7s (restante global: 29.7s)
+2026-04-13 10:35:44 |   TIMEOUT en grupo 'relative' después de 29.728259563446045s -> se rellena con error
+2026-04-13 10:35:44 | Tiempo global agotado (180s). Se rellenan los 4 grupos restantes con error.
+2026-04-13 10:35:44 | Extracción finalizada en 180.06 segundos globales
+2026-04-13 10:35:44 | OK - Meta-features mapeadas a tipos nativos y con valores de error/infinito reemplazados
+2026-04-13 10:35:46 | OK - Dataset temporal guardado en: temp_dataset.csv
+2026-04-13 10:35:50 | OK - Meta-features personalizadas calculadas y agregadas al diccionario
+2026-04-13 10:35:50 | OK - Meta-features vectorizadas en una lista con longitud: 182
+2026-04-13 10:35:50 | OK - Metafeatures extraídas para task_id: 142
+2026-04-13 11:15:55 | --------------------------------------------------
+2026-04-13 11:15:55 | Pipeline generado
+2026-04-13 11:15:55 | --------------------------------------------------
+2026-04-13 11:15:55 | {
+    "tratar_duplicados": null,
+    "codificar_variables_binarias": "label_encoding",
+    "tratar_faltantes_numericos": "media_geometrica",
+    "tratar_faltantes_strings": "aleatorio",
+    "codificar_variables_categoricas_rango_bajo": null,
+    "codificar_variables_categoricas_rango_medio": "eliminar_variable",
+    "codificar_variables_categoricas_rango_alto": "eliminar_columna",
+    "tratar_outliers_numericos": "aleatorio",
+    "escalar_datos_numericos": null,
+    "normalizar_datos_numericos": "box_cox",
+    "crear_nueva_variable": "llm_llama3.1:8b",
+    "seleccionar_variables": "select_from_model"
+}
+2026-04-13 11:15:55 | --------------------------------------------------
+2026-04-13 11:15:55 | Modelos seleccionados
+2026-04-13 11:15:55 | --------------------------------------------------
+2026-04-13 11:15:55 | 1. gradient_boosting
+2026-04-13 11:15:55 | 2. ada_boost
+2026-04-13 11:15:55 | 3. gaussian_nb
+2026-04-13 11:15:55 | 4. svc
+2026-04-13 11:15:55 | 5. mlp_classifier
+2026-04-13 11:15:55 | 6. knn
+2026-04-13 11:15:55 | 7. hist_gradient_boosting
+2026-04-13 11:15:55 | 8. decision_tree
+2026-04-13 11:15:55 | 9. logistic_regression
+2026-04-13 11:15:55 | 10. linear_svc
+2026-04-13 11:15:55 | 11. linear_discriminant_analysis
+2026-04-13 11:15:55 | LLM seleccionado: deepseek-r1:8b
+2026-04-13 11:15:55 | --------------------------------------------------
+2026-04-13 11:15:56 | OK - Folds generados para tarea: clasificacion
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: tratar_duplicados                             | Algoritmo: None      
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: codificar_variables_binarias                  | Algoritmo: label_encoding
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: tratar_faltantes_numericos                    | Algoritmo: media_geometrica
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: tratar_faltantes_strings                      | Algoritmo: aleatorio 
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: codificar_variables_categoricas_rango_bajo    | Algoritmo: None      
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: codificar_variables_categoricas_rango_medio   | Algoritmo: eliminar_variable
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: codificar_variables_categoricas_rango_alto    | Algoritmo: eliminar_columna
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: tratar_outliers_numericos                     | Algoritmo: aleatorio 
+2026-04-13 11:15:56 | OK    - Fold: 1   | Fase: escalar_datos_numericos                       | Algoritmo: None      
+2026-04-13 11:16:04 | OK    - Fold: 1   | Fase: normalizar_datos_numericos                    | Algoritmo: box_cox   
+2026-04-13 11:16:25 | Respuesta del modelo: {'length_lanes_ratio': '`LENGTH` / `LANES`', 'clear_g_length_ratio': '`CLEAR-G` / `LENGTH`', 'span_length_ratio': '`SPAN` / `LENGTH`'}
+2026-04-13 11:16:25 | Tiempo de respuesta: 21.11 segundos
+2026-04-13 11:16:25 | OK    - Fold: 1   | Fase: crear_nueva_variable                          | Algoritmo: llm_llama3.1:8b
+2026-04-13 11:16:25 | ERROR - Fold: 1   | Fase: seleccionar_variables                         | Algoritmo: select_from_model
+2026-04-13 11:16:25 | Exception: could not convert string to float: 'E45'
