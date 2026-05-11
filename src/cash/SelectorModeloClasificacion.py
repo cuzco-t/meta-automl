@@ -142,6 +142,14 @@ class SelectorModeloClasificacion(RegistroTecnica):
             case _: raise ValueError(f"Modelo no reconocido: {self.log_algoritmo}")
         
     def _calcular_parametros(self, X: pd.DataFrame, y: pd.Series, meta_features):
+
+        if self.llm_seleccionado == 'ninguno':
+            self.llm_seleccionado = None
+        elif self.llm_seleccionado == 'deepseek_r1:8b':
+            self.llm_seleccionado = 'deepseek-r1:8b'
+        elif self.llm_seleccionado == 'qwen2.5_coder:7b':
+            self.llm_seleccionado = 'qwen2.5-coder:7b'
+
         if self.llm_seleccionado is None:
             hiper_parametros = self._get_instancia_modelo().get_params()
             self.log_params["params"] = hiper_parametros

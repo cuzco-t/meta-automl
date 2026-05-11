@@ -3,6 +3,9 @@ import time
 import numpy as np
 import pandas as pd
 
+from src.ExtractorMetaFeatures import ExtractorMetaFeatures
+from src.cash import SelectorModeloClasificacion
+
 from ..Result import Result
 
 from ..preprocesamiento.TratarDuplicados import TratarDuplicados
@@ -161,3 +164,6 @@ class EjecutorPreprocesamiento:
         
         return Result.ok({"X_proc": X_proc, "y_proc": y_proc}), tiempo_total
             
+
+   
+    

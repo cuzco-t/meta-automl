@@ -102,6 +102,13 @@ class SeleccionarVariables(RegistroTecnica):
             self.log_params = {}
             self.registrar_parametros(self.log_params)
             return
+        
+        if self.log_algoritmo == 'llm_qwen2.5_coder:7b':
+            self.log_algoritmo = "llm_qwen2.5-coder:7b"
+        elif self.log_algoritmo == 'llm_deepseek_r1:8b':
+            self.log_algoritmo = "llm_deepseek-r1:8b"
+        elif self.log_algoritmo == 'llm_llama3.1:8b':
+            self.log_algoritmo = "llm_llama3.1:8b"
 
         rng = np.random.default_rng(42)
 

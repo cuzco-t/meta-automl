@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
@@ -220,6 +221,21 @@ class EvaluadorModelos:
         """Retorna métricas con valores de fallo según la tarea."""
         return _metricas_fallo_por_tarea(tarea)
     
+    def evaluar_un_modelo_supervisado(self, modelo, X_val: pd.DataFrame, y_val: pd.Series, tarea: str) -> Dict[str, float]:
+        """Evalúa un solo modelo y retorna sus métricas."""
+        try:
+            y_pred = modelo.predict(X_val)
+            if tarea == "clasificación":
+                return _calcular_metricas_clasificacion_worker(y_val, y_pred)
+            elif tarea == "regresión":
+                return _calcular_metricas_regresion_worker(y_val, y_pred)
+            else:
+                return self._obtener_metricas_fallo(tarea)
+        except Exception as e:
+            print(f"ERROR evaluando modelo: {str(e)}")
+            return self._obtener_metricas_fallo(tarea)
+
+
     def evaluar_modelos(
         self,
         lista_results_modelos: List[List[Result]],
@@ -228,88 +244,78 @@ class EvaluadorModelos:
     ) -> List[Dict[str, float]]:
         """
         Evalúa una lista de modelos usando validación cruzada.
-        
+        Cada fold se evalúa secuencialmente en el mismo proceso.
+        Si un fold excede los 5 minutos, se asignan métricas de fallo.
+
         Args:
             lista_results_modelos: Lista de listas de objetos Result con modelos
             folds_data: Diccionario con datos de validación por fold
             tarea: Tipo de tarea ('clasificacion', 'regresion', 'clustering')
-            
+
         Returns:
             Lista de diccionarios con métricas promediadas por modelo
         """
         resultados_evaluacion = []
-        
+
         for resultado_list in lista_results_modelos:
             # Verificar si algún resultado en la lista es fallo
             if any(resultado.is_failure for resultado in resultado_list):
                 resultados_evaluacion.append({
-                    "estado": "CRASH", 
+                    "estado": "CRASH",
                     "error": resultado_list[0].get_error()
                 })
                 continue
-            
-            metricas_folds = {fold_id: {} for fold_id in folds_data.keys()}
 
-            # Evaluar en cada fold en procesos separados
-            procesos = {}
-            colas = {}
+            metricas_folds = {}
+            todos_ok = True
 
             for fold_id, fold_data in folds_data.items():
                 X_val = fold_data["X_val"]
                 y_val = fold_data["y_val"]
-
-                # Obtener el modelo correspondiente al fold (índice fold_id - 1)
                 modelo = resultado_list[fold_id - 1].get_value()
 
-                cola_resultado = mp.Queue()
-                proceso = mp.Process(
-                    target=_evaluar_fold_worker,
-                    args=(cola_resultado, fold_id, modelo, X_val, y_val, tarea)
-                )
-                proceso.start()
-
-                procesos[fold_id] = proceso
-                colas[fold_id] = cola_resultado
-
-            for fold_id in folds_data.keys():
-                proceso = procesos[fold_id]
-                cola_resultado = colas[fold_id]
-
-                proceso.join(TIMEOUT_EVALUACION_SEGUNDOS)
-
-                if proceso.is_alive():
-                    proceso.terminate()
-                    proceso.join()
-                    print(f"TIMEOUT en fold {fold_id}. Se asignan metricas por defecto.")
-                    metricas_folds[fold_id] = self._obtener_metricas_fallo(tarea)
-                    cola_resultado.close()
-                    cola_resultado.join_thread()
-                    continue
-
+                tiempo_inicio = time.time()
                 try:
-                    resultado = cola_resultado.get_nowait()
-                except Empty:
-                    resultado = {"ok": False, "error": "Sin resultado en cola"}
+                    y_pred = modelo.predict(X_val)
+                    duracion = time.time() - tiempo_inicio
 
-                if resultado.get("ok"):
-                    metricas_folds[fold_id] = resultado["metricas"]
-                else:
-                    print(f"ERROR en fold {fold_id}: {resultado.get('error', 'Error desconocido')}")
+                    if duracion > TIMEOUT_EVALUACION_SEGUNDOS:
+                        print(f"TIMEOUT en fold {fold_id} ({duracion:.2f}s). Se asignan métricas por defecto.")
+                        metricas_folds[fold_id] = self._obtener_metricas_fallo(tarea)
+                        todos_ok = False
+                        continue
+
+                    tarea_normalizada = tarea.lower()
+                    if tarea_normalizada == "clasificacion":
+                        metricas = _calcular_metricas_clasificacion_worker(y_val, y_pred)
+                    elif tarea_normalizada == "regresion":
+                        metricas = _calcular_metricas_regresion_worker(y_val, y_pred)
+                    else:
+                        metricas = self._obtener_metricas_fallo(tarea)
+
+                    metricas_folds[fold_id] = metricas
+                    print(f"Fold {fold_id} evaluado en {duracion:.2f}s")
+
+                except Exception as e:
+                    duracion = time.time() - tiempo_inicio
+                    print(f"ERROR en fold {fold_id} ({duracion:.2f}s): {e}")
                     metricas_folds[fold_id] = self._obtener_metricas_fallo(tarea)
+                    todos_ok = False
 
-                cola_resultado.close()
-                cola_resultado.join_thread()
-            
             # Promediar métricas de los folds
             metricas_promedio = {}
-            todas_las_metricas = set().union(*[set(m.keys()) for m in metricas_folds.values()])
-            
-            for metrica in todas_las_metricas:
-                valores = [metricas_folds[fold_id][metrica] for fold_id in metricas_folds.keys()]
-                metricas_promedio[metrica] = float(np.mean(valores))
-            
+            if metricas_folds:
+                todas_las_metricas = set().union(*[set(m.keys()) for m in metricas_folds.values()])
+                for metrica in todas_las_metricas:
+                    valores = [metricas_folds[fold_id][metrica] for fold_id in metricas_folds.keys()]
+                    metricas_promedio[metrica] = float(np.mean(valores))
+
+            if not todos_ok:
+                metricas_promedio["estado"] = "CRASH"
+                metricas_promedio["error"] = "Algún fold falló o hizo timeout"
+
             resultados_evaluacion.append(metricas_promedio)
-        
+
         return resultados_evaluacion
 
     def evaluar_modelos_clustering(
@@ -362,7 +368,7 @@ class EvaluadorModelos:
                     continue
 
                 try:
-                    resultado = cola_resultado.get_nowait()
+                    resultado = cola_resultado.get(timeout=10)
                 except Empty:
                     resultado = {"ok": False, "error": "Sin resultado en cola"}
 

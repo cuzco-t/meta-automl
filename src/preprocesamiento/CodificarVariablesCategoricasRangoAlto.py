@@ -48,7 +48,7 @@ class CodificarVariablesCategoricasRangoAlto(RegistroTecnica):
             case None:
                 return X, y
             
-            case "eliminar_columna":
+            case "eliminar_columna" | "eliminar_variable":
                 X_modificado = self._eliminar_columna(X)
                 return X_modificado, y
 

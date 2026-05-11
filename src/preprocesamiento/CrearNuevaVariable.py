@@ -78,6 +78,13 @@ class CrearNuevaVariable(RegistroTecnica):
             self.registrar_parametros(self.log_params)
             return
         
+        if self.log_algoritmo == 'llm_qwen2.5_coder:7b':
+            self.log_algoritmo = "llm_qwen2.5-coder:7b"
+        elif self.log_algoritmo == 'llm_deepseek_r1:8b':
+            self.log_algoritmo = "llm_deepseek-r1:8b"
+        elif self.log_algoritmo == 'llm_llama3.1:8b':
+            self.log_algoritmo = "llm_llama3.1:8b"
+        
         # Caso LLM: selecciona variables basándose en meta-features
         if self.log_algoritmo not in self.MODELOS_LLM:
             raise ValueError(f"Algoritmo no reconocido: {self.log_algoritmo}")
