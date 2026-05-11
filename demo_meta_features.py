@@ -175,7 +175,7 @@ def main():
             task_ids = [int(line.strip()) for line in f if line.strip()]
 
         # Solo primeros 5
-        task_ids = task_ids[:5]
+        task_ids = task_ids[:]
         print(f"[INFO] Task IDs a procesar: {task_ids}")
 
         for tid in task_ids:
@@ -218,7 +218,7 @@ def main():
             guia_estado_acciones = {}
             for i in range(16):
                 estado_actual = f"{cluster}_fase{i}"
-                acciones_recomendadas = q_table.obtener_acciones_ordenadas(estado_actual)
+                acciones_recomendadas = q_table.obtener_acciones_ordenadas(estado_actual).copy()
                 guia_estado_acciones[estado_actual] = acciones_recomendadas
                 print(f"    Estado: {estado_actual}  |  Acciones recomendadas: {acciones_recomendadas[:3]}")  # Mostrar solo top 3 acciones
 
@@ -233,7 +233,7 @@ def main():
             for i in range(12):
                 estado_actual = estados[i]
                 fase_actual = fases_str[i]
-                acciones_recomendadas = guia_estado_acciones[estado_actual]
+                acciones_recomendadas = guia_estado_acciones[estado_actual].copy()
 
 
                 accion_exitosa = False
@@ -285,33 +285,34 @@ def main():
                     dataset_imposible=True,  # <-- activa el -1111
                 )
                 continue
-            
+            # ===============================================
+            # Antecedente: Calcular MTFs globales para la selección de modelo
+            # ===============================================
+            X_total = pd.concat([X_train, X_test], axis=0, ignore_index=True)
+            y_total = pd.concat([y_train, y_test], axis=0, ignore_index=True)
+
+            extractor = ExtractorMetaFeatures()
+            meta_features_globales, _ = extractor.extraer_desde_dataframe(X_total, y_total)
+            meta_features_globales = extractor.eliminar_constantes_errores(meta_features_globales)
+            meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales)
+
             # 8. Seleccionar LLM y calculo de hiperparámetros
             accion_exitosa = False
-            acciones_recomendadas = guia_estado_acciones[estados[12]]
+            acciones_recomendadas = guia_estado_acciones[estados[12]].copy()
 
             while not accion_exitosa and len(acciones_recomendadas) > 0:
-                llm_recomendado = guia_estado_acciones[estados[12]].pop(0)
+                llm_recomendado = acciones_recomendadas.pop(0)
                 llm_recomendado = llm_recomendado if llm_recomendado != 'ninguno' else None
 
                 print(f"[INFO] LLM recomendado: {llm_recomendado}")
 
-                # 9. Calculo de las MTFs globales
-                X_total = pd.concat([X_train, X_test], axis=0, ignore_index=True)
-                y_total = pd.concat([y_train, y_test], axis=0, ignore_index=True)
-
-                extractor = ExtractorMetaFeatures()
-                meta_features_globales, _ = extractor.extraer_desde_dataframe(X_total, y_total)
-                meta_features_globales = extractor.eliminar_constantes_errores(meta_features_globales)
-                meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales)
-
                 modelos_recomendados = []
                 selector = None
                 if tipo_tarea == "clasificación":
-                    modelos_recomendados = guia_estado_acciones[estados[13]]
+                    modelos_recomendados = guia_estado_acciones[estados[13]].copy()
                     selector = SelectorModeloClasificacion()
                 elif tipo_tarea == "regresión":
-                    modelos_recomendados = guia_estado_acciones[estados[14]]
+                    modelos_recomendados = guia_estado_acciones[estados[14]].copy()
                     selector = SelectorModeloRegresion()
 
                 modelo_exitoso = False
@@ -336,7 +337,7 @@ def main():
 
                     modelo = modelo_result.get_value()
 
-                    # 10. Evaluar modelo
+                    # 9. Evaluar modelo
                     evaluador = EvaluadorModelos()
                     metricas = evaluador.evaluar_un_modelo_supervisado(modelo, X_test, y_test, tipo_tarea)
                     print(f"  Modelo: {modelo_recomendado}  |  Métricas: {metricas}")
