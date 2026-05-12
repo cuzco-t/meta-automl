@@ -340,6 +340,11 @@ def main():
                     # 9. Evaluar modelo
                     evaluador = EvaluadorModelos()
                     metricas = evaluador.evaluar_un_modelo_supervisado(modelo, X_test, y_test, tipo_tarea)
+                    
+                    if -1111.0 in metricas.values():
+                        print(f"[ERROR] Modelo '{modelo_recomendado}' falló al evaluar (métricas con -1111): {metricas}")
+                        continue
+
                     print(f"  Modelo: {modelo_recomendado}  |  Métricas: {metricas}")
                     modelo_exitoso = True
                 

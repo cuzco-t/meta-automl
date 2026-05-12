@@ -27,12 +27,12 @@ def print(*args, **kwargs):
 
 def _metricas_fallo_por_tarea(tarea: str) -> Dict[str, float]:
     tarea_normalizada = tarea.lower()
-    if tarea_normalizada == "clasificacion":
-        return {"accuracy": -1.0, "precision": -1.0, "recall": -1.0, "f1": -1.0}
-    if tarea_normalizada == "regresion":
-        return {"mae": 999.0, "mse": 999.0, "rmse": 999.0, "r2": -1.0, "medae": 999.0, "ev": -1.0}
+    if tarea_normalizada in ["clasificacion", "clasificación"]:
+        return {"accuracy": -1111.0, "precision": -1111.0, "recall": -1111.0, "f1": -1111.0}
+    if tarea_normalizada in ["regresion", "regresión"]:
+        return {"mae": 999.0, "mse": 999.0, "rmse": 999.0, "r2": -1111.0, "medae": 999.0, "ev": -1111.0}
     if tarea_normalizada == "clustering":
-        return {"silhouette": -1.0, "calinski": 0.0, "davies": 999.0}
+        return {"silhouette": -1111.0, "calinski": 0.0, "davies": 999.0}
     return {}
 
 
