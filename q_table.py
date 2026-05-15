@@ -9,21 +9,27 @@ class QTable:
         RUTA_CENTROIDES = "data/normalizacion/centroides_k10.csv"
         self.centroides = pd.read_csv(RUTA_CENTROIDES).to_numpy()
 
-    def determinar_cluster(self, vector: list[float]) -> int:
+    def determinar_cluster(self, vector: list[float], numero_cluster: int = 1) -> str:
         """
         Dado un vector de meta-features, determina a qué cluster pertenece
         comparándolo con los centroides usando distancia euclidiana.
+
+        Args:
+            vector: vector de meta-features normalizado.
+            numero_cluster: 1 devuelve el cluster más cercano, 2 el segundo
+                más cercano, y así sucesivamente.
         """
-        min_distancia = float('inf')
-        cluster_asignado = ""
+        numero_cluster = max(1, numero_cluster)
+        vector_np = np.array(vector)
 
+        distancias = []
         for i, centroide in enumerate(self.centroides):
-            distancia = np.sqrt(np.sum((np.array(vector) - centroide[1:]) ** 2))
-            if distancia < min_distancia:
-                min_distancia = distancia
-                cluster_asignado = f"cluster{i}"
+            distancia = np.sqrt(np.sum((vector_np - centroide[1:]) ** 2))
+            distancias.append((distancia, f"cluster{i}"))
 
-        return cluster_asignado
+        distancias.sort(key=lambda elemento: elemento[0])
+        indice = min(numero_cluster - 1, len(distancias) - 1)
+        return distancias[indice][1]
 
     def obtener_acciones_ordenadas(self, nombre_estado: str) -> list[str]:
         """

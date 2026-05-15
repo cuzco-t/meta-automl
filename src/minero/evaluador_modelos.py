@@ -235,6 +235,47 @@ class EvaluadorModelos:
             print(f"ERROR evaluando modelo: {str(e)}")
             return self._obtener_metricas_fallo(tarea)
 
+    def evaluar_un_modelo_clustering(self, modelo, X: pd.DataFrame, y: pd.Series) -> Dict[str, float]:
+        try:
+            y_pred = modelo.labels_
+
+            metricas_clustering = _calcular_metricas_clustering_worker(X, y_pred)
+
+            y_true = y.astype(str).to_numpy()
+            y_pred_str = np.array(y_pred).astype(str)
+
+            clases_unicas = np.unique(y_true)
+            clusters_unicos = np.unique(y_pred_str)
+
+            map_clases = {clase: idx for idx, clase in enumerate(clases_unicas)}
+            map_clusters = {cluster: idx for idx, cluster in enumerate(clusters_unicos)}
+
+            matriz_confusion = np.zeros((len(clusters_unicos), len(clases_unicas)))
+            for i in range(len(y_true)):
+                fila = map_clusters[y_pred_str[i]]
+                columna = map_clases[y_true[i]]
+                matriz_confusion[fila, columna] += 1
+
+            row_ind, col_ind = linear_sum_assignment(-matriz_confusion)
+            cluster_to_clase = {
+                clusters_unicos[row]: clases_unicas[col]
+                for row, col in zip(row_ind, col_ind)
+            }
+
+            y_pred_mapeado = np.array([
+                cluster_to_clase.get(label, label)
+                for label in y_pred_str
+            ])
+
+            metricas_clasificacion = _calcular_metricas_clasificacion_worker(y, y_pred_mapeado)
+            metricas_totales = {**metricas_clustering, **metricas_clasificacion}
+
+            return metricas_totales
+        except Exception as e:
+            print(f"ERROR evaluando modelo de clustering: {str(e)}")
+            return None
+        
+
 
     def evaluar_modelos(
         self,
