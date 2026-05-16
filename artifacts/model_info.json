@@ -1,0 +1,16 @@
+{
+  "input_size": 280,
+  "output_size": 95,
+  "hidden_layers": [
+    2478,
+    3503,
+    1970,
+    1208,
+    2752,
+    2940
+  ],
+  "best_validation_loss": 0.024246860421567817,
+  "training_timestamp": "20260516_145203",
+  "best_trial_number": 9,
+  "total_trials": 12
+}

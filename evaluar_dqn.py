@@ -8,8 +8,10 @@ import os
 import sys
 import time
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 
+from dqn_pipeline import DQNPipeline
 from src.cash.SelectorModeloClasificacion import SelectorModeloClasificacion
 from src.cash.SelectorModeloRegresion import SelectorModeloRegresion
 
@@ -155,6 +157,14 @@ def main():
     archivos_txt = [f for f in os.listdir(directorio_datasets) if f.endswith(".txt")]
     archivos_txt.sort()
 
+    red_dqn = pipeline = DQNPipeline(
+        model_path="models/dqn_model_loss_20260516_145203.pt",
+        model_info_path="artifacts/model_info.json",
+        action_mapping_path="artifacts/action_mapping.json",
+        actions_csv_path="data/acciones.csv",
+        device="cpu"
+    )
+
     for archivo in archivos_txt:
         ruta_archivo = os.path.join(directorio_datasets, archivo)
         print("\n" + "=" * 70)
@@ -175,7 +185,7 @@ def main():
             task_ids = [int(line.strip()) for line in f if line.strip()]
 
         # Solo primeros 5
-        task_ids = task_ids[:]
+        task_ids = task_ids[:5]
         print(f"[INFO] Task IDs a procesar: {task_ids}")
 
         for tid in task_ids:
@@ -209,40 +219,31 @@ def main():
             vector_normalizado = normalizar_vector(vector, params_norm)
             print(f"  Vector normalizado (primeros 5 elementos): {vector_normalizado[:5]}")
 
-            # 4. Determinar cluster
-            q_table = QTable()
-            cluster = q_table.determinar_cluster(vector_normalizado)
-            print(f"  Cluster asignado: {cluster}")
+            vector_np = np.array(vector_normalizado, dtype=np.float32)
+            vector_280 = np.pad(vector_np, (0, 280 - len(vector_np)), mode='constant')
 
-            # 5. Crear guía de estados y acciones recomendadas para cada fase
-            guia_estado_acciones = {}
-            for i in range(16):
-                estado_actual = f"{cluster}_fase{i}"
-                acciones_recomendadas = q_table.obtener_acciones_ordenadas(estado_actual).copy()
-                guia_estado_acciones[estado_actual] = acciones_recomendadas
-                print(f"    Estado: {estado_actual}  |  Acciones recomendadas: {acciones_recomendadas[:3]}")  # Mostrar solo top 3 acciones
-
-            # 6. Dividir en 80/20 para entrenamiento/prueba
+            # 4. Dividir en 80/20 para entrenamiento/prueba
             X_train, X_test, y_train, y_test = train_test_split(X_df, y_series, test_size=0.2, random_state=912)
 
-            # 7. Preprocesamiento
-            estados = list(guia_estado_acciones.keys())
-            
+            # 5. Preprocesamiento
             fases_instancias = crear_fases_instancias()
             fases_str = list(fases_instancias.keys())
             for i in range(12):
-                estado_actual = estados[i]
+                fase_int = i
                 fase_actual = fases_str[i]
-                acciones_recomendadas = guia_estado_acciones[estado_actual].copy()
-
 
                 accion_exitosa = False
+                acciones = red_dqn.get_actions_for_phase(vector_280, phase=fase_int)
+                acciones_recomendadas = acciones.copy()
+
                 while not accion_exitosa and len(acciones_recomendadas) > 0:
                     X_train_temp, y_train_temp = X_train.copy(), y_train.copy()
                     X_val_temp, y_val_temp = X_test.copy(), y_test.copy()
 
-                    accion = acciones_recomendadas.pop(0)
-                    
+                    accion_info = acciones_recomendadas.pop(0)
+                    accion = accion_info["action_name"]
+                    dim_to_activate = accion_info["dimension_to_activate"]
+
                     accion_limpia = accion.replace(f"{fase_actual}_", "")
                     instancia = fases_instancias[fase_actual]
                     instancia.log_algoritmo = accion_limpia if accion_limpia != 'None' else None
@@ -267,6 +268,11 @@ def main():
                 if not accion_exitosa:
                     print("PIPELINE ROTO: No se pudo aplicar ninguna acción recomendada para esta fase.")
                     break
+
+                vector_280 = red_dqn.apply_action_to_vector(
+                    vector_280, 
+                    dim_to_activate
+                )
                 
                 X_train, y_train = X_train_temp, y_train_temp
                 X_test, y_test = X_val_temp, y_val_temp
@@ -274,11 +280,11 @@ def main():
             if not accion_exitosa:
                 print("[ERROR] No se pudo completar el pipeline para este dataset debido a errores en las fases.")
                 registrador.guardar_resultado(
-                    nombre_automl="q_learning_v1",
+                    nombre_automl="dqn_v1",
                     task_id=tid,
                     nombre_dataset=nombre_dataset,
                     fuente=archivo,
-                    cluster_nombre=cluster,
+                    cluster_nombre="dqn",
                     tiempo=time.perf_counter() - tiempo_inicio,
                     metricas={},  # será ignorado
                     formula_recompensa="original",
@@ -298,26 +304,45 @@ def main():
 
             # 8. Seleccionar LLM y calculo de hiperparámetros
             accion_exitosa = False
-            acciones_recomendadas = guia_estado_acciones[estados[12]].copy()
+            acciones = red_dqn.get_actions_for_phase(vector_280, phase=12)
+            acciones_recomendadas = acciones.copy()
+
+            vector_280_llm_sin_activar = vector_280.copy()  # Si queremos modificar el vector para la selección de LLM, lo haríamos aquí
 
             while not accion_exitosa and len(acciones_recomendadas) > 0:
-                llm_recomendado = acciones_recomendadas.pop(0)
+                accion_info = acciones_recomendadas.pop(0)
+                accion = accion_info["action_name"]
+                dim_to_activate = accion_info["dimension_to_activate"]
+
+                llm_recomendado = accion
                 llm_recomendado = llm_recomendado if llm_recomendado != 'ninguno' else None
 
+                vector_280_llm_acivado = red_dqn.apply_action_to_vector(
+                    vector_280_llm_sin_activar.copy(), 
+                    dim_to_activate
+                )
                 print(f"[INFO] LLM recomendado: {llm_recomendado}")
 
                 modelos_recomendados = []
                 selector = None
+
+                vector_280_modelo = vector_280_llm_acivado.copy()
                 if tipo_tarea == "clasificación":
-                    modelos_recomendados = guia_estado_acciones[estados[13]].copy()
+                    acciones = red_dqn.get_actions_for_phase(vector_280_modelo, phase=13)
+                    modelos_recomendados = acciones.copy()
+
                     selector = SelectorModeloClasificacion()
                 elif tipo_tarea == "regresión":
-                    modelos_recomendados = guia_estado_acciones[estados[14]].copy()
+                    acciones = red_dqn.get_actions_for_phase(vector_280_modelo, phase=14)
+                    modelos_recomendados = acciones.copy()
+
                     selector = SelectorModeloRegresion()
 
                 modelo_exitoso = False
                 while not modelo_exitoso and len(modelos_recomendados) > 0:
-                    modelo_recomendado = modelos_recomendados.pop(0)
+                    accion_info = modelos_recomendados.pop(0)
+
+                    modelo_recomendado = accion_info["action_name"]                    
                     modelo_recomendado = modelo_recomendado.replace("clasificacion_", "").replace("regresion_", "").strip()
                     
                     try:
@@ -357,11 +382,11 @@ def main():
             if not accion_exitosa:
                 print("DATASET IMPOSIBLE DE PROCESAR")
                 registrador.guardar_resultado(
-                    nombre_automl="q_learning_v1",
+                    nombre_automl="dqn_v1",
                     task_id=tid,
                     nombre_dataset=nombre_dataset,
                     fuente=archivo,
-                    cluster_nombre=cluster,
+                    cluster_nombre="dqn",
                     tiempo=time.perf_counter() - tiempo_inicio,
                     metricas={},  # será ignorado
                     formula_recompensa="original",
@@ -372,11 +397,11 @@ def main():
             print(f"[INFO] Task ID {tid} procesada exitosamente con LLM '{llm_recomendado}' y modelo '{modelo_recomendado}'.")
             print(f"Métricas finales:\n{metricas}")
             registrador.guardar_resultado(
-                nombre_automl="q_learning_v1",
+                nombre_automl="dqn_v1",
                 task_id=tid,
                 nombre_dataset=nombre_dataset,
                 fuente=archivo,
-                cluster_nombre=cluster,
+                cluster_nombre="dqn",
                 tiempo=time.perf_counter() - tiempo_inicio,
                 metricas=metricas,
                 formula_recompensa="original",
