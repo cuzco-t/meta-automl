@@ -180,7 +180,7 @@ def main():
             task_ids = [int(line.strip()) for line in f if line.strip()]
 
         # Solo primeros 5
-        task_ids = task_ids[:5]
+        task_ids = task_ids[:]
         print(f"[INFO] Task IDs a procesar: {task_ids}")
 
         for tid in task_ids:
