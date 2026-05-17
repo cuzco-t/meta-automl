@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 
 from dqn_pipeline import DQNPipeline
 from src.cash.SelectorModeloClasificacion import SelectorModeloClasificacion
+from src.cash.SelectorModeloClustering import SelectorModeloClustering
 from src.cash.SelectorModeloRegresion import SelectorModeloRegresion
 
 # Añadir raíz del proyecto al path para imports absolutos
@@ -171,13 +172,7 @@ def main():
         print(f"[INFO] Procesando archivo: {archivo}")
         print("=" * 70)
 
-        # Determinar tipo de tarea
-        if "cc18" in archivo:
-            tipo_tarea = "clasificación"
-        elif "ctr23" in archivo:
-            tipo_tarea = "regresión"
-        else:
-            tipo_tarea = "desconocido"
+        tipo_tarea = "clustering"
         print(f"[INFO] Tipo de tareas: {tipo_tarea}")
 
         # Leer task_ids
@@ -223,7 +218,8 @@ def main():
             vector_280 = np.pad(vector_np, (0, 280 - len(vector_np)), mode='constant')
 
             # 4. Dividir en 80/20 para entrenamiento/prueba
-            X_train, X_test, y_train, y_test = train_test_split(X_df, y_series, test_size=0.2, random_state=912)
+            X_procesado = X_df.copy()
+            y_procesado = y_series.copy()
 
             # 5. Preprocesamiento
             fases_instancias = crear_fases_instancias()
@@ -237,8 +233,7 @@ def main():
                 acciones_recomendadas = acciones.copy()
 
                 while not accion_exitosa and len(acciones_recomendadas) > 0:
-                    X_train_temp, y_train_temp = X_train.copy(), y_train.copy()
-                    X_val_temp, y_val_temp = X_test.copy(), y_test.copy()
+                    X_temporal, y_temporal = X_procesado.copy(), y_procesado.copy()
 
                     accion_info = acciones_recomendadas.pop(0)
                     accion = accion_info["action_name"]
@@ -254,9 +249,8 @@ def main():
                         elif fase_actual == "seleccionar_variables" and descripcion:
                             instancia.descripcion = descripcion
 
-                        instancia.fit(X_train_temp, y_train_temp)
-                        X_train_temp, y_train_temp = instancia.transform(X_train_temp, y_train_temp)
-                        X_val_temp, y_val_temp = instancia.transform(X_val_temp, y_val_temp)
+                        instancia.fit(X_temporal, y_temporal)
+                        X_temporal, y_temporal = instancia.transform(X_temporal, y_temporal)
 
                         print(f"[INFO] Fase: {fase_actual:<45} | Acción aplicada: {accion}")
 
@@ -274,8 +268,7 @@ def main():
                     dim_to_activate
                 )
                 
-                X_train, y_train = X_train_temp, y_train_temp
-                X_test, y_test = X_val_temp, y_val_temp
+                X_procesado, y_procesado = X_temporal, y_temporal
             
             if not accion_exitosa:
                 print("[ERROR] No se pudo completar el pipeline para este dataset debido a errores en las fases.")
@@ -287,18 +280,15 @@ def main():
                     cluster_nombre="dqn",
                     tiempo=time.perf_counter() - tiempo_inicio,
                     metricas={},  # será ignorado
-                    formula_recompensa="original",
+                    formula_recompensa="original-clustering",
                     dataset_imposible=True,  # <-- activa el -1111
                 )
                 continue
             # ===============================================
             # Antecedente: Calcular MTFs globales para la selección de modelo
             # ===============================================
-            X_total = pd.concat([X_train, X_test], axis=0, ignore_index=True)
-            y_total = pd.concat([y_train, y_test], axis=0, ignore_index=True)
-
             extractor = ExtractorMetaFeatures()
-            meta_features_globales, _ = extractor.extraer_desde_dataframe(X_total, y_total)
+            meta_features_globales, _ = extractor.extraer_desde_dataframe(X_procesado.copy(), y_procesado.copy(), vectorizar=False)
             meta_features_globales = extractor.eliminar_constantes_errores(meta_features_globales)
             meta_features_globales_formateadas = extractor.formatear_meta_features_globales(meta_features_globales)
 
@@ -327,30 +317,25 @@ def main():
                 selector = None
 
                 vector_280_modelo = vector_280_llm_acivado.copy()
-                if tipo_tarea == "clasificación":
-                    acciones = red_dqn.get_actions_for_phase(vector_280_modelo, phase=13)
-                    modelos_recomendados = acciones.copy()
-
-                    selector = SelectorModeloClasificacion()
-                elif tipo_tarea == "regresión":
-                    acciones = red_dqn.get_actions_for_phase(vector_280_modelo, phase=14)
-                    modelos_recomendados = acciones.copy()
-
-                    selector = SelectorModeloRegresion()
+                
+                acciones = red_dqn.get_actions_for_phase(vector_280_modelo, phase=15)
+                modelos_recomendados = acciones.copy()
+                selector = SelectorModeloClustering()
+                
 
                 modelo_exitoso = False
                 while not modelo_exitoso and len(modelos_recomendados) > 0:
                     accion_info = modelos_recomendados.pop(0)
 
                     modelo_recomendado = accion_info["action_name"]                    
-                    modelo_recomendado = modelo_recomendado.replace("clasificacion_", "").replace("regresion_", "").strip()
+                    modelo_recomendado = modelo_recomendado.replace("clustering_", "").strip()
                     
                     try:
                         selector.log_algoritmo = modelo_recomendado
                         selector.llm_seleccionado = llm_recomendado
 
-                        selector.calcular_hiper_parametros(X_total, y_total, meta_features_globales_formateadas)
-                        modelo_result = selector.entrenar_modelo(X_train, y_train)
+                        selector.calcular_hiper_parametros(X_procesado.copy(), meta_features_globales_formateadas)
+                        modelo_result = selector.entrenar_modelo(X_procesado.copy())
                         
                         if modelo_result.is_failure:
                             print(f"[ERROR] Modelo '{modelo_recomendado}' falló al entrenar: {modelo_result.get_error()}")
@@ -364,9 +349,9 @@ def main():
 
                     # 9. Evaluar modelo
                     evaluador = EvaluadorModelos()
-                    metricas = evaluador.evaluar_un_modelo_supervisado(modelo, X_test, y_test, tipo_tarea)
+                    metricas = evaluador.evaluar_un_modelo_clustering(modelo, X_procesado.copy(), y_procesado.copy())
                     
-                    if -1111.0 in metricas.values():
+                    if metricas is None:
                         print(f"[ERROR] Modelo '{modelo_recomendado}' falló al evaluar (métricas con -1111): {metricas}")
                         continue
 
@@ -389,7 +374,7 @@ def main():
                     cluster_nombre="dqn",
                     tiempo=time.perf_counter() - tiempo_inicio,
                     metricas={},  # será ignorado
-                    formula_recompensa="original",
+                    formula_recompensa="original-clustering",
                     dataset_imposible=True,  # <-- activa el -1111
                 )
                 continue
@@ -404,7 +389,7 @@ def main():
                 cluster_nombre="dqn",
                 tiempo=time.perf_counter() - tiempo_inicio,
                 metricas=metricas,
-                formula_recompensa="original",
+                formula_recompensa="original-clustering",
                 dataset_imposible=False,
             )
             

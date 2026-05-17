@@ -80,7 +80,7 @@ def _calcular_metricas_regresion_worker(y_val: pd.Series, y_pred: np.ndarray) ->
         y_pred_np = np.asarray(y_pred)
 
         mse = mean_squared_error(y_val_np, y_pred_np)
-        rmse = np.sqrt(mse)
+        rmse = float(np.sqrt(mse))
 
         mae = mean_absolute_error(y_val_np, y_pred_np)
         medae = median_absolute_error(y_val_np, y_pred_np)
